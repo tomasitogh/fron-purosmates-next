@@ -70,7 +70,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             return { success: true, user: result };
         } catch (error: any) {
             console.error('Error en login:', error);
-            return { success: false, error: error.message || 'Credenciales inválidas' };
+            const errorMessage = typeof error === 'string' ? error : (error.message || 'Credenciales inválidas');
+            return { success: false, error: errorMessage };
         }
     };
 

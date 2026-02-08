@@ -21,20 +21,28 @@ interface AuthState {
 // Thunk para login
 export const loginUser = createAsyncThunk(
     'auth/login',
-    async ({ email, password }: { email: string; password: string }) => {
-        const { data } = await axios.post(`${API_URL}/auth/authenticate`, { email, password });
-        const accessToken = data.access_token;
+    async ({ email, password }: { email: string; password: string }, { rejectWithValue }) => {
+        try {
+            const { data } = await axios.post(`${API_URL}/auth/authenticate`, { email, password });
+            const accessToken = data.access_token;
 
-        // Decodificar el token JWT para obtener el rol
-        const tokenPayload = JSON.parse(atob(accessToken.split('.')[1]));
+            // Decodificar el token JWT para obtener el rol
+            const tokenPayload = JSON.parse(atob(accessToken.split('.')[1]));
 
-        const userData = {
-            email: tokenPayload.sub,
-            role: tokenPayload.role || tokenPayload.authorities?.[0]?.replace('ROLE_', '') || 'USER',
-            token: accessToken
-        };
+            const userData = {
+                email: tokenPayload.sub,
+                role: tokenPayload.role || tokenPayload.authorities?.[0]?.replace('ROLE_', '') || 'USER',
+                token: accessToken
+            };
 
-        return userData;
+            return userData;
+        } catch (error: any) {
+            if (axios.isAxiosError(error) && error.response?.data) {
+                // Return the message from backend (GlobalExceptionHandler)
+                return rejectWithValue(error.response.data.message || 'Error al iniciar sesión');
+            }
+            return rejectWithValue(error.message || 'Error desconocido');
+        }
     }
 );
 
@@ -121,7 +129,7 @@ const authSlice = createSlice({
             })
             .addCase(loginUser.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.error.message || 'Error al iniciar sesión';
+                state.error = (action.payload as string) || action.error.message || 'Error al iniciar sesión';
             })
             // Register
             .addCase(registerUser.pending, (state) => {
