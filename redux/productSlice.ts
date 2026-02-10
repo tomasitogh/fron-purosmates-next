@@ -10,7 +10,12 @@ export interface Product {
     description: string;
     price: number;
     stock: number;
-    imageUrls: string[];
+    images: {
+        url: string;
+        scale?: number;
+        x?: number;
+        y?: number;
+    }[];
     active: boolean;
     category?: {
         id: number;

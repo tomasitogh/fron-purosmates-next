@@ -9,7 +9,12 @@ export interface CartItem {
     id: number;
     name: string;
     price: number;
-    imageUrls: string[];
+    images: {
+        url: string;
+        scale?: number;
+        x?: number;
+        y?: number;
+    }[];
     category?: {
         id: number;
         description: string;

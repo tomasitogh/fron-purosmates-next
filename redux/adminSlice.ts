@@ -25,7 +25,12 @@ export interface ProductData {
     category: {
         id: number;
     };
-    imageUrls: string[];
+    images: {
+        url: string;
+        scale?: number;
+        x?: number;
+        y?: number;
+    }[];
     active: boolean;
 }
 

@@ -1,19 +1,27 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import { addToCart } from '@/redux/cartSlice';
 import FilterTabs from '@/components/FilterTabs';
 import { useAuth } from '@/context/AuthContext';
 import AuthModal from '@/components/AuthModal';
 import Image from 'next/image';
+import ProductImagePreview from '@/components/ProductImagePreview';
+import { slugify } from '@/lib/slugify';
 
 interface Product {
   id: number;
   name: string;
+  slug?: string;
   price: number;
-  imageUrls: string[];
+  images: {
+    url: string;
+    scale?: number;
+    x?: number;
+    y?: number;
+  }[];
   category: { id: number; description: string };
   stock: number;
   description?: string;
@@ -26,6 +34,7 @@ interface ShopContentProps {
 
 export default function ShopContent({ initialProducts }: ShopContentProps) {
   const dispatch = useDispatch();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated } = useAuth();
 
@@ -45,11 +54,30 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
     return searchParams.get('category') || null;
   }, [searchParams]);
 
+  const productSlugFromUrl = useMemo(() => {
+    return searchParams.get('producto') || null;
+  }, [searchParams]);
+
   useEffect(() => {
     if (categoryFromUrl) {
       setSelectedType([categoryFromUrl]);
     }
   }, [categoryFromUrl]);
+
+  // Abrir modal automáticamente si hay un slug en la URL
+  useEffect(() => {
+    if (productSlugFromUrl && initialProducts.length > 0) {
+      // Solo abrir si el modal no está ya abierto con ese producto
+      if (!selectedProduct || (selectedProduct.slug || slugify(selectedProduct.name)) !== productSlugFromUrl) {
+        const product = initialProducts.find(
+          p => (p.slug || slugify(p.name)) === productSlugFromUrl
+        );
+        if (product) {
+          setSelectedProduct(product);
+        }
+      }
+    }
+  }, [productSlugFromUrl, initialProducts]);
 
   useEffect(() => {
     if (initialProducts.length > 0) {
@@ -84,6 +112,23 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
     dispatch(addToCart(product) as any);
   };
 
+  const openProductModal = (product: Product) => {
+    const slug = product.slug || slugify(product.name);
+    // Actualizar URL directamente sin navegar (shallow routing)
+    const newUrl = `/?producto=${slug}`;
+    router.push(newUrl, { scroll: false });
+    setSelectedProduct(product);
+  };
+
+  const closeProductModal = () => {
+    // Remover el query param 'producto' de la URL
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('producto');
+    const newUrl = params.toString() ? `/?${params.toString()}` : '/';
+    router.replace(newUrl, { scroll: false });
+    setSelectedProduct(null);
+  };
+
   return (
     <>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -91,6 +136,7 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
           {/* Sidebar */}
           <aside className="lg:w-64 flex-shrink-0">
             <div className="sticky top-24 space-y-6">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Filtros</h3>
               <FilterTabs selectedType={selectedType} onFilterChange={setSelectedType} />
             </div>
           </aside>
@@ -109,16 +155,24 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
                 <div
                   key={product.id}
                   className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
-                  onClick={() => setSelectedProduct(product)}
+                  onClick={() => openProductModal(product)}
                 >
                   <div className="relative h-64 bg-gray-200">
-                    {product.imageUrls?.[0] && (
-                      <Image
-                        src={product.imageUrls[0]}
+                    {product.images?.[0] ? (
+                      <ProductImagePreview
+                        src={product.images[0].url}
                         alt={product.name}
+                        transform={{
+                          scale: product.images[0].scale || 1,
+                          x: product.images[0].x || 0,
+                          y: product.images[0].y || 0
+                        }}
                         fill
-                        className="object-cover"
                       />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        Sin Imagen
+                      </div>
                     )}
                   </div>
                   <div className="p-4">
@@ -156,7 +210,7 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
       {selectedProduct && (
         <div
           className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-          onClick={() => setSelectedProduct(null)}
+          onClick={closeProductModal}
         >
           <div
             className="bg-white rounded-lg max-w-2xl w-full p-6"
@@ -165,19 +219,24 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
             <div className="flex justify-between items-start mb-4">
               <h2 className="text-2xl font-bold">{selectedProduct.name}</h2>
               <button
-                onClick={() => setSelectedProduct(null)}
+                onClick={closeProductModal}
                 className="text-gray-500 hover:text-gray-700"
               >
                 ✕
               </button>
             </div>
-            <div className="relative h-96 bg-gray-200 rounded-lg mb-4">
-              {selectedProduct.imageUrls?.[0] && (
-                <Image
-                  src={selectedProduct.imageUrls[0]}
+            <div className="relative h-96 bg-gray-200 rounded-lg mb-4 overflow-hidden">
+              {selectedProduct.images?.[0] && (
+                <ProductImagePreview
+                  src={selectedProduct.images[0].url}
                   alt={selectedProduct.name}
+                  transform={{
+                    scale: selectedProduct.images[0].scale || 1,
+                    x: selectedProduct.images[0].x || 0,
+                    y: selectedProduct.images[0].y || 0
+                  }}
                   fill
-                  className="object-cover rounded-lg"
+                  className="rounded-lg"
                 />
               )}
             </div>
@@ -189,7 +248,7 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
               <button
                 onClick={() => {
                   handleAddToCart(selectedProduct);
-                  setSelectedProduct(null);
+                  closeProductModal();
                 }}
                 className="bg-[#2d5d52] text-white px-6 py-3 rounded-lg hover:bg-[#2d5d52]/90 transition"
               >

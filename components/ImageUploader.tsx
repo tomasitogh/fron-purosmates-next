@@ -1,35 +1,59 @@
-'use client';
-
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { X, Upload } from 'lucide-react';
+import { X, Upload, Pencil } from 'lucide-react';
 import { uploadFiles, clearUploadedFiles } from '@/redux/fileSlice';
 import { AppDispatch, RootState } from '@/redux/store';
 import toast from 'react-hot-toast';
-import Image from 'next/image';
+import ProductImageEditor from './ProductImageEditor';
+import ProductImagePreview from './ProductImagePreview';
+
+export interface ProductImage {
+    url: string;
+    scale?: number;
+    x?: number;
+    y?: number;
+}
 
 interface ImageUploaderProps {
-    images?: string[];
-    onChange: (urls: string[]) => void;
+    images?: ProductImage[];
+    onChange: (images: ProductImage[]) => void;
     required?: boolean;
     token: string;
 }
 
-export default function ImageUploader({ images = [], onChange, required = false, token }: ImageUploaderProps) {
+export default function ImageUploader({
+    images = [],
+    onChange,
+    required = false,
+    token
+}: ImageUploaderProps) {
     const [dragActive, setDragActive] = useState(false);
-    const [previewUrls, setPreviewUrls] = useState<string[]>(images);
+    const [previewImages, setPreviewImages] = useState<ProductImage[]>(images);
+    const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
     const dispatch = useDispatch<AppDispatch>();
     const { uploadedUrls, loading: uploading, error } = useSelector((state: RootState) => state.files);
 
-    // Update previewUrls when files are uploaded successfully
+    // Update previewImages when files are uploaded successfully
     useEffect(() => {
         if (uploadedUrls.length > 0) {
-            const updatedUrls = [...previewUrls, ...uploadedUrls];
-            setPreviewUrls(updatedUrls);
-            onChange(updatedUrls);
+            const newImages: ProductImage[] = uploadedUrls.map(url => ({
+                url,
+                scale: 1,
+                x: 0,
+                y: 0
+            }));
+            const updatedImages = [...previewImages, ...newImages];
+            setPreviewImages(updatedImages);
+            onChange(updatedImages);
             dispatch(clearUploadedFiles());
         }
-    }, [uploadedUrls, previewUrls, onChange, dispatch]);
+    }, [uploadedUrls, previewImages, onChange, dispatch]);
+
+    // Update local state when prop changes
+    useEffect(() => {
+        setPreviewImages(images);
+    }, [images]);
 
     // Show errors
     useEffect(() => {
@@ -74,17 +98,30 @@ export default function ImageUploader({ images = [], onChange, required = false,
     };
 
     const removeImage = (index: number) => {
-        const newUrls = previewUrls.filter((_, i) => i !== index);
-        setPreviewUrls(newUrls);
-        onChange(newUrls);
+        const newImages = previewImages.filter((_, i) => i !== index);
+        setPreviewImages(newImages);
+        onChange(newImages);
     };
 
     const moveImage = (fromIndex: number, toIndex: number) => {
-        const newUrls = [...previewUrls];
-        const [moved] = newUrls.splice(fromIndex, 1);
-        newUrls.splice(toIndex, 0, moved);
-        setPreviewUrls(newUrls);
-        onChange(newUrls);
+        const newImages = [...previewImages];
+        const [moved] = newImages.splice(fromIndex, 1);
+        newImages.splice(toIndex, 0, moved);
+        setPreviewImages(newImages);
+        onChange(newImages);
+    };
+
+    const handleSaveTransform = (transform: { scale: number; x: number; y: number }) => {
+        if (editingIndex === null) return;
+
+        const newImages = [...previewImages];
+        newImages[editingIndex] = {
+            ...newImages[editingIndex],
+            ...transform
+        };
+        setPreviewImages(newImages);
+        onChange(newImages);
+        setEditingIndex(null);
     };
 
     return (
@@ -97,7 +134,7 @@ export default function ImageUploader({ images = [], onChange, required = false,
                 onDrop={handleDrop}
                 className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors
           ${dragActive ? 'border-[#2d5d52] bg-[#2d5d52]/5' : 'border-gray-300 hover:border-gray-400'}
-          ${required && previewUrls.length === 0 ? 'border-red-300' : ''}
+          ${required && previewImages.length === 0 ? 'border-red-300' : ''}
           ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
             >
                 <input
@@ -125,7 +162,7 @@ export default function ImageUploader({ images = [], onChange, required = false,
                             {uploading ? 'Espera un momento' : 'o haz clic para seleccionar archivos'}
                         </p>
                     </div>
-                    {required && previewUrls.length === 0 && (
+                    {required && previewImages.length === 0 && (
                         <p className="text-sm text-red-600">
                             * Debes subir al menos una imagen
                         </p>
@@ -134,80 +171,95 @@ export default function ImageUploader({ images = [], onChange, required = false,
             </div>
 
             {/* Preview Grid */}
-            {previewUrls.length > 0 && (
+            {previewImages.length > 0 && (
                 <div>
                     <p className="text-sm font-medium text-gray-700 mb-2">
-                        Imágenes ({previewUrls.length})
+                        Imágenes ({previewImages.length})
                     </p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {previewUrls.map((url, index) => (
+                        {previewImages.map((image, index) => (
                             <div
                                 key={index}
                                 className="relative group aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-200"
                             >
-                                {/* We use standard img tag here because these URLs might be external or not configured in next.config yet */}
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                    src={url}
+                                <ProductImagePreview
+                                    src={image.url}
                                     alt={`Preview ${index + 1}`}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        target.onerror = null;
-                                        target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect fill="%23ddd" width="200" height="200"/><text x="50%" y="50%" text-anchor="middle" dy=".3em">Error</text></svg>';
+                                    transform={{
+                                        scale: image.scale || 1,
+                                        x: image.x || 0,
+                                        y: image.y || 0
                                     }}
+                                    fill={true}
                                 />
 
                                 {/* Controls Overlay */}
-                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                                    {/* Move Left */}
+                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity p-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditingIndex(index)}
+                                        className="bg-white p-1.5 rounded-full shadow-sm hover:bg-gray-100 transition flex-shrink-0"
+                                        title="Editar encuadre"
+                                    >
+                                        <Pencil className="w-3.5 h-3.5 text-[#2d5d52]" />
+                                    </button>
+
                                     {index > 0 && (
                                         <button
                                             type="button"
                                             onClick={() => moveImage(index, index - 1)}
-                                            className="bg-white p-2 rounded-full shadow-lg hover:bg-gray-100 transition"
+                                            className="bg-white p-1.5 rounded-full shadow-sm hover:bg-gray-100 transition flex-shrink-0"
                                             title="Mover a la izquierda"
                                         >
-                                            ←
+                                            <span className="text-xs font-bold text-gray-600">←</span>
                                         </button>
                                     )}
 
-                                    {/* Delete */}
                                     <button
                                         type="button"
                                         onClick={() => removeImage(index)}
-                                        className="bg-red-500 text-white p-2 rounded-full shadow-lg hover:bg-red-600 transition"
+                                        className="bg-red-500 text-white p-1.5 rounded-full shadow-sm hover:bg-red-600 transition flex-shrink-0"
                                         title="Eliminar imagen"
                                     >
-                                        <X className="w-4 h-4" />
+                                        <X className="w-3.5 h-3.5" />
                                     </button>
 
-                                    {/* Move Right */}
-                                    {index < previewUrls.length - 1 && (
+                                    {index < previewImages.length - 1 && (
                                         <button
                                             type="button"
                                             onClick={() => moveImage(index, index + 1)}
-                                            className="bg-white p-2 rounded-full shadow-lg hover:bg-gray-100 transition"
+                                            className="bg-white p-1.5 rounded-full shadow-sm hover:bg-gray-100 transition flex-shrink-0"
                                             title="Mover a la derecha"
                                         >
-                                            →
+                                            <span className="text-xs font-bold text-gray-600">→</span>
                                         </button>
                                     )}
                                 </div>
 
                                 {/* Main Image Indicator */}
                                 {index === 0 && (
-                                    <div className="absolute top-2 left-2 bg-[#2d5d52] text-white text-xs px-2 py-1 rounded">
+                                    <div className="absolute top-2 left-2 bg-[#2d5d52] text-white text-[10px] px-1.5 py-0.5 rounded shadow-sm z-10 font-medium">
                                         Principal
                                     </div>
                                 )}
                             </div>
                         ))}
                     </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                        Tip: La primera imagen será la principal. Usa las flechas para reordenar.
-                    </p>
                 </div>
+            )}
+
+            {/* Editor Modal */}
+            {editingIndex !== null && previewImages[editingIndex] && (
+                <ProductImageEditor
+                    imageUrl={previewImages[editingIndex].url}
+                    initialTransform={{
+                        scale: previewImages[editingIndex].scale || 1,
+                        x: previewImages[editingIndex].x || 0,
+                        y: previewImages[editingIndex].y || 0
+                    }}
+                    onSave={handleSaveTransform}
+                    onCancel={() => setEditingIndex(null)}
+                />
             )}
         </div>
     );

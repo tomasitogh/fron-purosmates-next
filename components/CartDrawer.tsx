@@ -84,12 +84,20 @@ export default function CartDrawer() {
                                 <div key={item.id} className="flex gap-4 border-b pb-4">
                                     {/* Image */}
                                     <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                                        {item.imageUrls?.[0] && (
+                                        {item.images?.[0] ? (
                                             <img
-                                                src={item.imageUrls[0]}
+                                                src={item.images[0].url}
                                                 alt={item.name}
                                                 className="w-full h-full object-cover"
+                                                style={{
+                                                    transform: `scale(${item.images[0].scale || 1}) translate(${item.images[0].x || 0}%, ${item.images[0].y || 0}%)`,
+                                                    transformOrigin: 'center'
+                                                }}
                                             />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100">
+                                                <span className="text-xs">Sin img</span>
+                                            </div>
                                         )}
                                     </div>
 
