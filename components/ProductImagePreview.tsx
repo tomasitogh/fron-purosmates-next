@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { cloudinaryLoader } from '@/lib/cloudinary';
 
 interface ProductImagePreviewProps {
     src: string;
@@ -25,6 +26,8 @@ export default function ProductImagePreview({
     priority = false,
     fill = false
 }: ProductImagePreviewProps) {
+    const isCloudinary = src.includes('res.cloudinary.com');
+
     return (
         <div className={`relative overflow-hidden ${className}`} style={{ width: fill ? '100%' : width, height: fill ? '100%' : height }}>
             <div
@@ -38,6 +41,7 @@ export default function ProductImagePreview({
                 }}
             >
                 <Image
+                    loader={isCloudinary ? cloudinaryLoader : undefined}
                     src={src}
                     alt={alt}
                     width={fill ? undefined : width || 500}

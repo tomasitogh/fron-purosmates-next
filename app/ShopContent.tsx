@@ -275,6 +275,7 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
                           }}
                           className="object-contain w-full h-full"
                           fill
+                          priority={index === 0}
                         />
                       </div>
                     ))
