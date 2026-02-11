@@ -84,6 +84,7 @@ export default function Footer() {
                                     width={48}
                                     height={32}
                                     className="object-contain"
+                                    style={{ width: '48px', height: 'auto', aspectRatio: '48/32' }}
                                 />
                             </a>
                             <a
@@ -99,6 +100,7 @@ export default function Footer() {
                                     width={32}
                                     height={32}
                                     className="object-contain"
+                                    style={{ width: '32px', height: 'auto', aspectRatio: '1/1' }}
                                 />
                             </a>
                         </div>
@@ -182,6 +184,7 @@ export default function Footer() {
                                     width={40}
                                     height={40}
                                     className="object-contain"
+                                    style={{ width: '40px', height: 'auto', aspectRatio: '1/1' }}
                                 />
                             </a>
                             <a
@@ -197,6 +200,7 @@ export default function Footer() {
                                     width={40}
                                     height={40}
                                     className="object-contain"
+                                    style={{ width: '40px', height: 'auto', aspectRatio: '1/1' }}
                                 />
                             </a>
                         </div>
