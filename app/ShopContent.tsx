@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import { addToCart } from '@/redux/cartSlice';
@@ -46,6 +46,8 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
   const [maxPrice, setMaxPrice] = useState(100000);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const searchText = useMemo(() => {
     return (searchParams.get('q') || '').trim().toLowerCase();
@@ -75,6 +77,9 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
         );
         if (product) {
           setSelectedProduct(product);
+          setSelectedImageIndex(0);
+          // Resetear scroll
+          setTimeout(() => scrollToImage(0), 0);
         }
       }
     }
@@ -105,6 +110,18 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
     setFilteredMates(list);
   }, [selectedType, searchText, priceRange, initialProducts]);
 
+  // Función helper para scrollear a una imagen específica
+  const scrollToImage = (index: number) => {
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const width = container.clientWidth;
+      container.scrollTo({
+        left: index * width,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   const handleAddToCart = (product: Product) => {
     if (!isAuthenticated) {
       setIsAuthModalOpen(true);
@@ -119,6 +136,9 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
     const newUrl = `/?producto=${slug}`;
     router.push(newUrl, { scroll: false });
     setSelectedProduct(product);
+    setSelectedImageIndex(0);
+    // Resetear scroll
+    setTimeout(() => scrollToImage(0), 0);
   };
 
   const closeProductModal = () => {
@@ -226,19 +246,106 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
                 ✕
               </button>
             </div>
-            <div className="relative h-96 bg-gray-200 rounded-lg mb-4 overflow-hidden">
-              {selectedProduct.images?.[0] && (
-                <ProductImagePreview
-                  src={selectedProduct.images[0].url}
-                  alt={selectedProduct.name}
-                  transform={{
-                    scale: selectedProduct.images[0].scale || 1,
-                    x: selectedProduct.images[0].x || 0,
-                    y: selectedProduct.images[0].y || 0
+            <div className="flex flex-col gap-4 mb-4">
+              <div className="relative group">
+                {/* Scrollable Container */}
+                <div
+                  ref={scrollContainerRef}
+                  className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide scroll-smooth h-96 bg-gray-200 rounded-lg"
+                  onScroll={(e) => {
+                    const container = e.currentTarget;
+                    const width = container.clientWidth;
+                    const newIndex = Math.round(container.scrollLeft / width);
+                    if (newIndex !== selectedImageIndex && selectedProduct.images && newIndex < selectedProduct.images.length) {
+                      setSelectedImageIndex(newIndex);
+                    }
                   }}
-                  fill
-                  className="rounded-lg"
-                />
+                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
+                  {selectedProduct.images && selectedProduct.images.length > 0 ? (
+                    selectedProduct.images.map((image, index) => (
+                      <div key={index} className="w-full h-full flex-shrink-0 snap-center flex items-center justify-center relative bg-gray-200">
+                        <ProductImagePreview
+                          src={image.url}
+                          alt={`${selectedProduct.name} ${index + 1}`}
+                          transform={{
+                            scale: image.scale || 1,
+                            x: image.x || 0,
+                            y: image.y || 0
+                          }}
+                          className="object-contain w-full h-full"
+                          fill
+                        />
+                      </div>
+                    ))
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400 snap-center flex-shrink-0">
+                      Sin Imagen
+                    </div>
+                  )}
+                </div>
+
+                {/* Navigation Arrows (Desktop/Hover) */}
+                {selectedProduct.images && selectedProduct.images.length > 1 && (
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Cycle backwards
+                        const newIndex = selectedImageIndex === 0 ? selectedProduct.images.length - 1 : selectedImageIndex - 1;
+                        scrollToImage(newIndex);
+                      }}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md text-gray-800 hover:bg-white opacity-0 group-hover:opacity-100 transition-opacity z-10 hidden sm:block"
+                      aria-label="Anterior"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Cycle forwards
+                        const newIndex = selectedImageIndex === selectedProduct.images.length - 1 ? 0 : selectedImageIndex + 1;
+                        scrollToImage(newIndex);
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md text-gray-800 hover:bg-white opacity-0 group-hover:opacity-100 transition-opacity z-10 hidden sm:block"
+                      aria-label="Siguiente"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                      </svg>
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Thumbnails */}
+              {selectedProduct.images && selectedProduct.images.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-2 justify-center">
+                  {selectedProduct.images.map((image, index) => (
+                    <button
+                      key={index}
+                      onClick={() => scrollToImage(index)}
+                      className={`relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${selectedImageIndex === index
+                        ? 'border-[#2d5d52] opacity-100 ring-2 ring-[#2d5d52] ring-offset-1'
+                        : 'border-transparent opacity-60 hover:opacity-100'
+                        }`}
+                    >
+                      <ProductImagePreview
+                        src={image.url}
+                        alt={`${selectedProduct.name} ${index + 1}`}
+                        transform={{
+                          scale: image.scale || 1,
+                          x: image.x || 0,
+                          y: image.y || 0
+                        }}
+                        fill
+                        className="object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
             <p className="text-gray-700 mb-4">{selectedProduct.description || 'Sin descripción'}</p>
