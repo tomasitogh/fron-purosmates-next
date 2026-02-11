@@ -15,6 +15,12 @@ export interface Order {
     total: number;
     createdAt: string;
     items: any[];
+    user?: {
+        firstname: string;
+        lastname: string;
+        email: string;
+        phoneNumber?: string;
+    };
 }
 
 export interface ProductData {
@@ -41,12 +47,13 @@ interface AdminState {
     successMessage: string | null;
 }
 
-// Thunk para obtener todos los pedidos (admin)
 export const fetchAllOrders = createAsyncThunk(
     'admin/fetchAllOrders',
     async (token: string) => {
         const { data } = await axios.get(ORDERS_API_URL, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
         });
         return data;
     }
@@ -63,8 +70,8 @@ export const updateOrder = createAsyncThunk(
     }) => {
         const { data } = await axios.put(`${ORDERS_API_URL}/${orderId}`, { status, total }, {
             headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             }
         });
         return data;
@@ -77,8 +84,8 @@ export const deleteOrder = createAsyncThunk(
     async ({ orderId, token }: { orderId: number; token: string }) => {
         await axios.delete(`${ORDERS_API_URL}/${orderId}`, {
             headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             }
         });
         return orderId;
@@ -91,8 +98,8 @@ export const createProduct = createAsyncThunk(
     async ({ productData, token }: { productData: ProductData; token: string }) => {
         const { data } = await axios.post(API_URL, productData, {
             headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             }
         });
         return data;
@@ -109,8 +116,8 @@ export const updateProduct = createAsyncThunk(
     }) => {
         const { data } = await axios.put(`${API_URL}/${productId}`, productData, {
             headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             }
         });
         return data;
@@ -123,8 +130,8 @@ export const deleteProduct = createAsyncThunk(
     async ({ productId, token }: { productId: number; token: string }) => {
         await axios.delete(`${API_URL}/${productId}`, {
             headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             }
         });
         return productId;

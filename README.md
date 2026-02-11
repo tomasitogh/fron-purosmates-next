@@ -1,36 +1,184 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🧉 Puros Mates - E-commerce
 
-## Getting Started
+E-commerce de mates artesanales argentinos construido con Next.js 15, Auth.js y Spring Boot.
 
-First, run the development server:
+## 🚀 Quick Start
 
 ```bash
+# 1. Verificar configuración
+./scripts/verify-setup.sh
+
+# 2. Configurar variables de entorno (ver QUICKSTART.md)
+# - Google OAuth credentials
+# - Database URL
+
+# 3. Ejecutar migraciones
+npx prisma db push
+
+# 4. Iniciar aplicación
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visita: http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🔐 Autenticación
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Este proyecto usa **Auth.js (NextAuth v5)** con Google OAuth.
 
-## Learn More
+**No hay login manual** - Los usuarios se autentican con su cuenta Google.
 
-To learn more about Next.js, take a look at the following resources:
+### Setup Completo:
+- **Quick Start:** `QUICKSTART.md` (5 min)
+- **Frontend:** `AUTH_SETUP.md` (detallado)
+- **Backend:** `BACKEND_CONFIG.md` (Spring Boot)
+- **Arquitectura:** `ARCHITECTURE.md` (diagramas)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📋 Características
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- ✅ Login con Google OAuth (1-click)
+- ✅ Gestión de productos (CRUD)
+- ✅ Carrito de compras persistente
+- ✅ Panel de administración
+- ✅ Integración con MercadoPago
+- ✅ Upload de imágenes (Cloudinary)
+- ✅ Roles de usuario (USER/ADMIN)
+- ✅ Protección de rutas server-side
 
-## Deploy on Vercel
+## 🏗️ Stack Tecnológico
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Frontend
+- **Framework:** Next.js 15 (App Router)
+- **Auth:** Auth.js (NextAuth v5)
+- **State:** Redux Toolkit
+- **Database:** PostgreSQL + Prisma
+- **Styling:** Tailwind CSS v4
+- **Language:** TypeScript
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Backend
+- **Framework:** Spring Boot 3.1
+- **Security:** Spring Security + OAuth2 Resource Server
+- **Database:** MySQL
+- **Payments:** MercadoPago SDK
+- **Images:** Cloudinary
+
+## 📂 Estructura del Proyecto
+
+```
+fron-purosmates-next/
+├── app/                    # Next.js App Router
+│   ├── admin/             # Panel de administración
+│   ├── api/auth/          # Auth.js routes
+│   └── checkout/          # Flujo de compra
+├── components/            # React components
+├── auth.ts                # Auth.js config
+├── middleware.ts          # Route protection
+├── prisma/                # Database schema
+└── redux/                 # State management
+```
+
+## 🔧 Scripts Útiles
+
+```bash
+# Verificar setup
+./scripts/verify-setup.sh
+
+# Generar nuevo secret
+./scripts/generate-secret.sh
+
+# Promover usuario a admin
+node scripts/promote-admin.js
+
+# Prisma Studio (DB viewer)
+npx prisma studio
+```
+
+## 🌐 Variables de Entorno
+
+Copia `.env.local` y configura:
+
+```bash
+# Google OAuth
+GOOGLE_CLIENT_ID="..."
+GOOGLE_CLIENT_SECRET="..."
+
+# Database
+DATABASE_URL="postgresql://..."
+
+# Auth.js
+NEXTAUTH_SECRET="..."
+NEXTAUTH_URL="http://localhost:3000"
+
+# Backend API
+NEXT_PUBLIC_API_BASE_URL="http://localhost:8080"
+```
+
+## 📚 Documentación
+
+| Archivo | Descripción |
+|---------|-------------|
+| `QUICKSTART.md` | Inicio rápido (3 pasos) |
+| `MIGRATION_COMPLETE.md` | Checklist completo |
+| `AUTH_SETUP.md` | Setup Auth.js frontend |
+| `BACKEND_CONFIG.md` | Setup Spring Boot |
+| `ARCHITECTURE.md` | Diagramas y flujos |
+| `AGENTS.md` | Guía para AI agents |
+
+## 🧪 Testing
+
+### Verificar sesión
+```javascript
+// En DevTools Console
+fetch('/api/auth/session')
+  .then(r => r.json())
+  .then(console.log)
+```
+
+### Debug endpoint
+```
+GET /api/debug/session
+⚠️ Eliminar en producción
+```
+
+## 🛡️ Seguridad
+
+- ✅ JWT firmado con HMAC-SHA256
+- ✅ Cookies httpOnly + secure
+- ✅ CSRF protection
+- ✅ Middleware server-side
+- ✅ OAuth2 Resource Server (backend)
+- ✅ Rol-based authorization
+
+## 🚀 Deploy
+
+### Frontend (Vercel)
+```bash
+vercel --prod
+```
+
+### Backend (Railway/Render)
+```bash
+# Configurar NEXTAUTH_SECRET en variables de entorno
+```
+
+## 🤝 Contribuir
+
+1. Fork el proyecto
+2. Crea una rama (`git checkout -b feature/AmazingFeature`)
+3. Commit cambios (`git commit -m 'Add AmazingFeature'`)
+4. Push (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+## 📄 Licencia
+
+Este proyecto es privado y de uso académico.
+
+## 🆘 Soporte
+
+- Issues: GitHub Issues
+- Docs: Ver archivos `.md` en el repo
+- Auth.js: https://authjs.dev/
+
+---
+
+**Built with ❤️ in Argentina 🇦🇷**
+

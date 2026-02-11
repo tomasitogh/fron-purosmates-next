@@ -1,6 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
 import cartReducer from "./cartSlice";
-import authReducer from "./authSlice";
 import adminReducer from "./adminSlice";
 import fileReducer from "./fileSlice";
 import categoryReducer from "./categorySlice";
@@ -9,7 +8,6 @@ import productReducer from "./productSlice";
 export const store = configureStore({
     reducer: {
         cart: cartReducer,
-        auth: authReducer,
         admin: adminReducer,
         files: fileReducer,
         categories: categoryReducer,

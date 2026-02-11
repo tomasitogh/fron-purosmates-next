@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAllOrders, updateOrder, deleteOrder } from '@/redux/adminSlice';
-import { useAuth } from '@/context/AuthContext';
+import { useSession } from 'next-auth/react';
 import { Copy, PenSquare, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { AppDispatch, RootState } from '@/redux/store';
@@ -20,7 +20,7 @@ const ORDER_STATUSES = ['ALL', 'PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', '
 
 export default function OrdersPanel() {
     const dispatch = useDispatch<AppDispatch>();
-    const { token } = useAuth();
+    const { data: session } = useSession();
     const { orders, loading } = useSelector((state: RootState) => state.admin);
     const [filterStatus, setFilterStatus] = useState('ALL');
 
@@ -32,10 +32,10 @@ export default function OrdersPanel() {
     });
 
     useEffect(() => {
-        if (token) {
-            dispatch(fetchAllOrders(token));
+        if (session?.user?.accessToken) {
+            dispatch(fetchAllOrders(session.user.accessToken));
         }
-    }, [dispatch, token]);
+    }, [dispatch, session]);
 
     const filteredOrders = orders?.filter(order => {
         if (filterStatus === 'ALL') return true;
@@ -56,7 +56,8 @@ export default function OrdersPanel() {
 
     const handleUpdateSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!token || !editingOrder) return;
+        const token = session?.user?.accessToken;
+        if (!session || !editingOrder || !token) return;
 
         try {
             await dispatch(updateOrder({
@@ -205,6 +206,7 @@ export default function OrdersPanel() {
                                                 </button>
                                                 <button
                                                     onClick={() => {
+                                                        const token = session?.user?.accessToken;
                                                         if (window.confirm('¿Está seguro de eliminar este pedido? Esta acción no se puede deshacer.') && token) {
                                                             dispatch(deleteOrder({ orderId: order.id, token }));
                                                         }

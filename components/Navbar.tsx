@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { selectCartTotalQty, setCartOpen } from '@/redux/cartSlice';
-import { useAuth } from '@/context/AuthContext';
+import { useSession, signOut } from 'next-auth/react';
 import AuthModal from './AuthModal';
 import Image from 'next/image';
 import { useDispatch } from 'react-redux';
@@ -14,8 +14,9 @@ export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [q, setQ] = useState("");
+    const [mounted, setMounted] = useState(false);
 
-    const { user, isAuthenticated, logout, isAdmin } = useAuth();
+    const { data: session, status } = useSession();
     const totalQty = useSelector(selectCartTotalQty);
     const router = useRouter();
     const pathname = usePathname();
@@ -23,18 +24,18 @@ export default function Navbar() {
     const dispatch = useDispatch();
 
     useEffect(() => {
+        setMounted(true);
         setQ(searchParams.get("q") || "");
     }, [searchParams]);
 
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
     const handleLogout = () => {
-        logout();
-        router.push('/');
+        signOut({ callbackUrl: '/' });
     };
 
     const handleCartClick = () => {
-        if (!isAuthenticated) {
+        if (status !== 'authenticated') {
             setIsAuthModalOpen(true);
         } else {
             dispatch(setCartOpen(true));
@@ -48,6 +49,9 @@ export default function Navbar() {
         else params.delete("q");
         router.push(`/?${params.toString()}`);
     };
+
+    const isAdmin = session?.user?.role === 'ADMIN';
+    const isAuthenticated = status === 'authenticated';
 
     return (
         <header className="bg-[#2d5d52] shadow-md sticky top-0 z-50">
@@ -107,14 +111,14 @@ export default function Navbar() {
                             aria-label="Ir al carrito"
                         >
                             🛒
-                            {totalQty > 0 && (
+                            {mounted && totalQty > 0 && (
                                 <span className="absolute -top-2 -right-3 text-xs bg-green-600 text-white rounded-full w-5 h-5 grid place-items-center">
                                     {totalQty}
                                 </span>
                             )}
                         </button>
 
-                        {isAuthenticated && isAdmin() && (
+                        {isAuthenticated && isAdmin && (
                             <Link
                                 href="/admin"
                                 className="text-[#F5F5DC] hover:text-white transition font-medium"
@@ -126,7 +130,7 @@ export default function Navbar() {
                         {isAuthenticated ? (
                             <div className="flex flex-row items-center gap-4 flex-wrap">
                                 <span className="text-[#F5F5DC] font-medium">
-                                    Hola, {user?.name || user?.email || 'Usuario'}
+                                    Hola, {session?.user?.name || session?.user?.email || 'Usuario'}
                                 </span>
                                 <button
                                     onClick={handleLogout}
@@ -140,7 +144,7 @@ export default function Navbar() {
                                 onClick={() => setIsAuthModalOpen(true)}
                                 className="inline-flex items-center justify-center h-10 px-4 rounded-xl font-medium text-white border border-white/60 bg-transparent hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 transition"
                             >
-                                Login
+                                Ingresar
                             </button>
                         )}
                     </div>
@@ -191,7 +195,7 @@ export default function Navbar() {
                                 aria-label="Ir al carrito"
                             >
                                 🛒 Carrito
-                                {totalQty > 0 && (
+                                {mounted && totalQty > 0 && (
                                     <span className="absolute -top-2 -right-3 text-xs bg-green-600 text-white rounded-full w-5 h-5 grid place-items-center">
                                         {totalQty}
                                     </span>
@@ -199,7 +203,7 @@ export default function Navbar() {
                             </button>
                         </li>
 
-                        {isAuthenticated && isAdmin() && (
+                        {isAuthenticated && isAdmin && (
                             <li>
                                 <Link
                                     href="/admin"
@@ -215,7 +219,7 @@ export default function Navbar() {
                             {isAuthenticated ? (
                                 <div className="space-y-2">
                                     <span className="block text-gray-700 font-medium">
-                                        Hola, {user?.name || user?.email || 'Usuario'}
+                                        Hola, {session?.user?.name || session?.user?.email || 'Usuario'}
                                     </span>
                                     <button
                                         onClick={() => {
@@ -235,7 +239,7 @@ export default function Navbar() {
                                     }}
                                     className="inline-flex items-center justify-center h-10 px-4 rounded-xl font-medium text-white border border-white/60 bg-transparent hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 transition w-full text-center"
                                 >
-                                    Login
+                                    Ingresar
                                 </button>
                             )}
                         </li>

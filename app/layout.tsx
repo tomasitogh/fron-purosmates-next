@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-import { ReduxProvider } from "@/components/Providers";
-import { AuthProvider } from "@/context/AuthContext";
+import { Providers } from "@/components/Providers";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CartDrawer from "@/components/CartDrawer";
@@ -28,16 +27,14 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body suppressHydrationWarning>
-        <ReduxProvider>
-          <AuthProvider>
-            <Navbar />
-            <CartDrawer />
-            <main className="min-h-screen flex flex-col">
-              {children}
-            </main>
-            <Footer />
-          </AuthProvider>
-        </ReduxProvider>
+        <Providers>
+          <Navbar />
+          <CartDrawer />
+          <main className="min-h-screen flex flex-col">
+            {children}
+          </main>
+          <Footer />
+        </Providers>
       </body>
     </html>
   );

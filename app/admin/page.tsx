@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useAuth } from '@/context/AuthContext';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { fetchAllProductsAdmin } from '@/redux/productSlice';
 import { fetchCategories } from '@/redux/categorySlice';
@@ -11,9 +11,9 @@ import FilterTabs from '@/components/FilterTabs';
 import ImageUploader from '@/components/ImageUploader';
 import OrdersPanel from '@/components/OrdersPanel';
 import toast from 'react-hot-toast';
+import ProductImagePreview from '@/components/ProductImagePreview';
 import { AppDispatch, RootState } from '@/redux/store';
 
-// Define Interface for Product Data
 interface ProductData {
     name: string;
     description: string;
@@ -22,14 +22,22 @@ interface ProductData {
     category: {
         id: number;
     };
-    imageUrls: string[];
+    images: {
+        url: string;
+        scale?: number;
+        x?: number;
+        y?: number;
+    }[];
     active: boolean;
 }
 
 export default function AdminPanel() {
-    const { user, token, logout, isAdmin } = useAuth();
+    const { data: session, status } = useSession();
     const router = useRouter();
     const dispatch = useDispatch<AppDispatch>();
+
+    // Get token from session
+    const token = session?.user?.accessToken;
 
     // Redux state
     const { items: products, loading: productsLoading } = useSelector((state: RootState) => state.products);
@@ -44,28 +52,22 @@ export default function AdminPanel() {
     const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
     const [isEditing, setIsEditing] = useState(false);
 
-    // Estados para el formulario de producto
     const [formData, setFormData] = useState({
         name: '',
         description: '',
         price: '',
         stock: '',
         categoryId: '',
-        imageUrls: [] as string[],
+        images: [] as { url: string; scale?: number; x?: number; y?: number }[],
         active: true,
     });
 
     useEffect(() => {
-        if (!token) return; // Wait for token to be available (client side)
-
-        // Auth check is handled by Middleware mostly, but double check here
-        if (!isAdmin()) {
-            router.push('/');
-        } else {
+        if (status === 'authenticated' && token) {
             dispatch(fetchAllProductsAdmin(token));
-            dispatch(fetchCategories()); // Categories usually public, but ok
+            dispatch(fetchCategories());
         }
-    }, [dispatch, token, isAdmin, router]);
+    }, [dispatch, status, token]);
 
     useEffect(() => {
         // Si el array está vacío, mostramos todos.
@@ -105,7 +107,7 @@ export default function AdminPanel() {
             price: '',
             stock: '',
             categoryId: '',
-            imageUrls: [],
+            images: [],
             active: true,
         });
         setSelectedProduct(null);
@@ -120,7 +122,7 @@ export default function AdminPanel() {
             price: product.price.toString(),
             stock: product.stock.toString(),
             categoryId: product.category?.id || '',
-            imageUrls: product.imageUrls || [],
+            images: product.images || [],
             active: product.active !== undefined ? product.active : true,
         });
         setSelectedProduct(product);
@@ -148,7 +150,7 @@ export default function AdminPanel() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!formData.imageUrls || formData.imageUrls.length === 0) {
+        if (!formData.images || formData.images.length === 0) {
             toast.error('Debes subir al menos una imagen del producto');
             return;
         }
@@ -166,7 +168,7 @@ export default function AdminPanel() {
             category: {
                 id: parseInt(formData.categoryId),
             },
-            imageUrls: formData.imageUrls,
+            images: formData.images,
             active: formData.active,
         };
 
@@ -213,7 +215,7 @@ export default function AdminPanel() {
                 category: {
                     id: product.category?.id,
                 },
-                imageUrls: product.imageUrls || [],
+                images: product.images || [],
                 active: newActiveState,
             };
 
@@ -311,12 +313,16 @@ export default function AdminPanel() {
                                     {/* Badge de estado */}
                                     <div className="relative">
                                         <div className="h-48 bg-gray-200 flex items-center justify-center overflow-hidden">
-                                            {product.imageUrls && product.imageUrls.length > 0 ? (
-                                                // eslint-disable-next-line @next/next/no-img-element
-                                                <img
-                                                    src={product.imageUrls[0]}
+                                            {product.images && product.images.length > 0 ? (
+                                                <ProductImagePreview
+                                                    src={product.images[0].url}
                                                     alt={product.name}
-                                                    className="w-full h-full object-cover"
+                                                    transform={{
+                                                        scale: product.images[0].scale || 1,
+                                                        x: product.images[0].x || 0,
+                                                        y: product.images[0].y || 0
+                                                    }}
+                                                    fill={true}
                                                 />
                                             ) : (
                                                 <span className="text-gray-400">Sin imagen</span>
@@ -452,13 +458,12 @@ export default function AdminPanel() {
                                             Imágenes del Producto *
                                         </label>
                                         <ImageUploader
-                                            images={formData.imageUrls}
-                                            onChange={(urls) => setFormData(prev => ({ ...prev, imageUrls: urls }))}
+                                            images={formData.images}
+                                            onChange={(images) => setFormData(prev => ({ ...prev, images }))}
                                             required={true}
                                             token={token || ''}
                                         />
                                     </div>
-
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">

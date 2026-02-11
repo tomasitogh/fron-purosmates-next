@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import { addToCart } from '@/redux/cartSlice';
 import FilterTabs from '@/components/FilterTabs';
-import { useAuth } from '@/context/AuthContext';
+import { useSession } from 'next-auth/react';
 import AuthModal from '@/components/AuthModal';
 import Image from 'next/image';
 import ProductImagePreview from '@/components/ProductImagePreview';
@@ -36,7 +36,8 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
   const dispatch = useDispatch();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthenticated } = useAuth();
+  const { data: session } = useSession();
+  const isAuthenticated = !!session;
 
   const [filteredMates, setFilteredMates] = useState<Product[]>(initialProducts);
   const [selectedType, setSelectedType] = useState<string[]>([]);
