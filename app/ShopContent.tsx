@@ -178,7 +178,7 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
                   className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
                   onClick={() => openProductModal(product)}
                 >
-                  <div className="relative h-64 bg-gray-200">
+                  <div className="relative w-full aspect-square bg-gray-200">
                     {product.images?.[0] ? (
                       <ProductImagePreview
                         src={product.images[0].url}
@@ -230,139 +230,168 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
       {/* Product Modal */}
       {selectedProduct && (
         <div
-          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
           onClick={closeProductModal}
         >
           <div
-            className="bg-white rounded-lg max-w-2xl w-full p-6"
+            className="bg-white rounded-2xl max-w-4xl w-full max-h-[92vh] overflow-y-auto relative animate-in fade-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-start mb-4">
-              <h2 className="text-2xl font-bold">{selectedProduct.name}</h2>
-              <button
-                onClick={closeProductModal}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="flex flex-col gap-4 mb-4">
-              <div className="relative group">
-                {/* Scrollable Container */}
-                <div
-                  ref={scrollContainerRef}
-                  className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide scroll-smooth h-96 bg-gray-200 rounded-lg"
-                  onScroll={(e) => {
-                    const container = e.currentTarget;
-                    const width = container.clientWidth;
-                    const newIndex = Math.round(container.scrollLeft / width);
-                    if (newIndex !== selectedImageIndex && selectedProduct.images && newIndex < selectedProduct.images.length) {
-                      setSelectedImageIndex(newIndex);
-                    }
-                  }}
-                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                >
-                  {selectedProduct.images && selectedProduct.images.length > 0 ? (
-                    selectedProduct.images.map((image, index) => (
-                      <div key={index} className="w-full h-full flex-shrink-0 snap-center flex items-center justify-center relative bg-gray-200">
-                        <ProductImagePreview
-                          src={image.url}
-                          alt={`${selectedProduct.name} ${index + 1}`}
-                          transform={{
-                            scale: image.scale || 1,
-                            x: image.x || 0,
-                            y: image.y || 0
+            {/* Close Button - Sticky/Absolute */}
+            <button
+              onClick={closeProductModal}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-2 z-10"
+              aria-label="Cerrar"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+
+            <div className="p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+
+                {/* Left Column: Image Section */}
+                <div className="flex flex-col gap-4">
+                  <div className="relative group max-w-[420px] lg:max-w-none w-4/5 lg:w-full mx-auto">
+                    {/* Scrollable Container */}
+                    <div
+                      ref={scrollContainerRef}
+                      className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide scroll-smooth w-full aspect-square bg-gray-200 rounded-xl"
+                      onScroll={(e) => {
+                        const container = e.currentTarget;
+                        const width = container.clientWidth;
+                        const newIndex = Math.round(container.scrollLeft / width);
+                        if (newIndex !== selectedImageIndex && selectedProduct.images && newIndex < selectedProduct.images.length) {
+                          setSelectedImageIndex(newIndex);
+                        }
+                      }}
+                      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    >
+                      {selectedProduct.images && selectedProduct.images.length > 0 ? (
+                        selectedProduct.images.map((image, index) => (
+                          <div key={index} className="w-full h-full flex-shrink-0 snap-center flex items-center justify-center relative bg-gray-200">
+                            <ProductImagePreview
+                              src={image.url}
+                              alt={`${selectedProduct.name} ${index + 1}`}
+                              transform={{
+                                scale: image.scale || 1,
+                                x: image.x || 0,
+                                y: image.y || 0
+                              }}
+                              className="object-contain w-full h-full"
+                              fill
+                              priority={index === 0}
+                            />
+                          </div>
+                        ))
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 snap-center flex-shrink-0">
+                          Sin Imagen
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Navigation Arrows (Desktop/Hover) */}
+                    {selectedProduct.images && selectedProduct.images.length > 1 && (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newIndex = selectedImageIndex === 0 ? selectedProduct.images.length - 1 : selectedImageIndex - 1;
+                            scrollToImage(newIndex);
                           }}
-                          className="object-contain w-full h-full"
-                          fill
-                          priority={index === 0}
-                        />
-                      </div>
-                    ))
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400 snap-center flex-shrink-0">
-                      Sin Imagen
+                          className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md text-gray-800 hover:bg-white opacity-0 group-hover:opacity-100 transition-opacity z-10 hidden sm:block"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newIndex = selectedImageIndex === selectedProduct.images.length - 1 ? 0 : selectedImageIndex + 1;
+                            scrollToImage(newIndex);
+                          }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md text-gray-800 hover:bg-white opacity-0 group-hover:opacity-100 transition-opacity z-10 hidden sm:block"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                          </svg>
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Thumbnails */}
+                  {selectedProduct.images && selectedProduct.images.length > 1 && (
+                    <div className="flex gap-2 overflow-x-auto pb-2 justify-center lg:justify-start">
+                      {selectedProduct.images.map((image, index) => (
+                        <button
+                          key={index}
+                          onClick={() => scrollToImage(index)}
+                          className={`relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${selectedImageIndex === index
+                            ? 'border-[#2d5d52] opacity-100 ring-2 ring-[#2d5d52] ring-offset-1'
+                            : 'border-transparent opacity-60 hover:opacity-100'
+                            }`}
+                        >
+                          <ProductImagePreview
+                            src={image.url}
+                            alt={`${selectedProduct.name} ${index + 1}`}
+                            transform={{
+                              scale: image.scale || 1,
+                              x: image.x || 0,
+                              y: image.y || 0
+                            }}
+                            fill
+                            className="object-cover"
+                          />
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
 
-                {/* Navigation Arrows (Desktop/Hover) */}
-                {selectedProduct.images && selectedProduct.images.length > 1 && (
-                  <>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // Cycle backwards
-                        const newIndex = selectedImageIndex === 0 ? selectedProduct.images.length - 1 : selectedImageIndex - 1;
-                        scrollToImage(newIndex);
-                      }}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md text-gray-800 hover:bg-white opacity-0 group-hover:opacity-100 transition-opacity z-10 hidden sm:block"
-                      aria-label="Anterior"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // Cycle forwards
-                        const newIndex = selectedImageIndex === selectedProduct.images.length - 1 ? 0 : selectedImageIndex + 1;
-                        scrollToImage(newIndex);
-                      }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md text-gray-800 hover:bg-white opacity-0 group-hover:opacity-100 transition-opacity z-10 hidden sm:block"
-                      aria-label="Siguiente"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                      </svg>
-                    </button>
-                  </>
-                )}
-              </div>
+                {/* Right Column: Details Section */}
+                <div className="flex flex-col h-full lg:pt-4">
+                  <div className="mb-6">
+                    <h2 className="text-3xl font-bold text-gray-900 mb-2">{selectedProduct.name}</h2>
+                    <p className="text-[#2d5d52] font-medium tracking-wide flex items-center gap-2">
+                      <span className="w-2 h-2 bg-[#2d5d52] rounded-full"></span>
+                      {selectedProduct.category?.description || 'Producto'}
+                    </p>
+                  </div>
 
-              {/* Thumbnails */}
-              {selectedProduct.images && selectedProduct.images.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto pb-2 justify-center">
-                  {selectedProduct.images.map((image, index) => (
-                    <button
-                      key={index}
-                      onClick={() => scrollToImage(index)}
-                      className={`relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${selectedImageIndex === index
-                        ? 'border-[#2d5d52] opacity-100 ring-2 ring-[#2d5d52] ring-offset-1'
-                        : 'border-transparent opacity-60 hover:opacity-100'
-                        }`}
-                    >
-                      <ProductImagePreview
-                        src={image.url}
-                        alt={`${selectedProduct.name} ${index + 1}`}
-                        transform={{
-                          scale: image.scale || 1,
-                          x: image.x || 0,
-                          y: image.y || 0
+                  <div className="flex-grow">
+                    <h4 className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Descripción</h4>
+                    <p className="text-gray-600 leading-relaxed max-h-[200px] overflow-y-auto scrollbar-hide">
+                      {selectedProduct.description || 'Este producto no tiene una descripción detallada todavía.'}
+                    </p>
+                  </div>
+
+                  <div className="mt-8 pt-6 border-t border-gray-100">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Precio</p>
+                        <span className="text-4xl font-black text-[#2d5d52]">
+                          ${selectedProduct.price.toLocaleString('es-AR')}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          handleAddToCart(selectedProduct);
+                          closeProductModal();
                         }}
-                        fill
-                        className="object-cover"
-                      />
-                    </button>
-                  ))}
+                        className="bg-[#2d5d52] text-white px-8 py-4 rounded-xl hover:bg-[#2d5d52]/90 transition-all font-bold shadow-lg shadow-[#2d5d52]/20 active:scale-95"
+                      >
+                        Agregar al Carrito
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
-            <p className="text-gray-700 mb-4">{selectedProduct.description || 'Sin descripción'}</p>
-            <div className="flex items-center justify-between">
-              <span className="text-3xl font-bold text-[#2d5d52]">
-                ${selectedProduct.price.toLocaleString('es-AR')}
-              </span>
-              <button
-                onClick={() => {
-                  handleAddToCart(selectedProduct);
-                  closeProductModal();
-                }}
-                className="bg-[#2d5d52] text-white px-6 py-3 rounded-lg hover:bg-[#2d5d52]/90 transition"
-              >
-                Agregar al Carrito
-              </button>
+
+              </div>
             </div>
           </div>
         </div>

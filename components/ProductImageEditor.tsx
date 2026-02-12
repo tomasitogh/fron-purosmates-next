@@ -24,21 +24,51 @@ export default function ProductImageEditor({
     const [position, setPosition] = useState({ x: initialTransform.x, y: initialTransform.y });
     const containerRef = useRef<HTMLDivElement>(null);
 
+    // Calculate bounds based on scale
+    const getBounds = (currentScale: number) => {
+        const containerWidth = 300;
+        const containerHeight = 300 / aspectRatio;
+
+        const maxTranslateX = (containerWidth * (currentScale - 1)) / 2;
+        const maxTranslateY = (containerHeight * (currentScale - 1)) / 2;
+
+        return {
+            left: -maxTranslateX,
+            right: maxTranslateX,
+            top: -maxTranslateY,
+            bottom: maxTranslateY
+        };
+    };
+
+    // Clamp position to bounds
+    const clampPosition = (x: number, y: number, currentScale: number) => {
+        const bounds = getBounds(currentScale);
+        return {
+            x: Math.min(Math.max(x, bounds.left), bounds.right),
+            y: Math.min(Math.max(y, bounds.top), bounds.bottom)
+        };
+    };
+
     // Gestures configuration
     useGesture({
         onDrag: ({ offset: [dx, dy] }) => {
             setPosition({ x: dx, y: dy });
         },
-        onPinch: ({ offset: [s] }) => {
+        onPinch: ({ offset: [s], memo }) => {
+            // When pinching, we also need to clamp the position if we zoom out
+            // memo stores the initial position when pinch started if needed, 
+            // but here we just update scale and rely on a useEffect or immediate clamp?
+            // simpler: just set scale here, let the drag bounds handle the rest? 
+            // no, if we zoom out, we might be out of bounds.
             setScale(s);
+            return memo;
         },
     }, {
         target: containerRef,
         drag: {
             from: () => [position.x, position.y],
-            // Límites aproximados, se pueden refinar
-            bounds: { left: -200, right: 200, top: -200, bottom: 200 },
-            rubberband: true,
+            bounds: () => getBounds(scale),
+            rubberband: false,
         },
         pinch: {
             scaleBounds: { min: 1, max: 3 },
@@ -46,6 +76,14 @@ export default function ProductImageEditor({
             from: () => [scale, 0],
         }
     });
+
+    // Effect to clamp position when scale changes (e.g. via zoom buttons or pinch end)
+    useEffect(() => {
+        const clamped = clampPosition(position.x, position.y, scale);
+        if (clamped.x !== position.x || clamped.y !== position.y) {
+            setPosition(clamped);
+        }
+    }, [scale]);
 
     const handleZoomIn = () => setScale(prev => Math.min(prev + 0.1, 3));
     const handleZoomOut = () => setScale(prev => Math.max(prev - 0.1, 1));

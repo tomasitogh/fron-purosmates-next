@@ -312,7 +312,7 @@ export default function AdminPanel() {
                                 >
                                     {/* Badge de estado */}
                                     <div className="relative">
-                                        <div className="h-48 bg-gray-200 flex items-center justify-center overflow-hidden">
+                                        <div className="h-auto w-full aspect-square bg-gray-200 flex items-center justify-center overflow-hidden">
                                             {product.images && product.images.length > 0 ? (
                                                 <ProductImagePreview
                                                     src={product.images[0].url}

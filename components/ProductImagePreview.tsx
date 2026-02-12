@@ -35,7 +35,7 @@ export default function ProductImagePreview({
                     width: '100%',
                     height: '100%',
                     position: 'relative', // Necessary for Next/Image fill
-                    transform: `scale(${transform.scale}) translate(${transform.x}%, ${transform.y}%)`,
+                    transform: `translate(${transform.x}%, ${transform.y}%) scale(${transform.scale})`,
                     transformOrigin: 'center',
                     transition: 'transform 0.1s ease-out'
                 }}
