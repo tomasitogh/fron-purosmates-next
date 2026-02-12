@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 
 import { Providers } from "@/components/Providers";
@@ -28,7 +29,9 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <Providers>
-          <Navbar />
+          <Suspense fallback={<div className="h-16 bg-[#2d5d52]" />}>
+            <Navbar />
+          </Suspense>
           <CartDrawer />
           <main className="min-h-screen flex flex-col">
             {children}

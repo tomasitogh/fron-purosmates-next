@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useSelector } from 'react-redux';
@@ -15,6 +15,7 @@ export default function Navbar() {
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [q, setQ] = useState("");
     const [mounted, setMounted] = useState(false);
+    const searchInputRef = useRef<HTMLInputElement>(null);
 
     const { data: session, status } = useSession();
     const totalQty = useSelector(selectCartTotalQty);
@@ -44,9 +45,18 @@ export default function Navbar() {
 
     const onSearchSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (!q.trim()) {
+            import('react-hot-toast').then(({ toast }) => {
+                toast.error("Ingresa texto para buscar", {
+                    duration: 3000,
+                    position: 'top-center',
+                });
+            });
+            searchInputRef.current?.focus();
+            return;
+        }
         const params = new URLSearchParams(searchParams.toString());
-        if (q.trim()) params.set("q", q.trim());
-        else params.delete("q");
+        params.set("q", q.trim());
         router.push(`/?${params.toString()}`);
     };
 
@@ -89,16 +99,18 @@ export default function Navbar() {
                         {/* Barra de búsqueda */}
                         <form onSubmit={onSearchSubmit} className="flex items-center gap-2">
                             <input
+                                id="search-desktop"
+                                ref={searchInputRef}
                                 type="search"
                                 value={q}
                                 onChange={(e) => setQ(e.target.value)}
                                 placeholder="Buscar productos…"
                                 aria-label="Buscar productos"
-                                className="w-56 rounded-md border border-gray-300 px-3 py-1.5 outline-none focus:ring-2 focus:ring-[#2d5d52]"
+                                className="w-56 rounded-xl border border-white/40 bg-white/10 px-3 py-1.5 text-white placeholder-white/60 outline-none focus:ring-2 focus:ring-[#D4AF37]"
                             />
                             <button
                                 type="submit"
-                                className="bg-white/10 text-white px-3 py-1.5 rounded-md hover:bg-white/20 transition"
+                                className="inline-flex items-center justify-center h-10 px-4 rounded-xl font-medium text-[#F5F5DC] border border-[#F5F5DC]/40 bg-transparent hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-2 transition"
                             >
                                 Buscar
                             </button>
@@ -107,7 +119,7 @@ export default function Navbar() {
                         <button
                             type="button"
                             onClick={handleCartClick}
-                            className="inline-flex items-center justify-center h-10 px-4 rounded-xl font-medium text-white border border-white/60 bg-transparent hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 transition relative"
+                            className="inline-flex items-center justify-center h-10 px-4 rounded-xl font-medium text-[#F5F5DC] border border-[#F5F5DC]/40 bg-transparent hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-2 transition relative"
                             aria-label="Ir al carrito"
                         >
                             🛒
@@ -142,7 +154,7 @@ export default function Navbar() {
                         ) : (
                             <button
                                 onClick={() => setIsAuthModalOpen(true)}
-                                className="inline-flex items-center justify-center h-10 px-4 rounded-xl font-medium text-white border border-white/60 bg-transparent hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 transition"
+                                className="inline-flex items-center justify-center h-10 px-6 rounded-xl font-bold bg-[#F5F5DC] text-[#2d5d52] hover:bg-[#F5F5DC]/90 transition shadow-md"
                             >
                                 Ingresar
                             </button>
@@ -172,6 +184,7 @@ export default function Navbar() {
                                 className="flex items-center gap-2"
                             >
                                 <input
+                                    id="search-mobile"
                                     type="search"
                                     value={q}
                                     onChange={(e) => setQ(e.target.value)}

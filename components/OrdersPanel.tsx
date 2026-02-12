@@ -154,8 +154,11 @@ export default function OrdersPanel() {
                                                 {order.user?.phoneNumber && (
                                                     <button
                                                         onClick={() => {
+                                                            const phoneNumber = order.user?.phoneNumber;
+                                                            if (!phoneNumber) return;
+
                                                             const prefixes = ['+54', '+598', '+56', '+55', '+595', '+1', '+34'];
-                                                            let phoneToCopy = order.user.phoneNumber;
+                                                            let phoneToCopy = phoneNumber;
 
                                                             // Intentar remover el prefijo si existe
                                                             for (const prefix of prefixes) {
