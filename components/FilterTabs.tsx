@@ -24,21 +24,26 @@ export default function FilterTabs({ selectedType, onFilterChange }: FilterTabsP
   };
 
   return (
-    <div className="filter-tabs-container">
+    <div className="flex flex-col gap-4">
       <div
-        className="filter-header flex justify-between items-center cursor-pointer"
+        className="flex justify-between items-center cursor-pointer hover:opacity-80 transition-opacity"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <p className="filter-label font-medium mb-0">Categorías</p>
-        {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+        <p className="text-xl font-semibold text-gray-700 mb-0">Categorías</p>
+        <div className="text-gray-500 transition-transform duration-200" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+          <ChevronDown size={20} />
+        </div>
       </div>
 
       {isOpen && (
-        <div className="filter-tabs">
+        <div className="flex flex-col gap-2 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
           {CATEGORIES.map((category) => (
             <button
               key={category}
-              className={`filter-tab-button ${selectedCategories.includes(category) ? 'active' : ''}`}
+              className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 border border-gray-100 shadow-sm capitalize ${selectedCategories.includes(category)
+                  ? 'bg-[#2d5d52] text-white border-[#2d5d52] font-semibold'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 hover:border-[#2d5d52]/30'
+                }`}
               onClick={() => handleCategoryClick(category)}
             >
               {category}
