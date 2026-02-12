@@ -141,9 +141,7 @@ export default function Navbar() {
 
                         {isAuthenticated ? (
                             <div className="flex flex-row items-center gap-4 flex-wrap">
-                                <span className="text-[#F5F5DC] font-medium">
-                                    Hola, {session?.user?.name || session?.user?.email || 'Usuario'}
-                                </span>
+
                                 <button
                                     onClick={handleLogout}
                                     className="bg-white/10 text-[#F5F5DC] px-4 py-2 rounded-lg hover:bg-white/20 transition shadow-sm"
@@ -231,9 +229,7 @@ export default function Navbar() {
                         <li>
                             {isAuthenticated ? (
                                 <div className="space-y-2">
-                                    <span className="block text-gray-700 font-medium">
-                                        Hola, {session?.user?.name || session?.user?.email || 'Usuario'}
-                                    </span>
+
                                     <button
                                         onClick={() => {
                                             handleLogout();
