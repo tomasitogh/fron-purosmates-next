@@ -118,7 +118,7 @@ export default function Carrito() {
                 {/* Lista de productos */}
                 <div className="lg:col-span-2 space-y-4">
                     {items.map((item) => (
-                        <div key={item.id} className="bg-white rounded-lg shadow-md p-6 flex items-center gap-4">
+                        <div key={item.id} className="bg-white rounded-lg shadow-md p-4 sm:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-4">
                             <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
                                 {item.images?.[0] ? (
                                     <img
@@ -137,11 +137,11 @@ export default function Carrito() {
                                 )}
                             </div>
 
-                            <div className="flex-grow">
+                            <div className="flex-grow text-center sm:text-left">
                                 <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
                                 <p className="text-gray-600">${item.price?.toFixed(2)}</p>
 
-                                <div className="flex items-center gap-2 mt-2">
+                                <div className="flex items-center justify-center sm:justify-start gap-2 mt-2">
                                     <button
                                         onClick={() => dispatch(decrementItem(item.id))}
                                         className="p-2 hover:bg-gray-100 rounded transition"
@@ -158,13 +158,13 @@ export default function Carrito() {
                                 </div>
                             </div>
 
-                            <div className="text-right">
+                            <div className="w-full sm:w-auto text-center sm:text-right border-t sm:border-t-0 pt-4 sm:pt-0">
                                 <p className="text-lg font-bold text-gray-800">
-                                    ${(item.price * item.qty).toFixed(2)}
+                                    Subtotal: ${(item.price * item.qty).toFixed(2)}
                                 </p>
                                 <button
                                     onClick={() => dispatch(removeItem(item.id))}
-                                    className="text-red-600 hover:text-red-800 transition text-sm mt-2 flex items-center justify-end w-full gap-1"
+                                    className="text-red-600 hover:text-red-800 transition text-sm mt-2 flex items-center justify-center sm:justify-end w-full gap-1"
                                 >
                                     <Trash2 className="w-4 h-4" /> Eliminar
                                 </button>

@@ -6,7 +6,7 @@ import "./globals.css";
 import { Providers } from "@/components/Providers";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import CartDrawer from "@/components/CartDrawer";
+
 
 export const metadata: Metadata = {
   title: "Puros Mates - Tienda Online",
@@ -32,7 +32,7 @@ export default function RootLayout({
           <Suspense fallback={<div className="h-16 bg-[#2d5d52]" />}>
             <Navbar />
           </Suspense>
-          <CartDrawer />
+
           <main className="min-h-screen flex flex-col">
             {children}
           </main>

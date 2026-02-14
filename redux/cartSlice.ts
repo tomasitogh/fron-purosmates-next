@@ -25,7 +25,6 @@ export interface CartItem {
 
 interface CartState {
     items: CartItem[];
-    open: boolean;
     status: 'idle' | 'loading' | 'succeeded' | 'failed';
     error: string | null;
 }
@@ -42,7 +41,6 @@ const getInitialCart = (): CartItem[] => {
 
 const initialState: CartState = {
     items: getInitialCart(),
-    open: false,
     status: 'idle',
     error: null
 };
@@ -117,9 +115,7 @@ const cartSlice = createSlice({
     name: 'cart',
     initialState,
     reducers: {
-        setCartOpen: (state, action: PayloadAction<boolean>) => {
-            state.open = action.payload;
-        },
+
         decrementItem: (state, action: PayloadAction<number>) => {
             const id = action.payload;
             const existingItem = state.items.find(item => item.id === id);
@@ -186,11 +182,11 @@ const cartSlice = createSlice({
     }
 });
 
-export const { setCartOpen, decrementItem, removeItem, clearCart } = cartSlice.actions;
+export const { decrementItem, removeItem, clearCart } = cartSlice.actions;
 
 // Selectors
 export const selectCartItems = (state: { cart: CartState }) => state.cart.items;
-export const selectCartOpen = (state: { cart: CartState }) => state.cart.open;
+
 export const selectCartTotalQty = (state: { cart: CartState }) =>
     state.cart.items.reduce((acc, item) => acc + item.qty, 0);
 export const selectCartSubtotal = (state: { cart: CartState }) =>
