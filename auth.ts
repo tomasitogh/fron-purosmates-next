@@ -22,6 +22,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // user solo está disponible en el primer login
       if (account && user) {
         // Guardar el ID Token de Google para validación en backend
+        console.log("NextAuth JWT Callback - Account ID Token present:", !!account.id_token);
         token.accessToken = account.id_token;
 
         // Buscar usuario en DB para obtener el rol
@@ -42,7 +43,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (session.user) {
         session.user.role = token.role as string;
         session.user.id = token.userId as string;
+        session.user.id = token.userId as string;
         session.user.accessToken = token.accessToken as string;
+        console.log("NextAuth Session Callback - Access Token present:", !!token.accessToken);
       }
       return session;
     },

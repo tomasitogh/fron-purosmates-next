@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { signIn } from 'next-auth/react';
 import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -13,8 +12,6 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
-  const router = useRouter();
-
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -80,13 +77,14 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               ¡Bienvenido a Puros Mates!
             </h2>
             <p className="text-gray-600 mb-8">
-              Ingresá con tu cuenta de Google para acceder a todas las funcionalidades.
+              Ingresá con tu cuenta de Google para acceder a tus compras.
             </p>
 
             {/* Botón de Google */}
             <button
               onClick={handleGoogleSignIn}
-              className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm hover:shadow-md"
+              type="button"
+              className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm hover:shadow-md mb-6"
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M19.8055 10.2292C19.8055 9.55155 19.7501 8.86906 19.6319 8.20312H10.2002V12.0492H15.6014C15.377 13.2911 14.6571 14.3898 13.6025 15.0879V17.5866H16.8254C18.712 15.8449 19.8055 13.2728 19.8055 10.2292Z" fill="#4285F4" />
@@ -96,36 +94,12 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               </svg>
               Continuar con Google
             </button>
-
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-gray-500 font-medium">Inicio rápido y seguro</span>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-blue-900 mb-1">
-                    ¿Por qué usar Google?
-                  </p>
-                  <ul className="text-xs text-blue-800 space-y-1">
-                    <li>✓ No necesitás crear contraseña</li>
-                    <li>✓ Inicio de sesión en 1 click</li>
-                    <li>✓ Máxima seguridad con Google</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
           </div>
+
+
         </div>
       </div>
     </div>
+
   );
 }

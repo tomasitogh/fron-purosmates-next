@@ -4,6 +4,7 @@ import adminReducer from "./adminSlice";
 import fileReducer from "./fileSlice";
 import categoryReducer from "./categorySlice";
 import productReducer from "./productSlice";
+import authReducer from "./authSlice";
 
 export const store = configureStore({
     reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
         files: fileReducer,
         categories: categoryReducer,
         products: productReducer,
+        auth: authReducer,
     }
 });
 
