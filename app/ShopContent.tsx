@@ -171,7 +171,7 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
               <p className="text-gray-600 mt-1">{filteredMates.length} productos encontrados</p>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
               {filteredMates.map((product) => (
                 <div
                   key={product.id}
