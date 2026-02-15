@@ -140,7 +140,7 @@ export default function ImageUploader({
                 <input
                     type="file"
                     multiple
-                    accept="image/*"
+                    accept="image/*,.heic,.heif"
                     onChange={handleChange}
                     disabled={uploading}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
