@@ -12,7 +12,7 @@ async function getProducts() {
   try {
     const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
     const res = await fetch(`${API_URL}/products`, {
-      cache: 'no-store' // Disable cache for instant updates during development/testing
+      next: { revalidate: 300 } // ISR: revalidate every 5 minutes
     });
 
     if (!res.ok) {
