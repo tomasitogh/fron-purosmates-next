@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAllOrders, updateOrder, deleteOrder } from '@/redux/adminSlice';
 import { useSession } from 'next-auth/react';
-import { Copy, PenSquare, Trash2 } from 'lucide-react';
+import { Copy, PenSquare, Trash2, Info, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { AppDispatch, RootState } from '@/redux/store';
 
@@ -39,6 +39,9 @@ export default function OrdersPanel() {
         total: ''
     });
 
+    // View Items State
+    const [viewingOrderItems, setViewingOrderItems] = useState<any | null>(null);
+
     useEffect(() => {
         if (session?.user?.accessToken) {
             dispatch(fetchAllOrders(session.user.accessToken));
@@ -69,7 +72,8 @@ export default function OrdersPanel() {
         if (!session || !editingOrder || !token) return;
 
         try {
-            await dispatch(updateOrder({
+
+            const result = await dispatch(updateOrder({
                 orderId: editingOrder.id,
                 status: editFormData.status,
                 paymentStatus: editFormData.paymentStatus,
@@ -77,13 +81,14 @@ export default function OrdersPanel() {
                 token
             })).unwrap();
             closeEditModal();
-            toast.success('Pedido actualizado exitosamente');
+            // Toast handled by AdminPanel via Redux state
         } catch (error: any) {
-            toast.error('Error al actualizar: ' + (error.message || 'Error desconocido'));
+            console.error('Update failed:', error);
+            // Toast handled by AdminPanel via Redux state
         }
     };
 
-    if (loading && !editingOrder) {
+    if (loading && !editingOrder && !viewingOrderItems) {
         return (
             <div className="flex justify-center items-center py-12">
                 <div className="text-xl text-gray-500">Cargando pedidos...</div>
@@ -135,9 +140,6 @@ export default function OrdersPanel() {
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Pago
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Items
                                 </th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Acciones
@@ -210,15 +212,15 @@ export default function OrdersPanel() {
                                                 {PAYMENT_STATUS_LABELS[order.paymentStatus || 'PENDING']?.label || 'Sin pagar'}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-500">
-                                            <div className="max-w-xs truncate">
-                                                {order.items?.map((item: any) =>
-                                                    `${item.quantity}x ${item.product?.name}`
-                                                ).join(', ')}
-                                            </div>
-                                        </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <div className="flex justify-end gap-2">
+                                                <button
+                                                    onClick={() => setViewingOrderItems(order)}
+                                                    className="text-blue-600 hover:text-blue-900 p-2 rounded-full hover:bg-blue-50 transition"
+                                                    title="Ver Productos"
+                                                >
+                                                    <Info className="w-5 h-5" />
+                                                </button>
                                                 <button
                                                     onClick={() => handleEditClick(order)}
                                                     className="text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-50 transition"
@@ -253,6 +255,63 @@ export default function OrdersPanel() {
                     </table>
                 </div>
             </div>
+
+            {/* View Items Modal */}
+            {viewingOrderItems && (
+                <div
+                    className="fixed inset-0 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200"
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) setViewingOrderItems(null);
+                    }}
+                >
+                    <div className="bg-white rounded-lg max-w-lg w-full p-6 shadow-xl relative">
+                        <button
+                            onClick={() => setViewingOrderItems(null)}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+                        <h3 className="text-lg font-bold mb-4 text-gray-900">
+                            Productos del Pedido #{viewingOrderItems.id}
+                        </h3>
+                        <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                            {viewingOrderItems.items?.map((item: any) => (
+                                <div key={item.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-10 w-10 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500 font-medium">
+                                            {item.product?.imageUrl ?
+                                                <img src={item.product.imageUrl} alt={item.product.name} className="h-full w-full object-cover rounded" />
+                                                : 'N/A'
+                                            }
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-gray-900">{item.product?.name}</p>
+                                            <p className="text-sm text-gray-500">Cantidad: {item.quantity}</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="font-medium text-gray-900">
+                                            ${(item.price * item.quantity).toLocaleString('es-AR')}
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                            ${item.price.toLocaleString('es-AR')} c/u
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                            {(!viewingOrderItems.items || viewingOrderItems.items.length === 0) && (
+                                <p className="text-center text-gray-500 py-4">No hay productos en este pedido.</p>
+                            )}
+                        </div>
+                        <div className="mt-6 pt-4 border-t border-gray-100 flex justify-between items-center">
+                            <span className="text-gray-600 font-medium">Total del Pedido</span>
+                            <span className="text-xl font-bold text-[#2d5d52]">
+                                ${viewingOrderItems.total?.toLocaleString('es-AR')}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Edit Modal */}
             {editingOrder && (
