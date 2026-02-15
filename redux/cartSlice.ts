@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-
+import { CategoryId } from '@/lib/constants';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 
 // Types
@@ -194,8 +194,10 @@ export const selectCartSubtotal = (state: { cart: CartState }) =>
 
 export const selectHasComboDiscount = (state: { cart: CartState }) => {
     const items = state.cart.items;
-    const categories = new Set(items.map(item => item.category?.description || ''));
-    return categories.has('mates') && categories.has('bombillas') && categories.has('accesorios');
+    const categories = new Set(items.map(item => item.category?.id));
+    return categories.has(CategoryId.MATE) &&
+        categories.has(CategoryId.BOMBILLA) &&
+        categories.has(CategoryId.ACCESORIO);
 };
 
 export const selectCartDiscount = (state: { cart: CartState }) => {
