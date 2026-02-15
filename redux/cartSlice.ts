@@ -122,9 +122,9 @@ export const createPreference = createAsyncThunk(
     'cart/createPreference',
     async ({ orderId, token }: { orderId: number; token: string }, { rejectWithValue }) => {
         try {
-            const response = await axios.post(`${API_URL}/mp/create_preference/${orderId}`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+
+            const response = await axios.post(`${API_URL}/mp/create_preference/${orderId}`, {}, config);
             return response.data;
         } catch (error: any) {
             if (error.response?.data) {

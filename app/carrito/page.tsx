@@ -68,11 +68,13 @@ export default function Carrito() {
             const orderData = {
                 items,
                 token: isAuthenticated ? token || undefined : undefined,
-                guestData: isAuthenticated ? undefined : {
-                    guestFirstname: guestData.firstname,
-                    guestLastname: guestData.lastname,
-                    guestEmail: guestData.email,
-                    guestPhone: guestData.phone
+                guestData: {
+                    guestPhone: guestData.phone,
+                    ...(!isAuthenticated ? {
+                        guestFirstname: guestData.firstname,
+                        guestLastname: guestData.lastname,
+                        guestEmail: guestData.email,
+                    } : {})
                 },
                 paymentMethod // We will pass this to backend if updated, allows discount logic
             };
@@ -87,17 +89,27 @@ export default function Carrito() {
                 const order = resultAction.payload;
 
                 if (paymentMethod === 'mp') {
-                    toast.loading('Generando pago...');
-                    const prefResult = await dispatch(createPreference({ orderId: order.id, token: token || '' })); // Token might be empty for guest
-                    // Preference endpoint might need token? 
-                    // The current createPreference thunk expects token.
-                    // Guests might not be able to create MP preference if endpoint is protected.
-                    // I need to check `createPreference` in cartSlice.
+                    const loadingToast = toast.loading('Generando pago...');
+                    try {
+                        const prefResult = await dispatch(createPreference({ orderId: order.id, token: token || '' }));
 
-                    if (createPreference.fulfilled.match(prefResult)) {
-                        window.location.href = prefResult.payload;
-                    } else {
-                        toast.error('Error al generar pago con Mercado Pago');
+                        toast.dismiss(loadingToast);
+
+                        if (createPreference.fulfilled.match(prefResult)) {
+                            // Redirigir a Mercado Pago
+                            window.location.href = prefResult.payload;
+                        } else {
+                            console.error('Error createPreference:', prefResult.payload || prefResult.error);
+                            if (typeof prefResult.payload === 'string') {
+                                toast.error(`Error: ${prefResult.payload}`);
+                            } else {
+                                toast.error('Error al generar pago con Mercado Pago. Intente nuevamente.');
+                            }
+                        }
+                    } catch (error) {
+                        toast.dismiss(loadingToast);
+                        console.error('Error createPreference catch:', error);
+                        toast.error('Ocurrió un error inesperado al generar el pago.');
                     }
                 } else if (paymentMethod === 'transfer') {
                     // Show Success and Instructions?

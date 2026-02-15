@@ -22,6 +22,10 @@ export interface Order {
         email: string;
         phoneNumber?: string;
     };
+    guestFirstname?: string;
+    guestLastname?: string;
+    guestEmail?: string;
+    guestPhone?: string;
 }
 
 export interface ProductData {

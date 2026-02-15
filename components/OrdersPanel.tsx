@@ -154,22 +154,26 @@ export default function OrdersPanel() {
                                             #{order.id}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <div className="flex flex-col">
-                                                <span className="font-medium text-gray-900">
-                                                    {order.user?.firstname} {order.user?.lastname}
-                                                </span>
-                                                <span className="text-xs text-gray-400">
-                                                    {order.user?.email}
-                                                </span>
-                                            </div>
+                                            {order.user ? (
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-gray-900">
+                                                        {order.user.firstname} {order.user.lastname}
+                                                    </span>
+                                                    <span className="text-xs text-gray-400">
+                                                        {order.user.email}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <span className="font-medium text-gray-500 italic">Invitado</span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <div className="flex items-center gap-2">
-                                                <span>{order.user?.phoneNumber || '-'}</span>
-                                                {order.user?.phoneNumber && (
+                                                <span>{order.user?.phoneNumber || order.guestPhone || '-'}</span>
+                                                {(order.user?.phoneNumber || order.guestPhone) && (
                                                     <button
                                                         onClick={() => {
-                                                            const phoneNumber = order.user?.phoneNumber;
+                                                            const phoneNumber = order.user?.phoneNumber || order.guestPhone;
                                                             if (!phoneNumber) return;
 
                                                             const prefixes = ['+54', '+598', '+56', '+55', '+595', '+1', '+34'];
@@ -272,8 +276,46 @@ export default function OrdersPanel() {
                             <X className="w-6 h-6" />
                         </button>
                         <h3 className="text-lg font-bold mb-4 text-gray-900">
-                            Productos del Pedido #{viewingOrderItems.id}
+                            {viewingOrderItems.user ? `Pedido #${viewingOrderItems.id}` : `Pedido #${viewingOrderItems.id} (Invitado)`}
                         </h3>
+
+                        {!viewingOrderItems.user && (
+                            <div className="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <h4 className="font-semibold text-gray-800 mb-3 border-b pb-2">Datos del Cliente</h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <p className="text-gray-500 text-xs uppercase tracking-wide">Nombre</p>
+                                        <p className="font-medium text-gray-900">
+                                            {viewingOrderItems.guestFirstname} {viewingOrderItems.guestLastname}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-500 text-xs uppercase tracking-wide">Email</p>
+                                        <p className="font-medium text-gray-900">{viewingOrderItems.guestEmail || '-'}</p>
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                        <p className="text-gray-500 text-xs uppercase tracking-wide">Teléfono</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-medium text-gray-900">{viewingOrderItems.guestPhone || '-'}</p>
+                                            {viewingOrderItems.guestPhone && (
+                                                <button
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(viewingOrderItems.guestPhone);
+                                                        toast.success('Copiado');
+                                                    }}
+                                                    className="text-gray-400 hover:text-gray-600"
+                                                    title="Copiar"
+                                                >
+                                                    <Copy className="w-3 h-3" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <h4 className="font-bold text-gray-900 mb-2">Productos</h4>
                         <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
                             {viewingOrderItems.items?.map((item: any) => (
                                 <div key={item.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
