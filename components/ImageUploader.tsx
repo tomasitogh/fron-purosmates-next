@@ -140,7 +140,7 @@ export default function ImageUploader({
                 <input
                     type="file"
                     multiple
-                    accept="image/*"
+                    accept="image/*,.heic,.heif"
                     onChange={handleChange}
                     disabled={uploading}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
@@ -194,7 +194,7 @@ export default function ImageUploader({
                                 />
 
                                 {/* Controls Overlay */}
-                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity p-2">
+                                <div className="absolute bottom-0 left-0 right-0 bg-black/50 flex items-center justify-center gap-2 p-2 transition-opacity">
                                     <button
                                         type="button"
                                         onClick={() => setEditingIndex(index)}
@@ -204,16 +204,29 @@ export default function ImageUploader({
                                         <Pencil className="w-3.5 h-3.5 text-[#2d5d52]" />
                                     </button>
 
-                                    {index > 0 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => moveImage(index, index - 1)}
-                                            className="bg-white p-1.5 rounded-full shadow-sm hover:bg-gray-100 transition flex-shrink-0"
-                                            title="Mover a la izquierda"
-                                        >
-                                            <span className="text-xs font-bold text-gray-600">←</span>
-                                        </button>
-                                    )}
+                                    <div className="flex gap-1">
+                                        {index > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => moveImage(index, index - 1)}
+                                                className="bg-white p-1.5 rounded-full shadow-sm hover:bg-gray-100 transition flex-shrink-0"
+                                                title="Mover a la izquierda"
+                                            >
+                                                <span className="text-xs font-bold text-gray-600">←</span>
+                                            </button>
+                                        )}
+
+                                        {index < previewImages.length - 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => moveImage(index, index + 1)}
+                                                className="bg-white p-1.5 rounded-full shadow-sm hover:bg-gray-100 transition flex-shrink-0"
+                                                title="Mover a la derecha"
+                                            >
+                                                <span className="text-xs font-bold text-gray-600">→</span>
+                                            </button>
+                                        )}
+                                    </div>
 
                                     <button
                                         type="button"
@@ -223,17 +236,6 @@ export default function ImageUploader({
                                     >
                                         <X className="w-3.5 h-3.5" />
                                     </button>
-
-                                    {index < previewImages.length - 1 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => moveImage(index, index + 1)}
-                                            className="bg-white p-1.5 rounded-full shadow-sm hover:bg-gray-100 transition flex-shrink-0"
-                                            title="Mover a la derecha"
-                                        >
-                                            <span className="text-xs font-bold text-gray-600">→</span>
-                                        </button>
-                                    )}
                                 </div>
 
                                 {/* Main Image Indicator */}

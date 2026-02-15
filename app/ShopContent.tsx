@@ -171,11 +171,11 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
               <p className="text-gray-600 mt-1">{filteredMates.length} productos encontrados</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
               {filteredMates.map((product) => (
                 <div
                   key={product.id}
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow cursor-pointer max-w-[281px] mx-auto w-full"
                   onClick={() => openProductModal(product)}
                 >
                   <div className="relative w-full aspect-square bg-gray-200">
@@ -199,8 +199,8 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
                   <div className="p-4">
                     <h3 className="font-semibold text-lg text-gray-900 truncate">{product.name}</h3>
                     <p className="text-sm text-gray-600 capitalize">{product.category?.description}</p>
-                    <div className="mt-4 flex items-center justify-between">
-                      <span className="text-2xl font-bold text-[#2d5d52]">
+                    <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+                      <span className="text-lg sm:text-xl font-bold text-[#2d5d52]">
                         ${product.price.toLocaleString('es-AR')}
                       </span>
                       <button
@@ -208,7 +208,7 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
                           e.stopPropagation();
                           handleAddToCart(product);
                         }}
-                        className="bg-[#2d5d52] text-white px-4 py-2 rounded-lg hover:bg-[#2d5d52]/90 transition"
+                        className="bg-[#2d5d52] text-white px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base rounded-lg hover:bg-[#2d5d52]/90 transition w-full sm:w-auto"
                       >
                         Agregar
                       </button>
@@ -253,7 +253,7 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
 
                 {/* Left Column: Image Section */}
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-4 mt-12 lg:mt-0">
                   <div className="relative group max-w-[420px] lg:max-w-none w-4/5 lg:w-full mx-auto">
                     {/* Scrollable Container */}
                     <div

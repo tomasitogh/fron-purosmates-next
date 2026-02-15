@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import CartDrawer from '@/components/CartDrawer';
+
 import ShopContent from './ShopContent';
 
 // Make this page dynamic to allow useSearchParams in ShopContent

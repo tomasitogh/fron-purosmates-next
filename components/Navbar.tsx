@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useSelector } from 'react-redux';
-import { selectCartTotalQty, setCartOpen } from '@/redux/cartSlice';
+import { selectCartTotalQty } from '@/redux/cartSlice';
 import { useSession, signOut } from 'next-auth/react';
 import AuthModal from './AuthModal';
 import Image from 'next/image';
@@ -39,7 +39,7 @@ export default function Navbar() {
         if (status !== 'authenticated') {
             setIsAuthModalOpen(true);
         } else {
-            dispatch(setCartOpen(true));
+            router.push('/carrito');
         }
     };
 
