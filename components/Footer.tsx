@@ -38,7 +38,7 @@ export default function Footer() {
                         <ul className="space-y-3 text-lg">
                             <li>
                                 <Link
-                                    href="/?category=mates"
+                                    href="/?category=mate"
                                     className="hover:opacity-70 transition"
                                 >
                                     Mates
@@ -46,7 +46,7 @@ export default function Footer() {
                             </li>
                             <li>
                                 <Link
-                                    href="/?category=bombillas"
+                                    href="/?category=bombilla"
                                     className="hover:opacity-70 transition"
                                 >
                                     Bombillas
@@ -54,7 +54,7 @@ export default function Footer() {
                             </li>
                             <li>
                                 <Link
-                                    href="/?category=accesorios"
+                                    href="/?category=accesorio"
                                     className="hover:opacity-70 transition"
                                 >
                                     Accesorios
@@ -138,7 +138,7 @@ export default function Footer() {
                         <ul className="space-y-2 text-lg">
                             <li>
                                 <Link
-                                    href="/?category=mates"
+                                    href="/?category=mate"
                                     className="hover:opacity-70 transition"
                                 >
                                     Mates
@@ -146,7 +146,7 @@ export default function Footer() {
                             </li>
                             <li>
                                 <Link
-                                    href="/?category=bombillas"
+                                    href="/?category=bombilla"
                                     className="hover:opacity-70 transition"
                                 >
                                     Bombillas
@@ -154,7 +154,7 @@ export default function Footer() {
                             </li>
                             <li>
                                 <Link
-                                    href="/?category=accesorios"
+                                    href="/?category=accesorio"
                                     className="hover:opacity-70 transition"
                                 >
                                     Accesorios

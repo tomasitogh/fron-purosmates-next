@@ -3,23 +3,24 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
-const CATEGORIES = ['mates', 'bombillas', 'accesorios'];
-
 interface FilterTabsProps {
+  categories: string[];
   selectedType: string[];
   onFilterChange: (categories: string[]) => void;
 }
 
-export default function FilterTabs({ selectedType, onFilterChange }: FilterTabsProps) {
+export default function FilterTabs({ categories, selectedType, onFilterChange }: FilterTabsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const selectedCategories = Array.isArray(selectedType) ? selectedType : [];
 
   const handleCategoryClick = (category: string) => {
-    if (selectedCategories.includes(category)) {
-      const newSelection = selectedCategories.filter(c => c !== category);
+    // Si la categoría ya está seleccionada, la deseleccionamos
+    if (selectedCategories.includes(category.toLowerCase())) {
+      const newSelection = selectedCategories.filter(c => c !== category.toLowerCase());
       onFilterChange(newSelection);
     } else {
-      onFilterChange([...selectedCategories, category]);
+      // Si no, la agregamos (asegurando que sea minúscula para consistencia)
+      onFilterChange([...selectedCategories, category.toLowerCase()]);
     }
   };
 
@@ -37,10 +38,10 @@ export default function FilterTabs({ selectedType, onFilterChange }: FilterTabsP
 
       {isOpen && (
         <div className="flex flex-col gap-2 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-          {CATEGORIES.map((category) => (
+          {categories.map((category) => (
             <button
               key={category}
-              className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 border border-gray-100 shadow-sm capitalize ${selectedCategories.includes(category)
+              className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 border border-gray-100 shadow-sm capitalize ${selectedCategories.includes(category.toLowerCase())
                   ? 'bg-[#2d5d52] text-white border-[#2d5d52] font-semibold'
                   : 'bg-white text-gray-700 hover:bg-gray-50 hover:border-[#2d5d52]/30'
                 }`}

@@ -47,10 +47,17 @@ async function getCategories() {
 }
 
 export default async function HomePage() {
-  const [products, categories] = await Promise.all([
+  const [products, categoriesData] = await Promise.all([
     getProducts(),
     getCategories()
   ]);
+
+  // Handle paginated response structure { content: [...], ... } or fallback to array
+  const categories = Array.isArray(categoriesData)
+    ? categoriesData
+    : (categoriesData && Array.isArray(categoriesData.content))
+      ? categoriesData.content
+      : [];
 
   return (
     <div className="flex flex-col min-h-screen">

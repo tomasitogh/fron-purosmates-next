@@ -36,8 +36,9 @@ interface ShopContentProps {
   initialCategories: any[];
 }
 
-export default function ShopContent({ initialProducts }: ShopContentProps) {
+export default function ShopContent({ initialProducts, initialCategories }: ShopContentProps) {
   console.log('ShopContent initialProducts:', initialProducts);
+  console.log('ShopContent initialCategories:', initialCategories);
   const dispatch = useDispatch();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -50,9 +51,8 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(100000);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<any | null>(null); // Changed type to any
-  const [wantsCustomization, setWantsCustomization] = useState(false); // New state
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // New state (assuming this was intended as a separate state)
+  const [wantsCustomization, setWantsCustomization] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [customizationStates, setCustomizationStates] = useState<Record<number, boolean>>({});
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -75,24 +75,21 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
     }
   }, [categoryFromUrl]);
 
-  // Abrir modal automáticamente si hay un slug en la URL
+  // Estado derivado para el producto seleccionado basado en la URL
+  const selectedProduct = useMemo(() => {
+    if (!productSlugFromUrl) return null;
+    return initialProducts.find(p => (p.slug || slugify(p.name)) === productSlugFromUrl) || null;
+  }, [productSlugFromUrl, initialProducts]);
+
+  // Resetear estados auxiliares cuando cambia el producto seleccionado
   useEffect(() => {
-    if (productSlugFromUrl && initialProducts.length > 0) {
-      // Solo abrir si el modal no está ya abierto con ese producto
-      if (!selectedProduct || (selectedProduct.slug || slugify(selectedProduct.name)) !== productSlugFromUrl) {
-        const product = initialProducts.find(
-          p => (p.slug || slugify(p.name)) === productSlugFromUrl
-        );
-        if (product) {
-          setSelectedProduct(product);
-          setWantsCustomization(false); // Reset customization state when opening a new product
-          setSelectedImageIndex(0);
-          // Resetear scroll
-          setTimeout(() => scrollToImage(0), 0);
-        }
-      }
+    if (selectedProduct) {
+      setWantsCustomization(false);
+      setSelectedImageIndex(0);
+      setTimeout(() => scrollToImage(0), 0);
     }
-  }, [productSlugFromUrl, initialProducts, selectedProduct]); // Added selectedProduct to dependencies
+  }, [selectedProduct?.id]);
+
 
   useEffect(() => {
     if (initialProducts.length > 0) {
@@ -141,11 +138,10 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
     // Actualizar URL directamente sin navegar (shallow routing)
     const newUrl = `/?producto=${slug}`;
     router.push(newUrl, { scroll: false });
-    setSelectedProduct(product);
-    setWantsCustomization(false); // Reset customization state when opening a new product
-    setSelectedImageIndex(0);
-    // Resetear scroll
-    setTimeout(() => scrollToImage(0), 0);
+    // setSelectedProduct removed - derived from URL
+    // setWantsCustomization(false); // Handled by useEffect
+    // setSelectedImageIndex(0); // Handled by useEffect
+    // setTimeout(() => scrollToImage(0), 0); // Handled by useEffect
   };
 
   const closeProductModal = () => {
@@ -154,8 +150,8 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
     params.delete('producto');
     const newUrl = params.toString() ? `/?${params.toString()}` : '/';
     router.replace(newUrl, { scroll: false });
-    setSelectedProduct(null);
-    setWantsCustomization(false); // Reset customization state when closing modal
+    // setSelectedProduct(null) removed - derived from URL
+    // setWantsCustomization(false); // Handled by useEffect (modal unmounts)
   };
 
   return (
@@ -166,7 +162,25 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
           <aside className="lg:w-64 flex-shrink-0">
             <div className="sticky top-24 space-y-6">
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Filtros</h3>
-              <FilterTabs selectedType={selectedType} onFilterChange={setSelectedType} />
+              <FilterTabs
+                categories={initialCategories
+                  .map(c => c.description)
+                  .sort((a, b) => {
+                    const order = ['mate', 'bombilla', 'accesorio'];
+                    const indexA = order.indexOf(a.toLowerCase());
+                    const indexB = order.indexOf(b.toLowerCase());
+                    // If both are in the known list, sort by index
+                    if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                    // If only A is known, it comes first
+                    if (indexA !== -1) return -1;
+                    // If only B is known, it comes first
+                    if (indexB !== -1) return 1;
+                    // Otherwise sort alphabetically
+                    return a.localeCompare(b);
+                  })}
+                selectedType={selectedType}
+                onFilterChange={setSelectedType}
+              />
             </div>
           </aside>
 
