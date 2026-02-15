@@ -36,11 +36,7 @@ export default function Navbar() {
     };
 
     const handleCartClick = () => {
-        if (status !== 'authenticated') {
-            setIsAuthModalOpen(true);
-        } else {
-            router.push('/carrito');
-        }
+        router.push('/carrito');
     };
 
     const onSearchSubmit = (e: React.FormEvent) => {

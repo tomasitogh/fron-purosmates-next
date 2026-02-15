@@ -21,6 +21,9 @@ export interface CartItem {
     };
     stock: number;
     qty: number;
+    isCustomizable?: boolean;
+    customizationCost?: number;
+    hasCustomization?: boolean;
 }
 
 interface CartState {
@@ -56,7 +59,11 @@ export const addToCart = createAsyncThunk(
         }
 
         const state = getState() as { cart: CartState };
-        const existingItem = state.cart.items.find(p => p.id === product.id);
+        // Buscar item que coincida en ID y estado de personalización
+        const existingItem = state.cart.items.find(p =>
+            p.id === product.id &&
+            !!p.hasCustomization === !!product.hasCustomization
+        );
 
         if (existingItem) {
             // Verificar que no se exceda el stock disponible
@@ -73,16 +80,33 @@ export const addToCart = createAsyncThunk(
 // Async Thunk for creating order
 export const createOrder = createAsyncThunk(
     'cart/createOrder',
-    async ({ items, token }: { items: CartItem[]; token: string }, { rejectWithValue }) => {
+    async ({ items, token, guestData, paymentMethod }: {
+        items: CartItem[];
+        token?: string;
+        guestData?: {
+            guestFirstname?: string;
+            guestLastname?: string;
+            guestEmail?: string;
+            guestPhone: string;
+        };
+        paymentMethod?: string;
+    }, { rejectWithValue }) => {
         try {
             const orderItems = items.map(item => ({
                 productId: item.id,
-                quantity: item.qty
+                quantity: item.qty,
+                hasCustomization: item.hasCustomization
             }));
 
-            const response = await axios.post(`${API_URL}/orders`, orderItems, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const payload = {
+                items: orderItems,
+                ...guestData,
+                paymentMethod
+            };
+
+            const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+
+            const response = await axios.post(`${API_URL}/orders`, payload, config);
             return response.data;
         } catch (error: any) {
             if (error.response?.data) {
@@ -116,31 +140,81 @@ const cartSlice = createSlice({
     initialState,
     reducers: {
 
-        decrementItem: (state, action: PayloadAction<number>) => {
-            const id = action.payload;
-            const existingItem = state.items.find(item => item.id === id);
+        decrementItem: (state, action: PayloadAction<{ id: number; hasCustomization?: boolean }>) => {
+            const { id, hasCustomization } = action.payload;
+            const existingItem = state.items.find(item =>
+                item.id === id && !!item.hasCustomization === !!hasCustomization
+            );
 
             if (existingItem) {
                 if (existingItem.qty > 1) {
                     existingItem.qty -= 1;
                 } else {
-                    state.items = state.items.filter(item => item.id !== id);
+                    state.items = state.items.filter(item =>
+                        !(item.id === id && !!item.hasCustomization === !!hasCustomization)
+                    );
                 }
             }
         },
-        removeItem: (state, action: PayloadAction<number>) => {
-            const id = action.payload;
-            state.items = state.items.filter(item => item.id !== id);
+        removeItem: (state, action: PayloadAction<{ id: number; hasCustomization?: boolean }>) => {
+            const { id, hasCustomization } = action.payload;
+            state.items = state.items.filter(item =>
+                !(item.id === id && !!item.hasCustomization === !!hasCustomization)
+            );
         },
         clearCart: (state) => {
             state.items = [];
+        },
+        toggleCustomization: (state, action: PayloadAction<{ id: number; hasCustomization: boolean }>) => {
+            // Nota: Esto es complejo porque cambiar la customización podría fusionar items
+            // Por simplicidad, asumimos que se llama desde el carrito y actualizamos el flag
+            // Idealmente, deberíamos verificar si al cambiarlo choca con otro item igual
+            const { id, hasCustomization } = action.payload;
+            const item = state.items.find(i => i.id === id && i.hasCustomization !== hasCustomization);
+            // Buscamos el item que NO tiene el estado al que queremos cambiar (o sea el actual)
+            // Esto es tricky si hay múltiples del mismo ID con diferente customización.
+            // Mejor pasamos un identificador único de línea de carrito si fuera posible, pero usamos ID y estado actual logic
+
+            // Revisión de la lógica:
+            // Si el usuario hace toggle en una fila del carrito, esa fila tiene un estado actual.
+            // Si quiero ACTIVAR (hasCustomization=true), busco el item con ID y hasCustomization=false.
+            // Si quiero DESACTIVAR, busco el item con ID y hasCustomization=true.
+
+            const targetItemIndex = state.items.findIndex(i =>
+                i.id === id && i.hasCustomization !== hasCustomization
+            );
+
+            if (targetItemIndex !== -1) {
+                const targetItem = state.items[targetItemIndex];
+                const newItemState = { ...targetItem, hasCustomization: hasCustomization };
+
+                // Verificar si ya existe un item con el NUEVO estado para fusionarlos
+                const existingMergeIndex = state.items.findIndex((i, idx) =>
+                    idx !== targetItemIndex &&
+                    i.id === id &&
+                    i.hasCustomization === hasCustomization
+                );
+
+                if (existingMergeIndex !== -1) {
+                    // Fusionar
+                    state.items[existingMergeIndex].qty += targetItem.qty;
+                    // Eliminar el antiguo
+                    state.items.splice(targetItemIndex, 1);
+                } else {
+                    // Solo actualizar flag
+                    state.items[targetItemIndex].hasCustomization = hasCustomization;
+                }
+            }
         },
     },
     extraReducers: (builder) => {
         builder
             .addCase(addToCart.fulfilled, (state, action) => {
                 const product = action.payload;
-                const existingItem = state.items.find(item => item.id === product.id);
+                const existingItem = state.items.find(item =>
+                    item.id === product.id &&
+                    !!item.hasCustomization === !!product.hasCustomization
+                );
 
                 if (existingItem) {
                     existingItem.qty += 1;
@@ -182,7 +256,7 @@ const cartSlice = createSlice({
     }
 });
 
-export const { decrementItem, removeItem, clearCart } = cartSlice.actions;
+export const { decrementItem, removeItem, clearCart, toggleCustomization } = cartSlice.actions;
 
 // Selectors
 export const selectCartItems = (state: { cart: CartState }) => state.cart.items;
@@ -190,7 +264,10 @@ export const selectCartItems = (state: { cart: CartState }) => state.cart.items;
 export const selectCartTotalQty = (state: { cart: CartState }) =>
     state.cart.items.reduce((acc, item) => acc + item.qty, 0);
 export const selectCartSubtotal = (state: { cart: CartState }) =>
-    state.cart.items.reduce((acc, item) => acc + (item.price || 0) * item.qty, 0);
+    state.cart.items.reduce((acc, item) => {
+        const itemPrice = item.price + (item.hasCustomization && item.customizationCost ? item.customizationCost : 0);
+        return acc + itemPrice * item.qty;
+    }, 0);
 
 export const selectHasComboDiscount = (state: { cart: CartState }) => {
     const items = state.cart.items;

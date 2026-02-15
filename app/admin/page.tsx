@@ -6,30 +6,13 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { fetchAllProductsAdmin } from '@/redux/productSlice';
 import { fetchCategories } from '@/redux/categorySlice';
-import { createProduct, updateProduct, deleteProduct, clearAdminMessages } from '@/redux/adminSlice';
+import { createProduct, updateProduct, deleteProduct, clearAdminMessages, ProductData } from '@/redux/adminSlice';
 import FilterTabs from '@/components/FilterTabs';
 import ImageUploader from '@/components/ImageUploader';
 import OrdersPanel from '@/components/OrdersPanel';
 import toast from 'react-hot-toast';
 import ProductImagePreview from '@/components/ProductImagePreview';
 import { AppDispatch, RootState } from '@/redux/store';
-
-interface ProductData {
-    name: string;
-    description: string;
-    price: number;
-    stock: number;
-    category: {
-        id: number;
-    };
-    images: {
-        url: string;
-        scale?: number;
-        x?: number;
-        y?: number;
-    }[];
-    active: boolean;
-}
 
 export default function AdminPanel() {
     const { data: session, status } = useSession();
@@ -60,6 +43,8 @@ export default function AdminPanel() {
         categoryId: '',
         images: [] as { url: string; scale?: number; x?: number; y?: number }[],
         active: true,
+        isCustomizable: false,
+        customizationCost: '',
     });
 
     useEffect(() => {
@@ -109,6 +94,8 @@ export default function AdminPanel() {
             categoryId: '',
             images: [],
             active: true,
+            isCustomizable: false,
+            customizationCost: '',
         });
         setSelectedProduct(null);
         setIsEditing(false);
@@ -124,6 +111,8 @@ export default function AdminPanel() {
             categoryId: product.category?.id || '',
             images: product.images || [],
             active: product.active !== undefined ? product.active : true,
+            isCustomizable: product.isCustomizable || false,
+            customizationCost: product.customizationCost ? product.customizationCost.toString() : '',
         });
         setSelectedProduct(product);
         setIsEditing(true);
@@ -170,6 +159,8 @@ export default function AdminPanel() {
             },
             images: formData.images,
             active: formData.active,
+            isCustomizable: formData.isCustomizable,
+            customizationCost: formData.isCustomizable ? parseFloat(formData.customizationCost) : 0,
         };
 
         try {
@@ -531,6 +522,41 @@ export default function AdminPanel() {
                                             Producto activo (visible para usuarios)
                                         </label>
                                     </div>
+                                </div>
+
+                                {/* Configuración de Personalización */}
+                                <div className="mt-4 p-4 bg-blue-50 rounded-lg space-y-4">
+                                    <div className="flex items-center space-x-3">
+                                        <input
+                                            type="checkbox"
+                                            name="isCustomizable"
+                                            id="isCustomizable"
+                                            checked={formData.isCustomizable}
+                                            onChange={handleInputChange}
+                                            className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                                        />
+                                        <label htmlFor="isCustomizable" className="text-sm font-medium text-gray-700">
+                                            Producto Personalizable
+                                        </label>
+                                    </div>
+
+                                    {formData.isCustomizable && (
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Costo de Personalización
+                                            </label>
+                                            <input
+                                                type="number"
+                                                name="customizationCost"
+                                                value={formData.customizationCost}
+                                                onChange={handleInputChange}
+                                                min="0"
+                                                step="0.01"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                placeholder="0.00"
+                                            />
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="mt-6 flex space-x-4">

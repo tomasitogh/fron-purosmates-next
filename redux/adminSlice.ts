@@ -39,6 +39,8 @@ export interface ProductData {
         y?: number;
     }[];
     active: boolean;
+    isCustomizable?: boolean;
+    customizationCost?: number;
 }
 
 interface AdminState {

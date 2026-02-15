@@ -293,9 +293,18 @@ export default function OrdersPanel() {
                                         <p className="font-medium text-gray-900">
                                             ${(item.price * item.quantity).toLocaleString('es-AR')}
                                         </p>
-                                        <p className="text-xs text-gray-500">
-                                            ${item.price.toLocaleString('es-AR')} c/u
-                                        </p>
+                                        <div className="text-xs text-gray-500 flex flex-col items-end mt-1 space-y-0.5">
+                                            {item.hasCustomization ? (
+                                                <>
+                                                    <span>Base: ${(item.price - (item.product?.customizationCost || 0)).toLocaleString('es-AR')}</span>
+                                                    <span className="text-blue-600 font-medium bg-blue-50 px-1.5 py-0.5 rounded">
+                                                        Personalizado (+${item.product?.customizationCost?.toLocaleString('es-AR')})
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <span>${item.price.toLocaleString('es-AR')} c/u</span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             ))}

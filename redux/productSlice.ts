@@ -21,6 +21,8 @@ export interface Product {
         id: number;
         description: string;
     };
+    isCustomizable?: boolean;
+    customizationCost?: number;
 }
 
 interface ProductState {

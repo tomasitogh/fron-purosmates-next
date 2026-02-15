@@ -3,7 +3,9 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
+import { RootState } from "@/redux/store";
 import { addToCart } from '@/redux/cartSlice';
+import toast from 'react-hot-toast';
 import FilterTabs from '@/components/FilterTabs';
 import { useSession } from 'next-auth/react';
 import AuthModal from '@/components/AuthModal';
@@ -25,6 +27,8 @@ interface Product {
   category: { id: number; description: string };
   stock: number;
   description?: string;
+  isCustomizable?: boolean;
+  customizationCost?: number;
 }
 
 interface ShopContentProps {
@@ -33,6 +37,7 @@ interface ShopContentProps {
 }
 
 export default function ShopContent({ initialProducts }: ShopContentProps) {
+  console.log('ShopContent initialProducts:', initialProducts);
   const dispatch = useDispatch();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -45,8 +50,11 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(100000);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null); // Changed type to any
+  const [wantsCustomization, setWantsCustomization] = useState(false); // New state
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // New state (assuming this was intended as a separate state)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [customizationStates, setCustomizationStates] = useState<Record<number, boolean>>({});
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const searchText = useMemo(() => {
@@ -77,13 +85,14 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
         );
         if (product) {
           setSelectedProduct(product);
+          setWantsCustomization(false); // Reset customization state when opening a new product
           setSelectedImageIndex(0);
           // Resetear scroll
           setTimeout(() => scrollToImage(0), 0);
         }
       }
     }
-  }, [productSlugFromUrl, initialProducts]);
+  }, [productSlugFromUrl, initialProducts, selectedProduct]); // Added selectedProduct to dependencies
 
   useEffect(() => {
     if (initialProducts.length > 0) {
@@ -122,12 +131,9 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
     }
   };
 
-  const handleAddToCart = (product: Product) => {
-    if (!isAuthenticated) {
-      setIsAuthModalOpen(true);
-      return;
-    }
-    dispatch(addToCart(product) as any);
+  const handleAddToCart = (product: any, withCustomization: boolean = false) => {
+    dispatch(addToCart({ ...product, qty: 1, hasCustomization: withCustomization }) as any);
+    toast.success(`Agregado: ${product.name}${withCustomization ? ' (Personalizado)' : ''}`);
   };
 
   const openProductModal = (product: Product) => {
@@ -136,6 +142,7 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
     const newUrl = `/?producto=${slug}`;
     router.push(newUrl, { scroll: false });
     setSelectedProduct(product);
+    setWantsCustomization(false); // Reset customization state when opening a new product
     setSelectedImageIndex(0);
     // Resetear scroll
     setTimeout(() => scrollToImage(0), 0);
@@ -148,6 +155,7 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
     const newUrl = params.toString() ? `/?${params.toString()}` : '/';
     router.replace(newUrl, { scroll: false });
     setSelectedProduct(null);
+    setWantsCustomization(false); // Reset customization state when closing modal
   };
 
   return (
@@ -200,18 +208,46 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
                     <h3 className="font-semibold text-lg text-gray-900 truncate">{product.name}</h3>
                     <p className="text-sm text-gray-600 capitalize">{product.category?.description}</p>
                     <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-                      <span className="text-lg sm:text-xl font-bold text-[#2d5d52]">
-                        ${product.price.toLocaleString('es-AR')}
-                      </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAddToCart(product);
-                        }}
-                        className="bg-[#2d5d52] text-white px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base rounded-lg hover:bg-[#2d5d52]/90 transition w-full sm:w-auto"
-                      >
-                        Agregar
-                      </button>
+                      <div className="flex flex-col w-full gap-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-lg sm:text-xl font-bold text-[#2d5d52]">
+                            ${(product.price + (customizationStates[product.id] ? (product.customizationCost || 0) : 0)).toLocaleString('es-AR')}
+                          </span>
+                        </div>
+
+                        {product.isCustomizable && (
+                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              id={`card-customization-${product.id}`}
+                              checked={!!customizationStates[product.id]}
+                              onChange={(e) => {
+                                setCustomizationStates(prev => ({
+                                  ...prev,
+                                  [product.id]: e.target.checked
+                                }));
+                              }}
+                              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                            />
+                            <label
+                              htmlFor={`card-customization-${product.id}`}
+                              className="text-sm text-gray-600 cursor-pointer select-none"
+                            >
+                              Personalizar (+${product.customizationCost?.toLocaleString('es-AR')})
+                            </label>
+                          </div>
+                        )}
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddToCart(product, !!customizationStates[product.id]);
+                          }}
+                          className="bg-[#2d5d52] text-white px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base rounded-lg hover:bg-[#2d5d52]/90 transition w-full font-semibold"
+                        >
+                          {customizationStates[product.id] ? 'Agregar Personalizado' : 'Agregar'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -270,7 +306,7 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
                       style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                     >
                       {selectedProduct.images && selectedProduct.images.length > 0 ? (
-                        selectedProduct.images.map((image, index) => (
+                        selectedProduct.images.map((image: any, index: number) => (
                           <div key={index} className="w-full h-full flex-shrink-0 snap-center flex items-center justify-center relative bg-gray-200">
                             <ProductImagePreview
                               src={image.url}
@@ -327,7 +363,7 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
                   {/* Thumbnails */}
                   {selectedProduct.images && selectedProduct.images.length > 1 && (
                     <div className="flex gap-2 overflow-x-auto pb-2 justify-center lg:justify-start">
-                      {selectedProduct.images.map((image, index) => (
+                      {selectedProduct.images.map((image: any, index: number) => (
                         <button
                           key={index}
                           onClick={() => scrollToImage(index)}
@@ -378,16 +414,44 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
                           ${selectedProduct.price.toLocaleString('es-AR')}
                         </span>
                       </div>
-                      <button
-                        onClick={() => {
-                          handleAddToCart(selectedProduct);
-                          closeProductModal();
-                        }}
-                        className="bg-[#2d5d52] text-white px-8 py-4 rounded-xl hover:bg-[#2d5d52]/90 transition-all font-bold shadow-lg shadow-[#2d5d52]/20 active:scale-95"
-                      >
-                        Agregar al Carrito
-                      </button>
                     </div>
+                    {/* Customization Checkbox - Only if product is customizable */}
+                    {selectedProduct.isCustomizable && (
+                      <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                        <div className="flex items-center space-x-3">
+                          <input
+                            type="checkbox"
+                            id="modal-customization"
+                            checked={wantsCustomization}
+                            onChange={(e) => setWantsCustomization(e.target.checked)}
+                            className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                          />
+                          <div className="flex-1">
+                            <label htmlFor="modal-customization" className="font-medium text-gray-900 cursor-pointer select-none">
+                              Quiero personalizar este producto
+                            </label>
+                            <p className="text-sm text-gray-500 mt-1">
+                              Agrega un grabado o detalle personalizado por <span className="font-bold text-blue-600">+${selectedProduct.customizationCost?.toLocaleString('es-AR')}</span>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between font-bold text-gray-900 text-xl mt-4">
+                      <span>Total:</span>
+                      <span>${(selectedProduct.price + (wantsCustomization ? (selectedProduct.customizationCost || 0) : 0)).toLocaleString('es-AR')}</span>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        handleAddToCart(selectedProduct, wantsCustomization);
+                        closeProductModal();
+                      }}
+                      className="w-full bg-[#2d5d52] text-white py-3 rounded-lg hover:bg-[#2d5d52]/90 transition font-semibold mt-4"
+                    >
+                      Agregar al Carrito
+                    </button>
                   </div>
                 </div>
 
