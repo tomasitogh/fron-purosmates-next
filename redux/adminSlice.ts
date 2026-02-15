@@ -12,6 +12,7 @@ const ORDERS_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 export interface Order {
     id: number;
     status: string;
+    paymentStatus?: string;
     total: number;
     createdAt: string;
     items: any[];
@@ -62,13 +63,14 @@ export const fetchAllOrders = createAsyncThunk(
 // Thunk para actualizar un pedido (admin)
 export const updateOrder = createAsyncThunk(
     'admin/updateOrder',
-    async ({ orderId, status, total, token }: {
+    async ({ orderId, status, paymentStatus, total, token }: {
         orderId: number;
         status: string;
+        paymentStatus?: string;
         total: number;
         token: string;
     }) => {
-        const { data } = await axios.put(`${ORDERS_API_URL}/${orderId}`, { status, total }, {
+        const { data } = await axios.put(`${ORDERS_API_URL}/${orderId}`, { status, paymentStatus, total }, {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`

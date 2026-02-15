@@ -16,6 +16,13 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
     'CANCELLED': { label: 'Cancelado', color: 'bg-red-100 text-red-800' }
 };
 
+const PAYMENT_STATUS_LABELS: Record<string, { label: string; color: string }> = {
+    'PENDING': { label: 'Sin pagar', color: 'bg-gray-100 text-gray-800' },
+    'PAID_MP': { label: 'Pagado (MP)', color: 'bg-green-100 text-green-800' },
+    'REJECTED_MP': { label: 'Rechazado (MP)', color: 'bg-red-100 text-red-800' },
+    'PAID_CASH': { label: 'Pagado (Efectivo)', color: 'bg-blue-100 text-blue-800' }
+};
+
 const ORDER_STATUSES = ['ALL', 'PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
 
 export default function OrdersPanel() {
@@ -28,6 +35,7 @@ export default function OrdersPanel() {
     const [editingOrder, setEditingOrder] = useState<any | null>(null);
     const [editFormData, setEditFormData] = useState({
         status: '',
+        paymentStatus: '',
         total: ''
     });
 
@@ -46,6 +54,7 @@ export default function OrdersPanel() {
         setEditingOrder(order);
         setEditFormData({
             status: order.status || '',
+            paymentStatus: order.paymentStatus || 'PENDING',
             total: order.total?.toString() || ''
         });
     };
@@ -63,6 +72,7 @@ export default function OrdersPanel() {
             await dispatch(updateOrder({
                 orderId: editingOrder.id,
                 status: editFormData.status,
+                paymentStatus: editFormData.paymentStatus,
                 total: parseFloat(editFormData.total),
                 token
             })).unwrap();
@@ -122,6 +132,9 @@ export default function OrdersPanel() {
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Estado
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Pago
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Items
@@ -191,6 +204,12 @@ export default function OrdersPanel() {
                                                 {STATUS_LABELS[order.status]?.label || order.status || 'Desconocido'}
                                             </span>
                                         </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${PAYMENT_STATUS_LABELS[order.paymentStatus || 'PENDING']?.color || 'bg-gray-100 text-gray-800'
+                                                }`}>
+                                                {PAYMENT_STATUS_LABELS[order.paymentStatus || 'PENDING']?.label || 'Sin pagar'}
+                                            </span>
+                                        </td>
                                         <td className="px-6 py-4 text-sm text-gray-500">
                                             <div className="max-w-xs truncate">
                                                 {order.items?.map((item: any) =>
@@ -254,6 +273,22 @@ export default function OrdersPanel() {
                                         {Object.keys(STATUS_LABELS).map(status => (
                                             <option key={status} value={status}>
                                                 {STATUS_LABELS[status].label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Estado de Pago
+                                    </label>
+                                    <select
+                                        value={editFormData.paymentStatus}
+                                        onChange={(e) => setEditFormData({ ...editFormData, paymentStatus: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2d5d52]"
+                                    >
+                                        {Object.keys(PAYMENT_STATUS_LABELS).map(status => (
+                                            <option key={status} value={status}>
+                                                {PAYMENT_STATUS_LABELS[status].label}
                                             </option>
                                         ))}
                                     </select>
