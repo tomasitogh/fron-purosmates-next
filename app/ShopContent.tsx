@@ -12,24 +12,7 @@ import AuthModal from '@/components/AuthModal';
 import Image from 'next/image';
 import ProductImagePreview from '@/components/ProductImagePreview';
 import { slugify } from '@/lib/slugify';
-
-interface Product {
-  id: number;
-  name: string;
-  slug?: string;
-  price: number;
-  images: {
-    url: string;
-    scale?: number;
-    x?: number;
-    y?: number;
-  }[];
-  category: { id: number; description: string };
-  stock: number;
-  description?: string;
-  isCustomizable?: boolean;
-  customizationCost?: number;
-}
+import ProductModal, { Product } from '@/components/ProductModal';
 
 interface ShopContentProps {
   initialProducts: Product[];
@@ -105,7 +88,7 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
   useEffect(() => {
     let list = selectedType.length === 0
       ? initialProducts
-      : initialProducts.filter(p => selectedType.includes(p.category?.description?.toLowerCase()));
+      : initialProducts.filter(p => selectedType.includes(p.category?.description?.toLowerCase() || ''));
 
     if (searchText) {
       list = list.filter(p => p.name.toLowerCase().includes(searchText));
@@ -277,202 +260,11 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
         </div>
       </div>
 
-      {/* Product Modal */}
       {selectedProduct && (
-        <div
-          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
-          onClick={closeProductModal}
-        >
-          <div
-            className="bg-white rounded-2xl max-w-4xl w-full max-h-[92vh] overflow-y-auto relative animate-in fade-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Close Button - Sticky/Absolute */}
-            <button
-              onClick={closeProductModal}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-2 z-10"
-              aria-label="Cerrar"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-
-            <div className="p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-
-                {/* Left Column: Image Section */}
-                <div className="flex flex-col gap-4 mt-12 lg:mt-0">
-                  <div className="relative group max-w-[420px] lg:max-w-none w-4/5 lg:w-full mx-auto">
-                    {/* Scrollable Container */}
-                    <div
-                      ref={scrollContainerRef}
-                      className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide scroll-smooth w-full aspect-square bg-gray-200 rounded-xl"
-                      onScroll={(e) => {
-                        const container = e.currentTarget;
-                        const width = container.clientWidth;
-                        const newIndex = Math.round(container.scrollLeft / width);
-                        if (newIndex !== selectedImageIndex && selectedProduct.images && newIndex < selectedProduct.images.length) {
-                          setSelectedImageIndex(newIndex);
-                        }
-                      }}
-                      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                    >
-                      {selectedProduct.images && selectedProduct.images.length > 0 ? (
-                        selectedProduct.images.map((image: any, index: number) => (
-                          <div key={index} className="w-full h-full flex-shrink-0 snap-center flex items-center justify-center relative bg-gray-200">
-                            <ProductImagePreview
-                              src={image.url}
-                              alt={`${selectedProduct.name} ${index + 1}`}
-                              transform={{
-                                scale: image.scale || 1,
-                                x: image.x || 0,
-                                y: image.y || 0
-                              }}
-                              className="object-contain w-full h-full"
-                              fill
-                              priority={index === 0}
-                            />
-                          </div>
-                        ))
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400 snap-center flex-shrink-0">
-                          Sin Imagen
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Navigation Arrows (Desktop/Hover) */}
-                    {selectedProduct.images && selectedProduct.images.length > 1 && (
-                      <>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const newIndex = selectedImageIndex === 0 ? selectedProduct.images.length - 1 : selectedImageIndex - 1;
-                            scrollToImage(newIndex);
-                          }}
-                          className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md text-gray-800 hover:bg-white opacity-0 group-hover:opacity-100 transition-opacity z-10 hidden sm:block"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const newIndex = selectedImageIndex === selectedProduct.images.length - 1 ? 0 : selectedImageIndex + 1;
-                            scrollToImage(newIndex);
-                          }}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md text-gray-800 hover:bg-white opacity-0 group-hover:opacity-100 transition-opacity z-10 hidden sm:block"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                          </svg>
-                        </button>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Thumbnails */}
-                  {selectedProduct.images && selectedProduct.images.length > 1 && (
-                    <div className="flex gap-2 overflow-x-auto pb-2 justify-center lg:justify-start">
-                      {selectedProduct.images.map((image: any, index: number) => (
-                        <button
-                          key={index}
-                          onClick={() => scrollToImage(index)}
-                          className={`relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${selectedImageIndex === index
-                            ? 'border-[#2d5d52] opacity-100 ring-2 ring-[#2d5d52] ring-offset-1'
-                            : 'border-transparent opacity-60 hover:opacity-100'
-                            }`}
-                        >
-                          <ProductImagePreview
-                            src={image.url}
-                            alt={`${selectedProduct.name} ${index + 1}`}
-                            transform={{
-                              scale: image.scale || 1,
-                              x: image.x || 0,
-                              y: image.y || 0
-                            }}
-                            fill
-                            className="object-cover"
-                          />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Right Column: Details Section */}
-                <div className="flex flex-col h-full lg:pt-4">
-                  <div className="mb-6">
-                    <h2 className="text-3xl font-bold text-gray-900 mb-2">{selectedProduct.name}</h2>
-                    <p className="text-[#2d5d52] font-medium tracking-wide flex items-center gap-2">
-                      <span className="w-2 h-2 bg-[#2d5d52] rounded-full"></span>
-                      {selectedProduct.category?.description || 'Producto'}
-                    </p>
-                  </div>
-
-                  <div className="flex-grow">
-                    <h4 className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Descripción</h4>
-                    <p className="text-gray-600 leading-relaxed max-h-[200px] overflow-y-auto scrollbar-hide">
-                      {selectedProduct.description || 'Este producto no tiene una descripción detallada todavía.'}
-                    </p>
-                  </div>
-
-                  <div className="mt-8 pt-6 border-t border-gray-100">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div>
-                        <p className="text-sm text-gray-500 mb-1">Precio</p>
-                        <span className="text-4xl font-black text-[#2d5d52]">
-                          ${selectedProduct.price.toLocaleString('es-AR')}
-                        </span>
-                      </div>
-                    </div>
-                    {/* Customization Checkbox - Only if product is customizable */}
-                    {selectedProduct.isCustomizable && (
-                      <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                        <div className="flex items-center space-x-3">
-                          <input
-                            type="checkbox"
-                            id="modal-customization"
-                            checked={wantsCustomization}
-                            onChange={(e) => setWantsCustomization(e.target.checked)}
-                            className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
-                          />
-                          <div className="flex-1">
-                            <label htmlFor="modal-customization" className="font-medium text-gray-900 cursor-pointer select-none">
-                              Quiero personalizar este producto
-                            </label>
-                            <p className="text-sm text-gray-500 mt-1">
-                              Agrega un grabado o detalle personalizado por <span className="font-bold text-blue-600">+${selectedProduct.customizationCost?.toLocaleString('es-AR')}</span>
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between font-bold text-gray-900 text-xl mt-4">
-                      <span>Total:</span>
-                      <span>${(selectedProduct.price + (wantsCustomization ? (selectedProduct.customizationCost || 0) : 0)).toLocaleString('es-AR')}</span>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        handleAddToCart(selectedProduct, wantsCustomization);
-                        closeProductModal();
-                      }}
-                      className="w-full bg-[#2d5d52] text-white py-3 rounded-lg hover:bg-[#2d5d52]/90 transition font-semibold mt-4"
-                    >
-                      Agregar al Carrito
-                    </button>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          </div>
-        </div>
+        <ProductModal
+          product={selectedProduct}
+          onClose={closeProductModal}
+        />
       )}
 
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />

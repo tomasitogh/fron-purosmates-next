@@ -23,6 +23,8 @@ import PaymentMethodModal from "@/components/PaymentMethodModal";
 import { AppDispatch } from "@/redux/store";
 import { Minus, Plus, Trash2, Copy } from "lucide-react";
 import AuthModal from "@/components/AuthModal";
+import ProductModal from "@/components/ProductModal";
+
 
 export default function Carrito() {
     const dispatch = useDispatch<AppDispatch>();
@@ -44,6 +46,8 @@ export default function Carrito() {
         phone: ''
     });
     const [mounted, setMounted] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState<any>(null);
+
 
     useEffect(() => {
         setMounted(true);
@@ -176,7 +180,10 @@ export default function Carrito() {
                 <div className="lg:col-span-2 space-y-4">
                     {items.map((item) => (
                         <div key={`${item.id}-${item.hasCustomization}`} className="bg-white rounded-lg shadow-md p-4 sm:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-4">
-                            <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                            <div
+                                className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200"
+                                onClick={() => setSelectedProduct(item)}
+                            >
                                 {item.images?.[0] ? (
                                     <img
                                         src={item.images[0].url}
@@ -455,6 +462,13 @@ export default function Carrito() {
                         </button>
                     </div>
                 </div>
+            )}
+
+            {selectedProduct && (
+                <ProductModal
+                    product={selectedProduct}
+                    onClose={() => setSelectedProduct(null)}
+                />
             )}
         </div>
     );
