@@ -9,6 +9,7 @@ import { useSession, signOut } from 'next-auth/react';
 import AuthModal from './AuthModal';
 import Image from 'next/image';
 import { useDispatch } from 'react-redux';
+import { Search, X } from 'lucide-react';
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -41,18 +42,14 @@ export default function Navbar() {
 
     const onSearchSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!q.trim()) {
-            import('react-hot-toast').then(({ toast }) => {
-                toast.error("Ingresa texto para buscar", {
-                    duration: 3000,
-                    position: 'top-center',
-                });
-            });
-            searchInputRef.current?.focus();
-            return;
-        }
         const params = new URLSearchParams(searchParams.toString());
-        params.set("q", q.trim());
+
+        if (q.trim()) {
+            params.set("q", q.trim());
+        } else {
+            params.delete("q");
+        }
+
         router.push(`/?${params.toString()}`);
     };
 
@@ -85,30 +82,37 @@ export default function Navbar() {
 
                     {/* Desktop Navigation */}
                     <div className="hidden min-[856px]:flex flex-row items-center gap-4 flex-wrap">
-                        <Link
-                            href="/"
-                            className="inline-flex items-center justify-center h-10 px-4 rounded-xl font-medium text-[#F5F5DC] border border-[#F5F5DC]/40 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-2 transition"
-                        >
-                            Productos
-                        </Link>
+
 
                         {/* Barra de búsqueda */}
-                        <form onSubmit={onSearchSubmit} className="flex items-center gap-2">
+                        {/* Barra de búsqueda - Desktop */}
+                        <form onSubmit={onSearchSubmit} className="flex items-center w-64 rounded-xl border border-white/40 bg-white/10 overflow-hidden focus-within:ring-2 focus-within:ring-[#D4AF37] transition-all">
                             <input
                                 id="search-desktop"
                                 ref={searchInputRef}
                                 type="search"
                                 value={q}
                                 onChange={(e) => setQ(e.target.value)}
-                                placeholder="Buscar productos…"
+                                placeholder="Buscar productos..."
                                 aria-label="Buscar productos"
-                                className="w-56 rounded-xl border border-white/40 bg-white/10 px-3 py-1.5 text-white placeholder-white/60 outline-none focus:ring-2 focus:ring-[#D4AF37]"
+                                className="w-full bg-transparent pl-4 py-1.5 text-white placeholder-white/60 outline-none [&::-webkit-search-cancel-button]:appearance-none"
                             />
+                            {q && (
+                                <button
+                                    type="button"
+                                    onClick={() => { setQ(""); searchInputRef.current?.focus(); }}
+                                    className="!px-0.5 text-white/50 hover:text-white transition-colors !border-none focus:outline-none h-full flex items-center justify-center"
+                                    aria-label="Limpiar búsqueda"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            )}
                             <button
                                 type="submit"
-                                className="inline-flex items-center justify-center h-10 px-4 rounded-xl font-medium text-[#F5F5DC] border border-[#F5F5DC]/40 bg-transparent hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-2 transition"
+                                className="!px-2 text-white/70 hover:text-white transition-colors !border-none focus:outline-none h-full flex items-center justify-center"
+                                aria-label="Buscar"
                             >
-                                Buscar
+                                <Search className="h-5 w-5" />
                             </button>
                         </form>
 
@@ -175,21 +179,32 @@ export default function Navbar() {
                         <li>
                             <form
                                 onSubmit={(e) => { onSearchSubmit(e); setIsMenuOpen(false); }}
-                                className="flex items-center gap-2"
+                                className="flex items-center w-full rounded-md border border-gray-300 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-[#2d5d52] transition-colors"
                             >
                                 <input
                                     id="search-mobile"
                                     type="search"
                                     value={q}
                                     onChange={(e) => setQ(e.target.value)}
-                                    placeholder="Buscar productos…"
-                                    className="flex-1 rounded-md border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-[#2d5d52]"
+                                    placeholder="Buscar productos..."
+                                    className="w-full bg-transparent pl-3 py-2 outline-none text-gray-900 [&::-webkit-search-cancel-button]:appearance-none"
                                 />
+                                {q && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setQ("")}
+                                        className="!px-0.5 text-gray-400 hover:text-gray-600 transition-colors !border-none focus:outline-none h-full flex items-center justify-center"
+                                        aria-label="Limpiar búsqueda"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                )}
                                 <button
                                     type="submit"
-                                    className="block text-white hover:text-white- transition"
+                                    className="!px-2 text-gray-500 hover:text-[#2d5d52] transition-colors !border-none focus:outline-none h-full flex items-center justify-center"
+                                    aria-label="Buscar"
                                 >
-                                    Buscar
+                                    <Search className="h-5 w-5" />
                                 </button>
                             </form>
                         </li>
