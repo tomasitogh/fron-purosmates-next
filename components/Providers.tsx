@@ -11,7 +11,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <SessionProvider>
             <Provider store={store}>
                 <AuthProvider>
-                    <Toaster position="top-right" />
+                    <Toaster
+                        position="top-right"
+                        containerStyle={{
+                            top: 80,
+                        }}
+                    />
                     {children}
                 </AuthProvider>
             </Provider>
