@@ -46,6 +46,11 @@ async function getCategories() {
   }
 }
 
+export const metadata = {
+  title: "Inicio",
+  description: "Encontrá los mejores mates y accesorios en Puros Mates.",
+};
+
 export default async function HomePage() {
   const [products, categoriesData] = await Promise.all([
     getProducts(),

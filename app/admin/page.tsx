@@ -290,6 +290,7 @@ export default function AdminPanel() {
                 {activeTab === 'products' ? (
                     <>
                         <FilterTabs
+                            categories={categories?.map((c: any) => c.description || c.name || '') || []}
                             selectedType={selectedType}
                             onFilterChange={handleFilterChange}
                         />

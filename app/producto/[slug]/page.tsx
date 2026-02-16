@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   const description = product.description || `${product.name} - Compra en Puros Mates`;
 
   return {
-    title: `${product.name} | Puros Mates`,
+    title: product.name,
     description: description,
     openGraph: {
       title: `${product.name} | Puros Mates`,
