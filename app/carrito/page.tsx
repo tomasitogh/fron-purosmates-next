@@ -121,7 +121,7 @@ export default function Carrito() {
                     // The instructions are already visible in the form.
                     // Just confirm order.
                     toast.success('Pedido realizado con éxito. ¡Gracias!');
-                    router.push('/'); // Or order confirmation page
+                    router.push(`/compra-exitosa?orderId=${order.id}`);
                 } else {
                     // Cash
                     // WhatsApp redirect?
@@ -130,7 +130,7 @@ export default function Carrito() {
                     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
                     window.open(whatsappUrl, '_blank');
                     toast.success('Pedido realizado. Redirigiendo a WhatsApp...');
-                    router.push('/');
+                    router.push(`/compra-exitosa?orderId=${order.id}`);
                 }
 
                 dispatch({ type: 'cart/clearCart' }); // Manually clear or handle via slice
