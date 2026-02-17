@@ -259,7 +259,7 @@ export default function AdminPanel() {
                             <button
                                 onClick={() => setActiveTab('products')}
                                 className={`px-4 py-2 font-medium rounded-lg transition ${activeTab === 'products'
-                                    ? 'bg-[#2d5d52] text-white shadow-md'
+                                    ? 'bg-[#254642] text-white shadow-md'
                                     : 'bg-white text-gray-600 hover:bg-gray-50'
                                     }`}
                             >
@@ -268,7 +268,7 @@ export default function AdminPanel() {
                             <button
                                 onClick={() => setActiveTab('orders')}
                                 className={`px-4 py-2 font-medium rounded-lg transition ${activeTab === 'orders'
-                                    ? 'bg-[#2d5d52] text-white shadow-md'
+                                    ? 'bg-[#254642] text-white shadow-md'
                                     : 'bg-white text-gray-600 hover:bg-gray-50'
                                     }`}
                             >
@@ -280,7 +280,7 @@ export default function AdminPanel() {
                     {activeTab === 'products' && (
                         <button
                             onClick={openCreateModal}
-                            className="bg-[#2d5d52] text-white px-6 py-2 rounded-lg hover:bg-[#2d5d52]/90 transition font-medium shadow-sm"
+                            className="bg-[#254642] text-white px-6 py-2 rounded-lg hover:bg-[#254642]/90 transition font-medium shadow-sm"
                         >
                             + Agregar Producto
                         </button>
@@ -428,7 +428,7 @@ export default function AdminPanel() {
                                             required
                                             value={formData.name}
                                             onChange={handleInputChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2d5d52]"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#254642]"
                                         />
                                     </div>
 
@@ -441,7 +441,7 @@ export default function AdminPanel() {
                                             value={formData.description}
                                             onChange={handleInputChange}
                                             rows={3}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2d5d52]"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#254642]"
                                         />
                                     </div>
 
@@ -469,7 +469,7 @@ export default function AdminPanel() {
                                                 min="0"
                                                 value={formData.price}
                                                 onChange={handleInputChange}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2d5d52]"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#254642]"
                                             />
                                         </div>
 
@@ -484,7 +484,7 @@ export default function AdminPanel() {
                                                 min="0"
                                                 value={formData.stock}
                                                 onChange={handleInputChange}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2d5d52]"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#254642]"
                                             />
                                         </div>
                                     </div>
@@ -498,7 +498,7 @@ export default function AdminPanel() {
                                             required
                                             value={formData.categoryId}
                                             onChange={handleInputChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2d5d52]"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#254642]"
                                         >
                                             <option value="">Selecciona una categoría</option>
                                             {categories.map((category: any) => (
@@ -517,7 +517,7 @@ export default function AdminPanel() {
                                             id="active"
                                             checked={formData.active}
                                             onChange={handleInputChange}
-                                            className="w-5 h-5 text-[#2d5d52] rounded focus:ring-[#2d5d52]"
+                                            className="w-5 h-5 text-[#254642] rounded focus:ring-[#254642]"
                                         />
                                         <label htmlFor="active" className="text-sm font-medium text-gray-700">
                                             Producto activo (visible para usuarios)
@@ -564,7 +564,7 @@ export default function AdminPanel() {
                                     <button
                                         type="submit"
                                         disabled={adminLoading}
-                                        className="flex-1 bg-[#2d5d52] text-white px-4 py-2 rounded-lg hover:bg-[#2d5d52]/90 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="flex-1 bg-[#254642] text-white px-4 py-2 rounded-lg hover:bg-[#254642]/90 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {adminLoading ? 'Guardando...' : (isEditing ? 'Actualizar' : 'Crear')} Producto
                                     </button>

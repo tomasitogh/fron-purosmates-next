@@ -57,37 +57,38 @@ export default function Navbar() {
     const isAuthenticated = status === 'authenticated';
 
     return (
-        <header className="bg-[#2d5d52] shadow-md sticky top-0 z-50">
+        <header className="bg-[#254642] shadow-md sticky top-0 z-50">
             <nav className="w-full px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
                     {/* Logo */}
                     <div className="flex items-center gap-3">
                         <Link href="/" className="flex items-center">
                             <Image
-                                src="/logo-purosmates.png"
+                                src="/logo-purosmates.png?v=2"
                                 alt="Puros Mates"
-                                width={40}
-                                height={40}
+                                width={60}
+                                height={60}
                                 className="object-contain rounded-full"
                                 priority
+                                unoptimized={true} // Add unoptimized to skip potential next/image cache issues for this specific asset if needed
                             />
                         </Link>
                         <Link
                             href="/"
-                            className="text-xl font-semibold tracking-wide text-[#F5F5DC]"
+                            className="text-xl font-semibold tracking-wide !text-[#F5F5DC] hover:text-white transition"
                         >
                             PUROS MATES
                         </Link>
                     </div>
 
                     {/* Desktop Navigation */}
-                    <div className="hidden min-[856px]:flex flex-row items-center gap-4">
+                    <div className="hidden min-[856px]:flex flex-row items-center gap-3">
 
 
                         {/* Sobre Nosotros - Desktop */}
                         <Link
                             href="/nosotros"
-                            className="hidden lg:block text-[#F5F5DC] hover:text-white transition font-medium mr-4"
+                            className=" lg:block !text-[#F5F5DC] hover:text-white transition font-medium mr-0"
                         >
                             Sobre Nosotros
                         </Link>
@@ -188,7 +189,7 @@ export default function Navbar() {
                         <li>
                             <form
                                 onSubmit={(e) => { onSearchSubmit(e); setIsMenuOpen(false); }}
-                                className="flex items-center w-full rounded-md border border-gray-300 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-[#2d5d52] transition-colors"
+                                className="flex items-center w-full rounded-md border border-gray-300 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-[#254642] transition-colors"
                             >
                                 <input
                                     id="search-mobile"
@@ -210,7 +211,7 @@ export default function Navbar() {
                                 )}
                                 <button
                                     type="submit"
-                                    className="!px-2 text-gray-500 hover:text-[#2d5d52] transition-colors !border-none focus:outline-none h-full flex items-center justify-center"
+                                    className="!px-2 text-gray-500 hover:text-[#254642] transition-colors !border-none focus:outline-none h-full flex items-center justify-center"
                                     aria-label="Buscar"
                                 >
                                     <Search className="h-5 w-5" />
@@ -284,7 +285,7 @@ export default function Navbar() {
                                 {/* Buy Now Button */}
                                 <button
                                     onClick={() => { router.push('/'); setIsMenuOpen(false); }}
-                                    className="bg-[#D4AF37] text-[#2d5d52] px-6 h-10 rounded-lg hover:bg-[#DAA520] transition font-semibold flex items-center justify-center focus:outline-none whitespace-nowrap"
+                                    className="bg-[#D4AF37] text-[#254642] px-6 h-10 rounded-lg hover:bg-[#DAA520] transition font-semibold flex items-center justify-center focus:outline-none whitespace-nowrap"
                                 >
                                     Comprar Ahora
                                 </button>

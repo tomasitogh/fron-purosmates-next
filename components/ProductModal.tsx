@@ -163,7 +163,7 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
                                             key={index}
                                             onClick={() => scrollToImage(index)}
                                             className={`relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${selectedImageIndex === index
-                                                ? 'border-[#2d5d52] opacity-100 ring-2 ring-[#2d5d52] ring-offset-1'
+                                                ? 'border-[#254642] opacity-100 ring-2 ring-[#254642] ring-offset-1'
                                                 : 'border-transparent opacity-60 hover:opacity-100'
                                                 }`}
                                         >
@@ -188,8 +188,8 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
                         <div className="flex flex-col h-full lg:pt-4">
                             <div className="mb-6">
                                 <h2 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h2>
-                                <p className="text-[#2d5d52] font-medium tracking-wide flex items-center gap-2">
-                                    <span className="w-2 h-2 bg-[#2d5d52] rounded-full"></span>
+                                <p className="text-[#254642] font-medium tracking-wide flex items-center gap-2">
+                                    <span className="w-2 h-2 bg-[#254642] rounded-full"></span>
                                     {product.category?.description || 'Producto'}
                                 </p>
                             </div>
@@ -205,7 +205,7 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div>
                                         <p className="text-sm text-gray-500 mb-1">Precio</p>
-                                        <span className="text-4xl font-black text-[#2d5d52]">
+                                        <span className="text-4xl font-black text-[#254642]">
                                             ${product.price?.toLocaleString('es-AR')}
                                         </span>
                                     </div>
@@ -240,7 +240,7 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
 
                                 <button
                                     onClick={handleAddToCart}
-                                    className="w-full bg-[#2d5d52] text-white py-3 rounded-lg hover:bg-[#2d5d52]/90 transition font-semibold mt-4 shadow-lg active:scale-[0.98]"
+                                    className="w-full bg-[#254642] text-white py-3 rounded-lg hover:bg-[#254642]/90 transition font-semibold mt-4 shadow-lg active:scale-[0.98]"
                                 >
                                     Agregar al Carrito
                                 </button>

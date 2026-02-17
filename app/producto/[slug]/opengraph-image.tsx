@@ -75,7 +75,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
                 <div
                     style={{
                         fontSize: 60,
-                        background: '#2d5d52',
+                        background: '#254642',
                         width: '100%',
                         height: '100%',
                         display: 'flex',
@@ -111,7 +111,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
         (
             <div
                 style={{
-                    background: '#2d5d52',
+                    background: '#254642',
                     width: '100%',
                     height: '100%',
                     display: 'flex',
@@ -126,7 +126,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
                     flexDirection: 'column',
                     justifyContent: 'space-between', // Distribute space
                     padding: '60px',
-                    backgroundColor: '#2d5d52',
+                    backgroundColor: '#254642',
                     borderRight: '1px solid rgba(255,255,255,0.1)'
                 }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>

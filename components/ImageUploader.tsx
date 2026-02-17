@@ -133,7 +133,7 @@ export default function ImageUploader({
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
                 className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors
-          ${dragActive ? 'border-[#2d5d52] bg-[#2d5d52]/5' : 'border-gray-300 hover:border-gray-400'}
+          ${dragActive ? 'border-[#254642] bg-[#254642]/5' : 'border-gray-300 hover:border-gray-400'}
           ${required && previewImages.length === 0 ? 'border-red-300' : ''}
           ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
             >
@@ -149,7 +149,7 @@ export default function ImageUploader({
                 <div className="space-y-4">
                     <div className="flex justify-center">
                         {uploading ? (
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2d5d52]"></div>
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#254642]"></div>
                         ) : (
                             <Upload className="w-12 h-12 text-gray-400" />
                         )}
@@ -201,7 +201,7 @@ export default function ImageUploader({
                                         className="bg-white p-1.5 rounded-full shadow-sm hover:bg-gray-100 transition flex-shrink-0"
                                         title="Editar encuadre"
                                     >
-                                        <Pencil className="w-3.5 h-3.5 text-[#2d5d52]" />
+                                        <Pencil className="w-3.5 h-3.5 text-[#254642]" />
                                     </button>
 
                                     <div className="flex gap-1">
@@ -240,7 +240,7 @@ export default function ImageUploader({
 
                                 {/* Main Image Indicator */}
                                 {index === 0 && (
-                                    <div className="absolute top-2 left-2 bg-[#2d5d52] text-white text-[10px] px-1.5 py-0.5 rounded shadow-sm z-10 font-medium">
+                                    <div className="absolute top-2 left-2 bg-[#254642] text-white text-[10px] px-1.5 py-0.5 rounded shadow-sm z-10 font-medium">
                                         Principal
                                     </div>
                                 )}

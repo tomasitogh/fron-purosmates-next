@@ -1,5 +1,24 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { Instagram } from 'lucide-react';
+
+const WhatsAppIcon = ({ size = 24, className = "" }: { size?: number, className?: string }) => (
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+    >
+        <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" />
+        <path d="M9 10a0.5 .5 0 0 0 1 0v-1a0.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a0.5 .5 0 0 0 0 -1h-1a0.5 .5 0 0 0 0 1" />
+    </svg>
+);
 
 export default function Footer() {
     return (
@@ -12,11 +31,12 @@ export default function Footer() {
                         <div className="flex items-center space-x-3 mb-4">
                             <Link href="/">
                                 <Image
-                                    src="/logo-purosmates.png"
+                                    src="/logo-purosmates.png?v=2"
                                     alt="Puros Mates Logo"
                                     width={80}
                                     height={80}
                                     className="object-contain p-1"
+                                    unoptimized={true}
                                 />
                             </Link>
                         </div>
@@ -76,32 +96,18 @@ export default function Footer() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 aria-label="Síguenos en Instagram"
-                                className="hover:opacity-80 transition"
+                                className="hover:opacity-80 transition p-2 border border-[#3D5F54] rounded-full text-[#3D5F54] hover:bg-[#3D5F54] hover:text-[#E8DCC4]"
                             >
-                                <Image
-                                    src="/instagram.png"
-                                    alt="Instagram"
-                                    width={48}
-                                    height={32}
-                                    className="object-contain"
-                                    style={{ width: '48px', height: 'auto', aspectRatio: '48/32' }}
-                                />
+                                <Instagram size={24} />
                             </a>
                             <a
                                 href="https://wa.me/5491130548207"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 aria-label="Contáctanos por WhatsApp"
-                                className="hover:opacity-80 transition"
+                                className="hover:opacity-80 transition p-2 border border-[#3D5F54] rounded-full text-[#3D5F54] hover:bg-[#3D5F54] hover:text-[#E8DCC4]"
                             >
-                                <Image
-                                    src="/wpp.png"
-                                    alt="WhatsApp"
-                                    width={32}
-                                    height={32}
-                                    className="object-contain"
-                                    style={{ width: '32px', height: 'auto', aspectRatio: '1/1' }}
-                                />
+                                <WhatsAppIcon size={24} />
                             </a>
                         </div>
                     </div>
@@ -113,11 +119,12 @@ export default function Footer() {
                     <div className="flex flex-col items-center">
                         <Link href="/" className="mb-4">
                             <Image
-                                src="/logo-purosmates.png"
+                                src="/logo-purosmates.png?v=2"
                                 alt="Puros Mates Logo"
                                 width={128}
                                 height={128}
                                 className="object-contain p-1"
+                                unoptimized={true}
                             />
                         </Link>
                         <Link
@@ -176,32 +183,18 @@ export default function Footer() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 aria-label="Síguenos en Instagram"
-                                className="hover:opacity-80 transition"
+                                className="hover:opacity-80 transition p-2 border border-[#3D5F54] rounded-full text-[#3D5F54] hover:bg-[#3D5F54] hover:text-[#E8DCC4]"
                             >
-                                <Image
-                                    src="/instagram.png"
-                                    alt="Instagram"
-                                    width={40}
-                                    height={40}
-                                    className="object-contain"
-                                    style={{ width: '40px', height: 'auto', aspectRatio: '1/1' }}
-                                />
+                                <Instagram size={28} />
                             </a>
                             <a
                                 href="https://wa.me/5491130548207"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 aria-label="Contáctanos por WhatsApp"
-                                className="hover:opacity-80 transition"
+                                className="hover:opacity-80 transition p-2 border border-[#3D5F54] rounded-full text-[#3D5F54] hover:bg-[#3D5F54] hover:text-[#E8DCC4]"
                             >
-                                <Image
-                                    src="/wpp.png"
-                                    alt="WhatsApp"
-                                    width={40}
-                                    height={40}
-                                    className="object-contain"
-                                    style={{ width: '40px', height: 'auto', aspectRatio: '1/1' }}
-                                />
+                                <WhatsAppIcon size={28} />
                             </a>
                         </div>
                     </div>

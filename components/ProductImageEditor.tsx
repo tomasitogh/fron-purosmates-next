@@ -152,7 +152,7 @@ export default function ProductImageEditor({
                             step="0.01"
                             value={scale}
                             onChange={(e) => setScale(parseFloat(e.target.value))}
-                            className="w-32 accent-[#2d5d52]"
+                            className="w-32 accent-[#254642]"
                         />
                         <ZoomIn size={20} className="text-gray-500 cursor-pointer hover:text-gray-800" onClick={handleZoomIn} />
                     </div>
@@ -177,7 +177,7 @@ export default function ProductImageEditor({
 
                             onSave({ scale, x: xPercent, y: yPercent });
                         }}
-                        className="px-6 py-2 bg-[#2d5d52] text-white rounded-lg hover:bg-[#2d5d52]/90 transition flex items-center gap-2 font-medium"
+                        className="px-6 py-2 bg-[#254642] text-white rounded-lg hover:bg-[#254642]/90 transition flex items-center gap-2 font-medium"
                     >
                         <Check size={18} />
                         Guardar Cambios

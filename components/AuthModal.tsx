@@ -60,7 +60,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           <X className="w-5 h-5" />
         </button>
 
-        <div className="w-full md:w-[30%] h-[350px] md:h-auto bg-gradient-to-br from-[#2d5d52]/10 to-[#2d5d52]/20 flex items-center justify-center relative shrink-0 overflow-hidden">
+        <div className="w-full md:w-[30%] h-[350px] md:h-auto bg-gradient-to-br from-[#254642]/10 to-[#254642]/20 flex items-center justify-center relative shrink-0 overflow-hidden">
           <Image
             src="/fondo-tandil.webp"
             alt="Mate"
@@ -73,7 +73,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
         <div className="w-full md:w-[70%] p-6 md:p-12 flex flex-col justify-start md:justify-center pt-8 md:pt-12">
           <div className="max-w-md mx-auto w-full">
-            <h2 className="text-3xl font-bold text-[#2d5d52] mb-3">
+            <h2 className="text-3xl font-bold text-[#254642] mb-3">
               ¡Bienvenido a Puros Mates!
             </h2>
             <p className="text-gray-600 mb-8">

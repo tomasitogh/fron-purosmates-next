@@ -162,7 +162,7 @@ export default function Carrito() {
                     <p className="text-gray-600 mb-8">Tu carrito está vacío</p>
                     <button
                         onClick={() => router.push('/')}
-                        className="bg-[#D4AF37] text-[#2d5d52] px-6 py-3 rounded-lg hover:bg-[#DAA520] transition font-semibold"
+                        className="bg-[#D4AF37] text-[#254642] px-6 py-3 rounded-lg hover:bg-[#DAA520] transition font-semibold"
                     >
                         Ir a comprar
                     </button>
@@ -291,7 +291,7 @@ export default function Carrito() {
 
                         <button
                             onClick={handleConfirmCart}
-                            className="w-full bg-[#D4AF37] text-[#2d5d52] px-6 py-3 rounded-lg hover:bg-[#DAA520] transition font-semibold mb-3"
+                            className="w-full bg-[#D4AF37] text-[#254642] px-6 py-3 rounded-lg hover:bg-[#DAA520] transition font-semibold mb-3"
                         >
                             Confirmar carrito
                         </button>
@@ -376,7 +376,7 @@ export default function Carrito() {
                                             </div>
                                             <p>
                                                 Podes transferir y luego enviar el comprobante a{' '}
-                                                <a href="https://wa.me/5491130548207" target="_blank" rel="noopener noreferrer" className="!text-[#2d5d52] font-semibold hover:underline">
+                                                <a href="https://wa.me/5491130548207" target="_blank" rel="noopener noreferrer" className="!text-[#254642] font-semibold hover:underline">
                                                     nuestro WhatsApp
                                                 </a>{' '}
                                                 - 11 3054 8207 y nosotros te confirmamos el pedido, o sino podes confirmar el pedido y esperar a que el vendedor se comunique con vos para coordinar el pago y el envío.
@@ -456,7 +456,7 @@ export default function Carrito() {
 
                         <button
                             onClick={handleFinalizePurchase}
-                            className="w-full sm:w-auto bg-[#D4AF37] text-[#2d5d52] px-8 py-3 rounded-lg hover:bg-[#DAA520] transition font-bold text-lg shadow-lg"
+                            className="w-full sm:w-auto bg-[#D4AF37] text-[#254642] px-8 py-3 rounded-lg hover:bg-[#DAA520] transition font-bold text-lg shadow-lg"
                         >
                             Confirmar Compra
                         </button>

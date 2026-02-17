@@ -42,8 +42,8 @@ export default function FilterTabs({ categories, selectedType, onFilterChange }:
             <button
               key={category}
               className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 border border-gray-100 shadow-sm capitalize ${selectedCategories.includes(category.toLowerCase())
-                  ? 'bg-[#2d5d52] text-white border-[#2d5d52] font-semibold'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 hover:border-[#2d5d52]/30'
+                  ? 'bg-[#254642] text-white border-[#254642] font-semibold'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 hover:border-[#254642]/30'
                 }`}
               onClick={() => handleCategoryClick(category)}
             >

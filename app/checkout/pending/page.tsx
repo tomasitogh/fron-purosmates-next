@@ -26,7 +26,7 @@ export default function CheckoutPending() {
                     <div className="mt-6">
                         <button
                             onClick={() => router.push('/')}
-                            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#2d5d52] hover:bg-[#2d5d52]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#254642] hover:bg-[#254642]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                         >
                             Volver al inicio
                         </button>

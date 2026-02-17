@@ -6,7 +6,7 @@
 
 a {
     font-weight: 500;
-    color: #F5F5DC;
+    color: #81813d;
     text-decoration: inherit;
 }
 
@@ -175,7 +175,7 @@ button:focus-visible {
 .filter-title {
     font-size: 1em;
     font-weight: 600;
-    color: #2d5d52;
+    color: #254642;
     margin-bottom: 10px;
     text-align: left;
 }
@@ -192,7 +192,7 @@ button:focus-visible {
 }
 
 .price-value {
-    color: #2d5d52;
+    color: #254642;
     font-weight: 700;
     font-size: 1em;
 }
@@ -233,7 +233,7 @@ button:focus-visible {
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: #2d5d52;
+    background: #254642;
     cursor: pointer;
     border: 2px solid white;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -249,7 +249,7 @@ button:focus-visible {
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: #2d5d52;
+    background: #254642;
     cursor: pointer;
     border: 2px solid white;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -264,7 +264,7 @@ button:focus-visible {
 .reset-filter-btn {
     width: 100%;
     padding: 10px;
-    background-color: #2d5d52;
+    background-color: #254642;
     color: white;
     border: none;
     border-radius: 6px;
@@ -277,7 +277,7 @@ button:focus-visible {
 .reset-filter-btn:hover {
     background-color: #1f4339;
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(45, 93, 82, 0.3);
+    box-shadow: 0 4px 8px rgba(37, 70, 66, 0.3);
 }
 
 /* Filters Container - Para alinear los filtros horizontalmente */
@@ -338,10 +338,10 @@ button:focus-visible {
 .sidebar-title {
     font-size: 1.4em;
     font-weight: 600;
-    color: #2d5d52;
+    color: #254642;
     margin-bottom: 10px;
     padding-bottom: 10px;
-    border-bottom: 2px solid #2d5d52;
+    border-bottom: 2px solid #254642;
 }
 
 /* 👇 WRAPPER para productos + banner (flex horizontal) */
@@ -493,7 +493,7 @@ button:focus-visible {
 
 .mate-info .mate-price {
     font-size: 1em;
-    color: #2d5d52;
+    color: #254642;
     font-weight: bold;
 }
 
@@ -533,17 +533,17 @@ button:focus-visible {
 }
 
 .filter-item:hover {
-    color: #2d5d52;
+    color: #254642;
 }
 
 .filter-item.active {
-    color: #2d5d52;
+    color: #254642;
     font-weight: 700;
     background-color: transparent;
 }
 
 .filter-item .chevron {
-    color: #2d5d52;
+    color: #254642;
     font-size: 0.8em;
 }
 
@@ -579,9 +579,9 @@ button:focus-visible {
 }
 
 .pagination-controls button.active {
-    background-color: #2d5d52;
+    background-color: #254642;
     color: white;
-    border-color: #2d5d52;
+    border-color: #254642;
 }
 
 /* ================================================= */
@@ -589,7 +589,7 @@ button:focus-visible {
 /* ================================================= */
 
 .main-header {
-    background-color: #2d5d52;
+    background-color: #254642;
     padding: 15px 0;
     color: white;
 }
@@ -611,7 +611,7 @@ button:focus-visible {
 
 .logo-icon {
     font-size: 1.5em;
-    color: rgba(45, 93, 82, 0.9);
+    color: rgba(37, 70, 66, 0.9);
     transform: rotate(180deg);
 }
 
@@ -637,12 +637,12 @@ button:focus-visible {
 }
 
 .nav-link:hover {
-    color: rgba(45, 93, 82, 0.9);
+    color: rgba(37, 70, 66, 0.9);
 }
 
 .btn-primary {
     background-color: #D4AF37;
-    color: #2d5d52;
+    color: #254642;
     border: none;
     padding: 8px 18px;
     font-weight: 600;
@@ -703,14 +703,14 @@ button:focus-visible {
 
 .shop-sidebar .filter-tab-button:hover {
     background-color: #f5f5f5;
-    border-color: #2d5d52;
+    border-color: #254642;
     transform: translateX(2px);
 }
 
 .shop-sidebar .filter-tab-button.active {
-    background-color: #2d5d52;
+    background-color: #254642;
     color: white;
-    border-color: #2d5d52;
+    border-color: #254642;
     font-weight: 600;
     transform: translateX(2px);
 }
@@ -747,9 +747,9 @@ button:focus-visible {
 }
 
 .filter-tab-button.active {
-    background-color: rgba(45, 93, 82, 0.1);
-    color: #2d5d52;
-    border-color: #2d5d52;
+    background-color: rgba(37, 70, 66, 0.1);
+    color: #254642;
+    border-color: #254642;
     font-weight: 600;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
@@ -881,7 +881,7 @@ button:focus-visible {
 
 .thumbnail-item:hover,
 .thumbnail-item.active {
-    border-color: #2d5d52;
+    border-color: #254642;
 }
 
 .product-info-section {
@@ -910,7 +910,7 @@ button:focus-visible {
 .product-detail-price {
     font-size: 1.6em;
     font-weight: bold;
-    color: #2d5d52;
+    color: #254642;
     margin-bottom: 25px;
 }
 
@@ -921,7 +921,7 @@ button:focus-visible {
 }
 
 .add-to-cart-btn {
-    background-color: #2d5d52;
+    background-color: #254642;
     color: white;
     border: none;
     padding: 12px 25px;
@@ -934,12 +934,12 @@ button:focus-visible {
 }
 
 .add-to-cart-btn:hover {
-    background-color: rgba(45, 93, 82, 0.9);
+    background-color: rgba(37, 70, 66, 0.9);
 }
 
 .buy-now-btn {
     background-color: #D4AF37;
-    color: #2d5d52;
+    color: #254642;
     border: 1px solid #D4AF37;
     padding: 12px 25px;
     border-radius: 6px;

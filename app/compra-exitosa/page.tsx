@@ -47,7 +47,7 @@ function SuccessContent() {
                         <CheckCircle className="w-16 h-16 text-yellow-600" />
                     </div>
                     <h1 className="text-2xl font-bold text-gray-800 mb-4">
-                        Tu orden de compra es la número <span className="text-[#2d5d52]">#{orderId}</span>, pero tu pago no se pudo acreditar.
+                        Tu orden de compra es la número <span className="text-[#254642]">#{orderId}</span>, pero tu pago no se pudo acreditar.
                     </h1>
                     <a
                         href={whatsappLink}
@@ -63,7 +63,7 @@ function SuccessContent() {
             {isSuccess && (
                 orderId ? (
                     <p className="text-xl text-gray-600 mb-8">
-                        Tu orden de compra es el número <span className="font-bold text-[#2d5d52]">#{orderId}</span>
+                        Tu orden de compra es el número <span className="font-bold text-[#254642]">#{orderId}</span>
                     </p>
                 ) : (
                     <p className="text-gray-600 mb-8">
@@ -74,7 +74,7 @@ function SuccessContent() {
 
             <button
                 onClick={() => router.push('/')}
-                className="bg-[#D4AF37] text-[#2d5d52] px-8 py-3 rounded-lg hover:bg-[#DAA520] transition font-semibold shadow-lg mt-4"
+                className="bg-[#D4AF37] text-[#254642] px-8 py-3 rounded-lg hover:bg-[#DAA520] transition font-semibold shadow-lg mt-4"
             >
                 Volver al inicio
             </button>

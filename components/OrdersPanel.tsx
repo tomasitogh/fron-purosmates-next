@@ -105,7 +105,7 @@ export default function OrdersPanel() {
                         key={status}
                         onClick={() => setFilterStatus(status)}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition ${filterStatus === status
-                            ? 'bg-[#2d5d52] text-white'
+                            ? 'bg-[#254642] text-white'
                             : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
                             }`}
                     >
@@ -356,7 +356,7 @@ export default function OrdersPanel() {
                         </div>
                         <div className="mt-6 pt-4 border-t border-gray-100 flex justify-between items-center">
                             <span className="text-gray-600 font-medium">Total del Pedido</span>
-                            <span className="text-xl font-bold text-[#2d5d52]">
+                            <span className="text-xl font-bold text-[#254642]">
                                 ${viewingOrderItems.total?.toLocaleString('es-AR')}
                             </span>
                         </div>
@@ -378,7 +378,7 @@ export default function OrdersPanel() {
                                     <select
                                         value={editFormData.status}
                                         onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2d5d52]"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#254642]"
                                     >
                                         {Object.keys(STATUS_LABELS).map(status => (
                                             <option key={status} value={status}>
@@ -394,7 +394,7 @@ export default function OrdersPanel() {
                                     <select
                                         value={editFormData.paymentStatus}
                                         onChange={(e) => setEditFormData({ ...editFormData, paymentStatus: e.target.value })}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2d5d52]"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#254642]"
                                     >
                                         {Object.keys(PAYMENT_STATUS_LABELS).map(status => (
                                             <option key={status} value={status}>
@@ -412,7 +412,7 @@ export default function OrdersPanel() {
                                         step="0.01"
                                         value={editFormData.total}
                                         onChange={(e) => setEditFormData({ ...editFormData, total: e.target.value })}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2d5d52]"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#254642]"
                                     />
                                 </div>
                             </div>
@@ -426,7 +426,7 @@ export default function OrdersPanel() {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 text-white bg-[#2d5d52] rounded-lg hover:bg-[#2d5d52]/90 transition"
+                                    className="px-4 py-2 text-white bg-[#254642] rounded-lg hover:bg-[#254642]/90 transition"
                                 >
                                     Guardar Cambios
                                 </button>

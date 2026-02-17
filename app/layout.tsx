@@ -33,6 +33,9 @@ export const metadata: Metadata = {
     locale: "es_AR",
     siteName: "Puros Mates",
   },
+  icons: {
+    icon: '/logo-purosmates.ico',
+  }
 };
 
 export default function RootLayout({
@@ -44,7 +47,7 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <Providers>
-          <Suspense fallback={<div className="h-16 bg-[#2d5d52]" />}>
+          <Suspense fallback={<div className="h-16 bg-[#254642]" />}>
             <Navbar />
           </Suspense>
 

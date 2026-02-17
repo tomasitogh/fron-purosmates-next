@@ -207,7 +207,7 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
                     <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
                       <div className="flex flex-col w-full gap-3">
                         <div className="flex items-center justify-between">
-                          <span className="text-lg sm:text-xl font-bold text-[#2d5d52]">
+                          <span className="text-lg sm:text-xl font-bold text-[#254642]">
                             ${(product.price + (customizationStates[product.id] ? (product.customizationCost || 0) : 0)).toLocaleString('es-AR')}
                           </span>
                         </div>
@@ -240,7 +240,7 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
                             e.stopPropagation();
                             handleAddToCart(product, !!customizationStates[product.id]);
                           }}
-                          className="bg-[#2d5d52] text-white px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base rounded-lg hover:bg-[#2d5d52]/90 transition w-full font-semibold"
+                          className="bg-[#254642] text-white px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base rounded-lg hover:bg-[#254642]/90 transition w-full font-semibold"
                         >
                           {customizationStates[product.id] ? 'Agregar Personalizado' : 'Agregar'}
                         </button>

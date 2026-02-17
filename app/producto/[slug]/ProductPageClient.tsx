@@ -21,7 +21,7 @@ export default function ProductPageClient({ params }: ProductPageClientProps) {
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2d5d52] mx-auto"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#254642] mx-auto"></div>
         <p className="mt-4 text-gray-600">Cargando producto...</p>
       </div>
     </div>
