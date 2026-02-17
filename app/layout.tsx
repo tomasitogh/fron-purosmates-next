@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
+import { GoogleAnalytics } from '@next/third-parties/google';
 
 import { Providers } from "@/components/Providers";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import FacebookPixel from "@/components/FacebookPixel";
 
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
@@ -55,7 +57,11 @@ export default function RootLayout({
             {children}
           </main>
           <Footer />
+          <Suspense fallback={null}>
+            <FacebookPixel />
+          </Suspense>
         </Providers>
+        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID || ""} />
       </body>
     </html>
   );

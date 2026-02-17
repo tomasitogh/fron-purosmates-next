@@ -32,18 +32,9 @@ interface CartState {
     error: string | null;
 }
 
-// Helper to get initial state from localStorage (client-side only)
-const getInitialCart = (): CartItem[] => {
-    if (typeof window === 'undefined') return [];
-    try {
-        return JSON.parse(localStorage.getItem("cart_items") || "[]");
-    } catch {
-        return [];
-    }
-};
-
+// Helper to get initial state (start empty to match server)
 const initialState: CartState = {
-    items: getInitialCart(),
+    items: [],
     status: 'idle',
     error: null
 };
@@ -139,7 +130,9 @@ const cartSlice = createSlice({
     name: 'cart',
     initialState,
     reducers: {
-
+        setCart: (state, action: PayloadAction<CartItem[]>) => {
+            state.items = action.payload;
+        },
         decrementItem: (state, action: PayloadAction<{ id: number; hasCustomization?: boolean }>) => {
             const { id, hasCustomization } = action.payload;
             const existingItem = state.items.find(item =>
@@ -234,9 +227,7 @@ const cartSlice = createSlice({
             .addCase(createOrder.fulfilled, (state) => {
                 state.status = 'succeeded';
                 state.items = [];
-                if (typeof window !== 'undefined') {
-                    localStorage.removeItem('cart_items');
-                }
+                // LocalStorage clearing moved to component
             })
             .addCase(createOrder.rejected, (state, action) => {
                 state.status = 'failed';
@@ -256,7 +247,7 @@ const cartSlice = createSlice({
     }
 });
 
-export const { decrementItem, removeItem, clearCart, toggleCustomization } = cartSlice.actions;
+export const { setCart, decrementItem, removeItem, clearCart, toggleCustomization } = cartSlice.actions;
 
 // Selectors
 export const selectCartItems = (state: { cart: CartState }) => state.cart.items;

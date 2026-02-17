@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
+    "@next/third-parties": "^16.1.6",
     "@reduxjs/toolkit": "^2.11.2",
     "@use-gesture/react": "^10.3.1",
     "axios": "^1.13.4",
@@ -20,6 +21,7 @@
     "prisma": "^6.19.2",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-facebook-pixel": "^1.0.4",
     "react-hot-toast": "^2.6.0",
     "react-redux": "^9.2.0"
   },

@@ -17,13 +17,7 @@ export const store = configureStore({
     }
 });
 
-// Subscribe to store updates to persist cart items (client-side only)
-if (typeof window !== 'undefined') {
-    store.subscribe(() => {
-        const state = store.getState();
-        localStorage.setItem('cart_items', JSON.stringify(state.cart.items));
-    });
-}
+// Persistence is handled in CartInitializer component
 
 // Infer the `RootState` and `AppDispatch` types from the store itself
 export type RootState = ReturnType<typeof store.getState>;
