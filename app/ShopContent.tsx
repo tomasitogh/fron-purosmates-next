@@ -170,7 +170,7 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
           {/* Products Grid */}
           <div className="flex-1">
             <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="!text-2xl font-bold text-gray-900">
                 {searchText ? `Resultados para "${searchText}"` : 'Todos los Productos'}
               </h1>
               <p className="text-gray-600 mt-1">{filteredMates.length} productos encontrados</p>

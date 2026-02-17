@@ -9,7 +9,7 @@ import { useSession, signOut } from 'next-auth/react';
 import AuthModal from './AuthModal';
 import Image from 'next/image';
 import { useDispatch } from 'react-redux';
-import { Search, X } from 'lucide-react';
+import { Search, X, ShoppingCart, User } from 'lucide-react';
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -81,8 +81,16 @@ export default function Navbar() {
                     </div>
 
                     {/* Desktop Navigation */}
-                    <div className="hidden min-[856px]:flex flex-row items-center gap-4 flex-wrap">
+                    <div className="hidden min-[856px]:flex flex-row items-center gap-4">
 
+
+                        {/* Sobre Nosotros - Desktop */}
+                        <Link
+                            href="/nosotros"
+                            className="hidden lg:block text-[#F5F5DC] hover:text-white transition font-medium mr-4"
+                        >
+                            Sobre Nosotros
+                        </Link>
 
                         {/* Barra de búsqueda */}
                         {/* Barra de búsqueda - Desktop */}
@@ -122,7 +130,7 @@ export default function Navbar() {
                             className="inline-flex items-center justify-center h-10 px-4 rounded-xl font-medium text-[#F5F5DC] border border-[#F5F5DC]/40 bg-transparent hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-2 transition relative"
                             aria-label="Ir al carrito"
                         >
-                            🛒
+                            <ShoppingCart className="w-6 h-6" />
                             {mounted && totalQty > 0 && (
                                 <span className="absolute -top-2 -right-3 text-xs bg-green-600 text-white rounded-full w-5 h-5 grid place-items-center">
                                     {totalQty}
@@ -152,9 +160,10 @@ export default function Navbar() {
                         ) : (
                             <button
                                 onClick={() => setIsAuthModalOpen(true)}
-                                className="inline-flex items-center justify-center h-10 px-6 rounded-xl font-bold bg-[#F5F5DC] text-[#2d5d52] hover:bg-[#F5F5DC]/90 transition shadow-md"
+                                className="flex min-w-[40px] h-10 shrink-0 items-center justify-center rounded-full text-[#F5F5DC] hover:bg-white/10 transition focus:outline-none"
+                                aria-label="Ingresar"
                             >
-                                Ingresar
+                                <User className="w-6 h-6" />
                             </button>
                         )}
                     </div>
@@ -209,22 +218,6 @@ export default function Navbar() {
                             </form>
                         </li>
 
-                        <li>
-                            <button
-                                type="button"
-                                onClick={handleCartClick}
-                                className="inline-flex items-center justify-center h-10 px-4 rounded-xl font-medium text-white border border-white/60 bg-transparent hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 transition w-full relative"
-                                aria-label="Ir al carrito"
-                            >
-                                🛒 Carrito
-                                {mounted && totalQty > 0 && (
-                                    <span className="absolute -top-2 -right-3 text-xs bg-green-600 text-white rounded-full w-5 h-5 grid place-items-center">
-                                        {totalQty}
-                                    </span>
-                                )}
-                            </button>
-                        </li>
-
                         {isAuthenticated && isAdmin && (
                             <li>
                                 <Link
@@ -238,39 +231,64 @@ export default function Navbar() {
                         )}
 
                         <li>
-                            {isAuthenticated ? (
-                                <div className="space-y-2">
+                            <div className="flex flex-row items-center gap-3">
+                                {/* Sobre Nosotros Button */}
+                                <Link
+                                    href="/nosotros"
+                                    onClick={() => setIsMenuOpen(false)}
+                                    className="inline-flex items-center justify-center h-10 px-3 rounded-xl text-white border border-white/60 bg-transparent hover:bg-white/10 transition whitespace-nowrap"
+                                >
+                                    Sobre Nosotros
+                                </Link>
 
+                                {/* Cart Button */}
+                                <button
+                                    type="button"
+                                    onClick={handleCartClick}
+                                    className="inline-flex items-center justify-center h-10 px-3 rounded-xl text-white border border-white/60 bg-transparent hover:bg-white/10 transition relative"
+                                    aria-label="Ir al carrito"
+                                >
+                                    <ShoppingCart className="w-5 h-5" />
+                                    {mounted && totalQty > 0 && (
+                                        <span className="absolute -top-2 -right-2 text-xs bg-green-600 text-white rounded-full w-5 h-5 grid place-items-center">
+                                            {totalQty}
+                                        </span>
+                                    )}
+                                </button>
+
+                                {/* User Button (Login/Logout) */}
+                                {isAuthenticated ? (
                                     <button
                                         onClick={() => {
                                             handleLogout();
                                             setIsMenuOpen(false);
                                         }}
-                                        className="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition shadow-sm text-center"
+                                        className="inline-flex items-center justify-center h-10 px-3 rounded-xl text-white border border-white/60 bg-transparent hover:bg-white/10 transition"
+                                        aria-label="Cerrar sesión"
                                     >
-                                        Cerrar sesión
+                                        <User className="w-5 h-5" />
                                     </button>
-                                </div>
-                            ) : (
-                                <button
-                                    onClick={() => {
-                                        setIsAuthModalOpen(true);
-                                        setIsMenuOpen(false);
-                                    }}
-                                    className="inline-flex items-center justify-center h-10 px-4 rounded-xl font-medium text-white border border-white/60 bg-transparent hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 transition w-full text-center"
-                                >
-                                    Ingresar
-                                </button>
-                            )}
-                        </li>
+                                ) : (
+                                    <button
+                                        onClick={() => {
+                                            setIsAuthModalOpen(true);
+                                            setIsMenuOpen(false);
+                                        }}
+                                        className="inline-flex items-center justify-center h-10 px-3 rounded-xl text-white border border-white/60 bg-transparent hover:bg-white/10 transition"
+                                        aria-label="Ingresar"
+                                    >
+                                        <User className="w-5 h-5" />
+                                    </button>
+                                )}
 
-                        <li>
-                            <button
-                                onClick={() => { router.push('/'); setIsMenuOpen(false); }}
-                                className="block bg-[#D4AF37] text-[#2d5d52] px-6 py-2 rounded-lg hover:bg-[#DAA520] transition font-semibold text-center w-full focus:outline-none"
-                            >
-                                Comprar Ahora
-                            </button>
+                                {/* Buy Now Button */}
+                                <button
+                                    onClick={() => { router.push('/'); setIsMenuOpen(false); }}
+                                    className="bg-[#D4AF37] text-[#2d5d52] px-6 h-10 rounded-lg hover:bg-[#DAA520] transition font-semibold flex items-center justify-center focus:outline-none whitespace-nowrap"
+                                >
+                                    Comprar Ahora
+                                </button>
+                            </div>
                         </li>
                     </ul>
                 </div>
