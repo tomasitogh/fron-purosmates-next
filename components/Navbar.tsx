@@ -232,60 +232,62 @@ export default function Navbar() {
                         )}
 
                         <li>
-                            <div className="flex flex-row items-center gap-3">
-                                {/* Sobre Nosotros Button */}
-                                <Link
-                                    href="/nosotros"
-                                    onClick={() => setIsMenuOpen(false)}
-                                    className="inline-flex items-center justify-center h-10 px-3 rounded-xl text-white border border-white/60 bg-transparent hover:bg-white/10 transition whitespace-nowrap"
-                                >
-                                    Sobre Nosotros
-                                </Link>
+                            <div className="flex flex-col items-center gap-3 w-full">
+                                <div className="flex flex-row items-center gap-3 flex-wrap w-full">
+                                    {/* Sobre Nosotros Button */}
+                                    <Link
+                                        href="/nosotros"
+                                        onClick={() => setIsMenuOpen(false)}
+                                        className="inline-flex items-center justify-center h-10 px-3 rounded-xl text-white border border-white/60 bg-transparent hover:bg-white/10 transition whitespace-nowrap flex-1"
+                                    >
+                                        Sobre Nosotros
+                                    </Link>
 
-                                {/* Cart Button */}
-                                <button
-                                    type="button"
-                                    onClick={handleCartClick}
-                                    className="inline-flex items-center justify-center h-10 px-3 rounded-xl text-white border border-white/60 bg-transparent hover:bg-white/10 transition relative"
-                                    aria-label="Ir al carrito"
-                                >
-                                    <ShoppingCart className="w-5 h-5" />
-                                    {mounted && totalQty > 0 && (
-                                        <span className="absolute -top-2 -right-2 text-xs bg-green-600 text-white rounded-full w-5 h-5 grid place-items-center">
-                                            {totalQty}
-                                        </span>
+                                    {/* Cart Button */}
+                                    <button
+                                        type="button"
+                                        onClick={handleCartClick}
+                                        className="inline-flex items-center justify-center h-10 px-3 rounded-xl text-white border border-white/60 bg-transparent hover:bg-white/10 transition relative"
+                                        aria-label="Ir al carrito"
+                                    >
+                                        <ShoppingCart className="w-5 h-5" />
+                                        {mounted && totalQty > 0 && (
+                                            <span className="absolute -top-2 -right-2 text-xs bg-green-600 text-white rounded-full w-5 h-5 grid place-items-center">
+                                                {totalQty}
+                                            </span>
+                                        )}
+                                    </button>
+
+                                    {/* User Button (Login/Logout) */}
+                                    {isAuthenticated ? (
+                                        <button
+                                            onClick={() => {
+                                                handleLogout();
+                                                setIsMenuOpen(false);
+                                            }}
+                                            className="inline-flex items-center justify-center h-10 px-3 rounded-xl text-white border border-white/60 bg-transparent hover:bg-white/10 transition"
+                                            aria-label="Cerrar sesión"
+                                        >
+                                            <User className="w-5 h-5" />
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => {
+                                                setIsAuthModalOpen(true);
+                                                setIsMenuOpen(false);
+                                            }}
+                                            className="inline-flex items-center justify-center h-10 px-3 rounded-xl text-white border border-white/60 bg-transparent hover:bg-white/10 transition"
+                                            aria-label="Ingresar"
+                                        >
+                                            <User className="w-5 h-5" />
+                                        </button>
                                     )}
-                                </button>
-
-                                {/* User Button (Login/Logout) */}
-                                {isAuthenticated ? (
-                                    <button
-                                        onClick={() => {
-                                            handleLogout();
-                                            setIsMenuOpen(false);
-                                        }}
-                                        className="inline-flex items-center justify-center h-10 px-3 rounded-xl text-white border border-white/60 bg-transparent hover:bg-white/10 transition"
-                                        aria-label="Cerrar sesión"
-                                    >
-                                        <User className="w-5 h-5" />
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={() => {
-                                            setIsAuthModalOpen(true);
-                                            setIsMenuOpen(false);
-                                        }}
-                                        className="inline-flex items-center justify-center h-10 px-3 rounded-xl text-white border border-white/60 bg-transparent hover:bg-white/10 transition"
-                                        aria-label="Ingresar"
-                                    >
-                                        <User className="w-5 h-5" />
-                                    </button>
-                                )}
+                                </div>
 
                                 {/* Buy Now Button */}
                                 <button
                                     onClick={() => { router.push('/'); setIsMenuOpen(false); }}
-                                    className="bg-[#D4AF37] text-[#254642] px-6 h-10 rounded-lg hover:bg-[#DAA520] transition font-semibold flex items-center justify-center focus:outline-none whitespace-nowrap"
+                                    className="bg-[#D4AF37] text-[#254642] px-6 h-10 rounded-lg hover:bg-[#DAA520] transition font-semibold flex items-center justify-center focus:outline-none whitespace-nowrap w-full"
                                 >
                                     Comprar Ahora
                                 </button>
