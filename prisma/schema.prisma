@@ -14,11 +14,13 @@ model User {
   emailVerified DateTime?
   image         String?   @db.Text
   role          String    @default("USER")
+  phoneNumber   String?   @map("phone_number")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   
   accounts      Account[]
   sessions      Session[]
+  orders        Order[]
   
   @@map("auth_users")
 }
@@ -63,4 +65,79 @@ model VerificationToken {
 
   @@id([identifier, token])
   @@map("auth_verification_tokens")
+}
+
+// Modelos del Backend (Java/Spring Boot)
+
+model Category {
+  id          BigInt    @id @default(autoincrement())
+  description String    @unique
+  products    Product[]
+
+  @@map("category")
+}
+
+model Product {
+  id                BigInt         @id @default(autoincrement())
+  name              String
+  slug              String         @unique
+  description       String?        @db.Text
+  price             Float
+  stock             Int
+  active            Boolean        @default(true)
+  isCustomizable    Boolean        @default(false) @map("is_customizable")
+  customizationCost Float          @default(0.0) @map("customization_cost")
+  categoryId        BigInt?        @map("category_id")
+  category          Category?      @relation(fields: [categoryId], references: [id])
+  images            ProductImage[]
+  orderItems        OrderItem[]
+
+  @@map("product")
+}
+
+model ProductImage {
+  productId BigInt @map("product_id")
+  url       String @map("image_url") @db.VarChar(500)
+  scale     Float  @default(1.0) @map("image_scale")
+  x         Float  @default(0.0) @map("image_x")
+  y         Float  @default(0.0) @map("image_y")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // Hibernate usa una tabla de colección sin ID propio, pero Prisma exige uno.
+  // Usamos una clave compuesta (product_id + url) para satisfacer a Prisma sin romper Hibernate.
+  @@id([productId, url])
+  @@map("product_images")
+}
+
+model Order {
+  id            BigInt      @id @default(autoincrement())
+  userId        String?     @map("user_id") @db.VarChar(191) // Explicitly set to 191 to match standard Auth User ID
+  guestFirstname String?    @map("guest_firstname")
+  guestLastname String?     @map("guest_lastname")
+  guestEmail    String?     @map("guest_email")
+  guestPhone    String?     @map("guest_phone")
+  total         Float       @map("total_amount")
+  status        String      @default("PENDING") // Enum: PENDING, SHIPPED, DELIVERED, CANCELLED
+  paymentStatus String      @default("PENDING") @map("payment_status") // Enum: PENDING, APPROVED, REJECTED
+  createdAt     DateTime    @default(now()) @map("created_at")
+  items         OrderItem[]
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id               BigInt  @id @default(autoincrement())
+  orderId          BigInt? @map("order_id")
+  productId        BigInt  @map("product_id")
+  quantity         Int
+  price            Float
+  hasCustomization Boolean @default(false)
+
+  order   Order?  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_item")
 }

@@ -3,7 +3,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   // ⚠️ CAMBIAR ESTE EMAIL por el tuyo
-  const email = 'tu-email@gmail.com';
+  const email = 'tomasgonzalezhu.phreys12@gmail.com';
   
   console.log(`🔍 Buscando usuario: ${email}...`);
   
