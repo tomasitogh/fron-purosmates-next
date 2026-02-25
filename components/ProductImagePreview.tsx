@@ -47,7 +47,7 @@ export default function ProductImagePreview({
                     width={fill ? undefined : width || 500}
                     height={fill ? undefined : height || 500}
                     fill={fill}
-                    sizes={fill ? "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" : undefined}
+                    sizes={fill ? "(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 300px" : undefined}
                     priority={priority}
                     className={`object-cover ${imageClassName} ${fill ? '' : 'w-full h-full'}`}
                 />

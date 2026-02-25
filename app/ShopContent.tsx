@@ -177,7 +177,7 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-              {filteredMates.map((product) => (
+              {filteredMates.map((product, index) => (
                 <div
                   key={product.id}
                   className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow cursor-pointer max-w-[281px] mx-auto w-full"
@@ -194,6 +194,7 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
                           y: product.images[0].y || 0
                         }}
                         fill
+                        priority={index < 4}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-400">

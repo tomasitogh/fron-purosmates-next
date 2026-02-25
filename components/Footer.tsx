@@ -31,12 +31,11 @@ export default function Footer() {
                         <div className="flex items-center space-x-3 mb-4">
                             <Link href="/">
                                 <Image
-                                    src="/logo-purosmates.png?v=2"
+                                    src="/logo-purosmates.png"
                                     alt="Puros Mates Logo"
                                     width={80}
                                     height={80}
                                     className="object-contain p-1"
-                                    unoptimized={true}
                                 />
                             </Link>
                         </div>
@@ -119,12 +118,11 @@ export default function Footer() {
                     <div className="flex flex-col items-center">
                         <Link href="/" className="mb-4">
                             <Image
-                                src="/logo-purosmates.png?v=2"
+                                src="/logo-purosmates.png"
                                 alt="Puros Mates Logo"
                                 width={128}
                                 height={128}
                                 className="object-contain p-1"
-                                unoptimized={true}
                             />
                         </Link>
                         <Link

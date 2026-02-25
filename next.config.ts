@@ -19,6 +19,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  productionBrowserSourceMaps: true,
   async rewrites() {
     return [
       {

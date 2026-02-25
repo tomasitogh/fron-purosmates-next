@@ -8,6 +8,7 @@ a {
     font-weight: 500;
     color: #81813d;
     text-decoration: inherit;
+    touch-action: manipulation;
 }
 
 a:hover {
@@ -36,6 +37,7 @@ button {
     font-family: inherit;
     cursor: pointer;
     transition: border-color 0.25s;
+    touch-action: manipulation;
 }
 
 button:hover {
@@ -699,6 +701,7 @@ button:focus-visible {
     text-align: left;
     transition: all 0.15s ease;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    touch-action: manipulation;
 }
 
 .shop-sidebar .filter-tab-button:hover {

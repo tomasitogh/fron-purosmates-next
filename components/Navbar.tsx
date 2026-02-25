@@ -64,13 +64,12 @@ export default function Navbar() {
                     <div className="flex items-center gap-3">
                         <Link href="/" className="flex items-center">
                             <Image
-                                src="/logo-purosmates.png?v=2"
+                                src="/logo-purosmates.png"
                                 alt="Puros Mates"
                                 width={60}
                                 height={60}
                                 className="object-contain rounded-full"
                                 priority
-                                unoptimized={true} // Add unoptimized to skip potential next/image cache issues for this specific asset if needed
                             />
                         </Link>
                         <Link
