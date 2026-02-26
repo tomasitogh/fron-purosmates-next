@@ -179,7 +179,7 @@ export default function ImageUploader({
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {previewImages.map((image, index) => (
                             <div
-                                key={index}
+                                key={image.url || index}
                                 className="relative group aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-200"
                             >
                                 <ProductImagePreview
@@ -194,14 +194,14 @@ export default function ImageUploader({
                                 />
 
                                 {/* Controls Overlay */}
-                                <div className="absolute bottom-0 left-0 right-0 bg-black/50 flex items-center justify-center gap-2 p-2 transition-opacity">
+                                <div className="absolute bottom-0 left-0 right-0 bg-black/50 flex flex-wrap items-center justify-center gap-1 sm:gap-2 p-1 sm:p-2 transition-opacity">
                                     <button
                                         type="button"
                                         onClick={() => setEditingIndex(index)}
-                                        className="bg-white p-1.5 rounded-full shadow-sm hover:bg-gray-100 transition flex-shrink-0"
+                                        className="bg-white p-1 sm:p-1.5 rounded-full shadow-sm hover:bg-gray-100 transition flex-shrink-0"
                                         title="Editar encuadre"
                                     >
-                                        <Pencil className="w-3.5 h-3.5 text-[#254642]" />
+                                        <Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#254642]" />
                                     </button>
 
                                     <div className="flex gap-1">
@@ -209,10 +209,10 @@ export default function ImageUploader({
                                             <button
                                                 type="button"
                                                 onClick={() => moveImage(index, index - 1)}
-                                                className="bg-white p-1.5 rounded-full shadow-sm hover:bg-gray-100 transition flex-shrink-0"
+                                                className="bg-white p-1 sm:p-1.5 rounded-full shadow-sm hover:bg-gray-100 transition flex-shrink-0"
                                                 title="Mover a la izquierda"
                                             >
-                                                <span className="text-xs font-bold text-gray-600">←</span>
+                                                <span className="text-[10px] sm:text-xs font-bold text-gray-600">←</span>
                                             </button>
                                         )}
 
@@ -220,10 +220,10 @@ export default function ImageUploader({
                                             <button
                                                 type="button"
                                                 onClick={() => moveImage(index, index + 1)}
-                                                className="bg-white p-1.5 rounded-full shadow-sm hover:bg-gray-100 transition flex-shrink-0"
+                                                className="bg-white p-1 sm:p-1.5 rounded-full shadow-sm hover:bg-gray-100 transition flex-shrink-0"
                                                 title="Mover a la derecha"
                                             >
-                                                <span className="text-xs font-bold text-gray-600">→</span>
+                                                <span className="text-[10px] sm:text-xs font-bold text-gray-600">→</span>
                                             </button>
                                         )}
                                     </div>
@@ -231,10 +231,10 @@ export default function ImageUploader({
                                     <button
                                         type="button"
                                         onClick={() => removeImage(index)}
-                                        className="bg-red-500 text-white p-1.5 rounded-full shadow-sm hover:bg-red-600 transition flex-shrink-0"
+                                        className="bg-red-500 text-white p-1 sm:p-1.5 rounded-full shadow-sm hover:bg-red-600 transition flex-shrink-0"
                                         title="Eliminar imagen"
                                     >
-                                        <X className="w-3.5 h-3.5" />
+                                        <X className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                     </button>
                                 </div>
 

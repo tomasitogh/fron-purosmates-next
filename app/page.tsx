@@ -12,7 +12,7 @@ async function getProducts() {
   try {
     const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
     const res = await fetch(`${API_URL}/products`, {
-      next: { revalidate: 120 } // ISR: revalidate every 5 minutes
+      next: { revalidate: 10 } // ISR: revalidate every 10 seconds
     });
 
     if (!res.ok) {
@@ -31,7 +31,7 @@ async function getCategories() {
   try {
     const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
     const res = await fetch(`${API_URL}/categories`, {
-      next: { revalidate: 300 } // ISR: revalidate every 5 minutes
+      next: { revalidate: 10 } // ISR: revalidate every 10 seconds
     });
 
     if (!res.ok) {
