@@ -8,6 +8,7 @@ import { Providers } from "@/components/Providers";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FacebookPixel from "@/components/FacebookPixel";
+import FloatingWhatsApp from "@/components/FloatingWhatsApp";
 
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
@@ -57,6 +58,7 @@ export default function RootLayout({
             {children}
           </main>
           <Footer />
+          <FloatingWhatsApp />
           <Suspense fallback={null}>
             <FacebookPixel />
           </Suspense>
