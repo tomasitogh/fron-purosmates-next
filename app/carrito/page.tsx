@@ -63,8 +63,8 @@ export default function Carrito() {
 
     const handleFinalizePurchase = async () => {
         // Validation
-        if (!isAuthenticated && !guestData.phone) {
-            toast.error('El número de teléfono es obligatorio para coordinar el envío.');
+        if (!isAuthenticated && (!guestData.phone || !guestData.email)) {
+            toast.error('El número de teléfono y el email son obligatorios para coordinar el envío y enviar el comprobante.');
             return;
         }
 
@@ -406,13 +406,14 @@ export default function Carrito() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Email (Opcional)</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Email (Obligatorio)</label>
                                         <input
                                             type="email"
                                             value={guestData.email}
                                             onChange={(e) => setGuestData({ ...guestData, email: e.target.value })}
                                             className="w-full px-3 py-2 border rounded-lg focus:ring-[#D4AF37] focus:border-[#D4AF37]"
                                             placeholder="tu@email.com"
+                                            required
                                         />
                                     </div>
                                 </>
