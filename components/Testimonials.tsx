@@ -1,5 +1,3 @@
-'use client';
-
 interface Testimonial {
   name: string;
   text: string;

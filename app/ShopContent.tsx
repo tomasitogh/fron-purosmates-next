@@ -119,7 +119,7 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
   const openProductModal = (product: Product) => {
     const slug = product.slug || slugify(product.name);
     // Actualizar URL directamente sin navegar (shallow routing)
-    const newUrl = `/?producto=${slug}`;
+    const newUrl = `/shop?producto=${slug}`;
     router.push(newUrl, { scroll: false });
     // setSelectedProduct removed - derived from URL
     // setWantsCustomization(false); // Handled by useEffect
@@ -131,7 +131,7 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
     // Remover el query param 'producto' de la URL
     const params = new URLSearchParams(searchParams.toString());
     params.delete('producto');
-    const newUrl = params.toString() ? `/?${params.toString()}` : '/';
+    const newUrl = params.toString() ? `/shop?${params.toString()}` : '/shop';
     router.replace(newUrl, { scroll: false });
     // setSelectedProduct(null) removed - derived from URL
     // setWantsCustomization(false); // Handled by useEffect (modal unmounts)

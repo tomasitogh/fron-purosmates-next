@@ -1,6 +1,5 @@
-'use client';
 import Image from 'next/image';
-import { useState } from 'react';
+import Link from 'next/link';
 
 export default function CategoryGrid({ categories }) {
   // categories: { mate: string, bombilla: string, accesorios: string }
@@ -11,7 +10,10 @@ export default function CategoryGrid({ categories }) {
       </h2>
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
         {/* Large Mate */}
-        <div className="col-span-1 lg:col-span-2 row-span-2 relative aspect-[4/5] md:aspect-square overflow-hidden group shadow-lg rounded-2xl">
+        <Link 
+          href="/shop?category=mate"
+          className="col-span-1 lg:col-span-2 row-span-2 relative aspect-[4/5] md:aspect-square overflow-hidden group shadow-lg rounded-2xl cursor-pointer"
+        >
           <Image 
             src={categories.mate} 
             alt="Mate" 
@@ -24,10 +26,13 @@ export default function CategoryGrid({ categories }) {
               Mates
             </div>
           </div>
-        </div>
+        </Link>
         
         {/* Bombilla */}
-        <div className="relative aspect-square overflow-hidden group shadow-md rounded-2xl">
+        <Link 
+          href="/shop?category=bombilla"
+          className="relative aspect-square overflow-hidden group shadow-md rounded-2xl cursor-pointer"
+        >
           <Image 
             src={categories.bombilla} 
             alt="Bombilla" 
@@ -40,10 +45,13 @@ export default function CategoryGrid({ categories }) {
               Bombillas
             </div>
           </div>
-        </div>
+        </Link>
         
         {/* Accesorios */}
-        <div className="relative aspect-square overflow-hidden group shadow-md rounded-2xl">
+        <Link 
+          href="/shop?category=accesorio"
+          className="relative aspect-square overflow-hidden group shadow-md rounded-2xl cursor-pointer"
+        >
           <Image 
             src={categories.accesorios} 
             alt="Accesorios" 
@@ -56,7 +64,7 @@ export default function CategoryGrid({ categories }) {
               Accesorios
             </div>
           </div>
-        </div>
+        </Link>
       </div>
     </section>
   );

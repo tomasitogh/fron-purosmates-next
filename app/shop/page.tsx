@@ -3,8 +3,8 @@ import ShopContent from '@/app/ShopContent';
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Tienda',
-  description: 'Catálogo de productos de Puros Mates',
+  title: 'Catálogo de Productos - Puros Mates',
+  description: 'Explora nuestra amplia variedad de mates, bombillas y accesorios artesanales. Elige la mejor calidad para tu set matero.',
 };
 
 export default async function ShopPage() {

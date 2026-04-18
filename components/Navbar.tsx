@@ -46,7 +46,7 @@ export default function Navbar() {
             params.delete("q");
         }
 
-        router.push(`/?${params.toString()}`);
+        router.push(`/shop?${params.toString()}`);
     };
 
     const isAuthenticated = isLoaded && isSignedIn;
@@ -268,7 +268,7 @@ export default function Navbar() {
 
                                 {/* Buy Now Button */}
                                 <button
-                                    onClick={() => { router.push('/'); setIsMenuOpen(false); }}
+                                    onClick={() => { router.push('/shop'); setIsMenuOpen(false); }}
                                     className="bg-[#D4AF37] text-[#254642] px-6 h-10 rounded-lg hover:bg-[#DAA520] transition font-semibold flex items-center justify-center focus:outline-none whitespace-nowrap w-full"
                                 >
                                     Comprar Ahora

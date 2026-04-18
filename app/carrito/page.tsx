@@ -203,7 +203,7 @@ export default function Carrito() {
                     <h1 className="text-3xl font-bold text-gray-800 mb-4">Tu Carrito</h1>
                     <p className="text-gray-600 mb-8">Tu carrito está vacío</p>
                     <button
-                        onClick={() => router.push('/')}
+                        onClick={() => router.push('/shop')}
                         className="bg-[#D4AF37] text-[#254642] px-6 py-3 rounded-lg hover:bg-[#DAA520] transition font-semibold"
                     >
                         Ir a comprar
@@ -339,7 +339,7 @@ export default function Carrito() {
                         </button>
 
                         <button
-                            onClick={() => router.push('/')}
+                            onClick={() => router.push('/shop')}
                             className="w-full bg-gray-200 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-300 transition font-semibold"
                         >
                             Seguir Comprando
