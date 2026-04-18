@@ -19,6 +19,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
 import toast from 'react-hot-toast';
+import axios from 'axios';
 import PaymentMethodModal from "@/components/PaymentMethodModal";
 import { AppDispatch } from "@/redux/store";
 import { Minus, Plus, Trash2, Copy } from "lucide-react";
@@ -43,7 +44,12 @@ export default function Carrito() {
         firstname: '',
         lastname: '',
         email: '',
-        phone: ''
+        phone: '',
+        shippingPreference: 'vendedor',
+        locality: '',
+        address: '',
+        floorApartment: '',
+        extraIndications: '',
     });
     const [mounted, setMounted] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<any>(null);
@@ -51,7 +57,28 @@ export default function Carrito() {
 
     useEffect(() => {
         setMounted(true);
-    }, []);
+        if (isAuthenticated && token) {
+            axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/users/me`, {
+                headers: { Authorization: `Bearer ${token}` }
+            }).then(response => {
+                const data = response.data;
+                if (data) {
+                    setGuestData(prev => ({
+                        ...prev,
+                        phone: data.phoneNumber || prev.phone,
+                        shippingPreference: data.shippingPreference || 'vendedor',
+                        locality: data.locality || '',
+                        address: data.address || '',
+                        floorApartment: data.floorApartment || '',
+                        extraIndications: data.extraIndications || '',
+                        // Extract firstname/lastname from name
+                        firstname: prev.firstname || (data.name ? data.name.split(' ')[0] : ''),
+                        lastname: prev.lastname || (data.name ? data.name.split(' ').slice(1).join(' ') : ''),
+                    }));
+                }
+            }).catch(e => console.error("Error fetching user data", e));
+        }
+    }, [isAuthenticated, token]);
 
     const handleConfirmCart = () => {
         setShowCheckout(true);
@@ -63,9 +90,19 @@ export default function Carrito() {
 
     const handleFinalizePurchase = async () => {
         // Validation
-        if (!isAuthenticated && !guestData.phone) {
-            toast.error('El número de teléfono es obligatorio para coordinar el envío.');
+        if (!guestData.firstname || !guestData.lastname || !guestData.phone) {
+            toast.error('Nombre, apellido y teléfono son obligatorios.');
             return;
+        }
+        if (!isAuthenticated && !guestData.email) {
+            toast.error('El email es obligatorio para continuar.');
+            return;
+        }
+        if (guestData.shippingPreference === 'correo') {
+            if (!guestData.locality || !guestData.address || !guestData.floorApartment) {
+                toast.error('Para envío por Correo Argentino, la localidad, dirección exacta y piso/departamento son obligatorios.');
+                return;
+            }
         }
 
         try {
@@ -74,9 +111,14 @@ export default function Carrito() {
                 token: isAuthenticated ? token || undefined : undefined,
                 guestData: {
                     guestPhone: guestData.phone,
+                    guestFirstname: guestData.firstname,
+                    guestLastname: guestData.lastname,
+                    shippingPreference: guestData.shippingPreference,
+                    locality: guestData.locality,
+                    address: guestData.address,
+                    floorApartment: guestData.floorApartment,
+                    extraIndications: guestData.extraIndications,
                     ...(!isAuthenticated ? {
-                        guestFirstname: guestData.firstname,
-                        guestLastname: guestData.lastname,
                         guestEmail: guestData.email,
                     } : {})
                 },
@@ -312,7 +354,7 @@ export default function Carrito() {
                     <h2 className="text-2xl font-bold text-gray-800 mb-6">Finalizar Compra</h2>
 
                     {/* Subtítulo 1: Método de pago */}
-                    <div className="mb-8">
+                    <div className="mb-12">
                         <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Método de pago</h3>
                         <div className="space-y-4">
                             {/* Efectivo */}
@@ -365,24 +407,70 @@ export default function Carrito() {
                                 <div>
                                     <span className="font-medium text-gray-800">Transferencia bancaria </span>
                                     <span className="text-green-600 font-bold text-sm bg-green-100 px-2 py-0.5 rounded ml-2">10% OFF</span>
-                                    {paymentMethod === 'transfer' && (
-                                        <div className="mt-3 bg-gray-50 p-4 rounded-md border border-gray-200 text-sm text-gray-700">
-                                            <p className="mb-2">El alias a transferir es:</p>
-                                            <div className="flex items-center gap-2 mb-3">
-                                                <code className="bg-gray-200 px-2 py-1 rounded font-mono font-bold">puros.mates2026</code>
-                                                <button onClick={() => { navigator.clipboard.writeText('puros.mates2026'); toast.success('Copiado'); }} className="text-gray-500 hover:text-gray-700">
-                                                    <Copy className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                            <p>
-                                                Podes transferir y luego enviar el comprobante a{' '}
-                                                <a href="https://wa.me/5491130548207" target="_blank" rel="noopener noreferrer" className="!text-[#254642] font-semibold hover:underline">
-                                                    nuestro WhatsApp
-                                                </a>{' '}
-                                                - 11 3054 8207 y nosotros te confirmamos el pedido, o sino podes confirmar el pedido y esperar a que el vendedor se comunique con vos para coordinar el pago y el envío.
-                                            </p>
+                                    
+                                    <div className="mt-3 bg-gray-50 p-4 rounded-md border border-gray-200 text-sm text-gray-700">
+                                        <p className="mb-2">El alias a transferir es:</p>
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <code className="bg-gray-200 px-2 py-1 rounded font-mono font-bold">puros.mates2026</code>
+                                            <button 
+                                                onClick={() => { 
+                                                    navigator.clipboard.writeText('puros.mates2026'); 
+                                                    toast.success('Copiado'); 
+                                                }} 
+                                                className="text-gray-500 hover:text-gray-700"
+                                            >
+                                                <Copy className="w-4 h-4" />
+                                            </button>
                                         </div>
-                                    )}
+                                        <p>
+                                            Podes transferir y luego enviar el comprobante a{' '}
+                                            <a href="https://wa.me/5491130548207" target="_blank" rel="noopener noreferrer" className="!text-[#254642] font-semibold hover:underline">
+                                                nuestro WhatsApp
+                                            </a>{' '}
+                                            - 11 3054 8207 y nosotros te confirmamos el pedido, o sino podes confirmar el pedido y esperar a que el vendedor se comunique con vos para coordinar el pago y el envío.
+                                        </p>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+
+                    {/* Preferencia de envío */}
+                    <div className="mb-8 border-b pb-8">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Preferencia de envío</h3>
+                        <div className="space-y-4">
+                            <label className="flex items-start space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-gray-50 transition">
+                                <input
+                                    type="radio"
+                                    name="shippingPreference"
+                                    value="correo"
+                                    checked={guestData.shippingPreference === 'correo'}
+                                    onChange={() => setGuestData({ ...guestData, shippingPreference: 'correo' })}
+                                    className="mt-1 w-4 h-4 text-[#D4AF37] focus:ring-[#D4AF37]"
+                                />
+                                <div>
+                                    <span className="font-medium text-gray-800">Correo Argentino</span>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                        Envíos a todo el país.
+                                    </p>
+                                </div>
+                            </label>
+
+                            <label className="flex items-start space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-gray-50 transition">
+                                <input
+                                    type="radio"
+                                    name="shippingPreference"
+                                    value="vendedor"
+                                    checked={guestData.shippingPreference === 'vendedor'}
+                                    onChange={() => setGuestData({ ...guestData, shippingPreference: 'vendedor' })}
+                                    className="mt-1 w-4 h-4 text-[#D4AF37] focus:ring-[#D4AF37]"
+                                />
+                                <div>
+                                    <span className="font-medium text-gray-800">Me comunico con el vendedor</span>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                        Coordinar un punto de retiro con el vendedor.
+                                    </p>
                                 </div>
                             </label>
                         </div>
@@ -390,33 +478,45 @@ export default function Carrito() {
 
                     {/* Subtítulo 2: Datos personales */}
                     <div className="mb-8">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Datos personales</h3>
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2 margin">Datos personales</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {!isAuthenticated && (
-                                <>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo (Opcional)</label>
-                                        <input
-                                            type="text"
-                                            value={guestData.firstname}
-                                            onChange={(e) => setGuestData({ ...guestData, firstname: e.target.value })}
-                                            className="w-full px-3 py-2 border rounded-lg focus:ring-[#D4AF37] focus:border-[#D4AF37]"
-                                            placeholder="Tu nombre"
-                                        />
-                                    </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre (Obligatorio)</label>
+                                <input
+                                    type="text"
+                                    value={guestData.firstname}
+                                    onChange={(e) => setGuestData({ ...guestData, firstname: e.target.value })}
+                                    className="w-full px-3 py-2 border rounded-lg focus:ring-[#D4AF37] focus:border-[#D4AF37]"
+                                    placeholder="Tu nombre"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Apellido (Obligatorio)</label>
+                                <input
+                                    type="text"
+                                    value={guestData.lastname}
+                                    onChange={(e) => setGuestData({ ...guestData, lastname: e.target.value })}
+                                    className="w-full px-3 py-2 border rounded-lg focus:ring-[#D4AF37] focus:border-[#D4AF37]"
+                                    placeholder="Tu apellido"
+                                    required
+                                />
+                            </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Email (Opcional)</label>
-                                        <input
-                                            type="email"
-                                            value={guestData.email}
-                                            onChange={(e) => setGuestData({ ...guestData, email: e.target.value })}
-                                            className="w-full px-3 py-2 border rounded-lg focus:ring-[#D4AF37] focus:border-[#D4AF37]"
-                                            placeholder="tu@email.com"
-                                        />
-                                    </div>
-                                </>
+                            {!isAuthenticated && (
+                                <div className="sm:col-span-2">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Email (Obligatorio)</label>
+                                    <input
+                                        type="email"
+                                        value={guestData.email}
+                                        onChange={(e) => setGuestData({ ...guestData, email: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg focus:ring-[#D4AF37] focus:border-[#D4AF37]"
+                                        placeholder="tu@email.com"
+                                        required
+                                    />
+                                </div>
                             )}
+
                             <div className="sm:col-span-2">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Número de teléfono (Obligatorio)</label>
                                 <input
@@ -429,6 +529,54 @@ export default function Carrito() {
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Para coordinar el envío y pago.</p>
                             </div>
+
+                            {guestData.shippingPreference === 'correo' && (
+                                <>
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Localidad (Obligatorio)</label>
+                                        <input
+                                            type="text"
+                                            value={guestData.locality}
+                                            onChange={(e) => setGuestData({ ...guestData, locality: e.target.value })}
+                                            className="w-full px-3 py-2 border rounded-lg focus:ring-[#D4AF37] focus:border-[#D4AF37]"
+                                            placeholder="Ej: Córdoba Capital"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Dirección exacta (Obligatorio)</label>
+                                        <input
+                                            type="text"
+                                            value={guestData.address}
+                                            onChange={(e) => setGuestData({ ...guestData, address: e.target.value })}
+                                            className="w-full px-3 py-2 border rounded-lg focus:ring-[#D4AF37] focus:border-[#D4AF37]"
+                                            placeholder="Ej: San Martín 123"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Piso y departamento (Obligatorio)</label>
+                                        <input
+                                            type="text"
+                                            value={guestData.floorApartment}
+                                            onChange={(e) => setGuestData({ ...guestData, floorApartment: e.target.value })}
+                                            className="w-full px-3 py-2 border rounded-lg focus:ring-[#D4AF37] focus:border-[#D4AF37]"
+                                            placeholder="Ej: PB A"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Indicaciones extras</label>
+                                        <input
+                                            type="text"
+                                            value={guestData.extraIndications}
+                                            onChange={(e) => setGuestData({ ...guestData, extraIndications: e.target.value })}
+                                            className="w-full px-3 py-2 border rounded-lg focus:ring-[#D4AF37] focus:border-[#D4AF37]"
+                                            placeholder="Ej: Tocar el timbre del medio"
+                                        />
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
 

@@ -4,6 +4,11 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8
 const apiUrl = new URL(API_BASE_URL);
 
 const nextConfig: NextConfig = {
+  // Disable Turbopack - use classic SWC compiler instead
+  // Turbopack has cache corruption issues on ARM64
+  typescript: {
+    tsconfigPath: './tsconfig.json',
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [

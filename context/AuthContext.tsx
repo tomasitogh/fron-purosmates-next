@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, ReactNode } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useSession, signOut as nextAuthSignOut } from 'next-auth/react';
+import { useUser, useAuth as useClerkAuth } from '@clerk/nextjs';
 import { logout as logoutAction, setAuthFromStorage } from '@/redux/authSlice';
 import { AppDispatch, RootState } from '@/redux/store';
 
@@ -30,53 +30,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // @ts-ignore
     const { user, token, loading, error } = useSelector((state: RootState) => state.auth);
 
-
-    const { data: session, status } = useSession();
+    const { user: clerkUser, isLoaded, isSignedIn } = useUser();
+    const { getToken, signOut: clerkSignOut } = useClerkAuth();
 
     useEffect(() => {
-        if (status === 'authenticated' && session?.user) {
-            // @ts-ignore
-            // The accessToken from session is actually the Google ID Token as per our auth.ts config
-            const token = session.user.accessToken as string;
-
-            if (token) {
+        const syncAuth = async () => {
+            if (isLoaded && isSignedIn && clerkUser) {
                 try {
-                    const payload = JSON.parse(atob(token.split('.')[1]));
-                    const expirationTime = payload.exp * 1000;
-
-                    if (Date.now() >= expirationTime) {
-                        console.warn("AuthContext - Token expired. Logging out.");
-                        dispatch(logoutAction());
-                        nextAuthSignOut({ redirect: false });
-                        return;
+                    const token = await getToken();
+                    if (token) {
+                        dispatch(setAuthFromStorage({
+                            user: {
+                                email: clerkUser.primaryEmailAddress?.emailAddress || '',
+                                role: (clerkUser.publicMetadata?.role as string) || 'USER'
+                            },
+                            token: token
+                        }));
                     }
-
-                    dispatch(setAuthFromStorage({
-                        user: {
-                            email: session.user.email || '',
-                            role: (session.user as any).role || 'USER'
-                        },
-                        token: token
-                    }));
                 } catch (e) {
-                    console.error("AuthContext - Error decoding token:", e);
+                    console.error("AuthContext - Error syncing token:", e);
                 }
+            } else if (isLoaded && !isSignedIn) {
+                // If Clerk says NOT signed in, clear redux state
+                dispatch(logoutAction());
             }
-        }
-    }, [session, status, dispatch]);
-
-
-
-
-
+        };
+        syncAuth();
+    }, [isLoaded, isSignedIn, clerkUser, getToken, dispatch]);
 
     const logout = () => {
         dispatch(logoutAction());
-        nextAuthSignOut({ redirect: false });
+        clerkSignOut();
     };
 
     const isAdmin = () => {
-        return user?.role === 'ADMIN';
+        // Provide a fallback or role check
+        return user?.role === 'ADMIN' || clerkUser?.publicMetadata?.role === 'ADMIN';
     };
 
     const value = {
@@ -84,8 +73,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         token,
         logout,
         isAdmin,
-        loading,
-        isAuthenticated: !!user,
+        loading: !isLoaded || loading,
+        isAuthenticated: !!user || !!isSignedIn,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

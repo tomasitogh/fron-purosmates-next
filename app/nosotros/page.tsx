@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AboutUsPage() {
+    const [visibleCount, setVisibleCount] = useState(3);
     const faqs = [
         {
             question: "¿Hacen personalizados en el mate?",
@@ -328,7 +329,7 @@ export default function AboutUsPage() {
                     Preguntas Frecuentes (FAQ)
                 </h2>
                 <div className="space-y-4">
-                    {faqs.map((faq, index) => (
+                    {faqs.slice(0, visibleCount).map((faq, index) => (
                         <FAQItem
                             key={index}
                             question={faq.question}
@@ -336,6 +337,16 @@ export default function AboutUsPage() {
                         />
                     ))}
                 </div>
+                {visibleCount < faqs.length && (
+                    <div className="mt-8 flex justify-center">
+                        <button
+                            onClick={() => setVisibleCount(prev => prev + 5)}
+                            className="bg-[#254642] text-white px-6 py-2 rounded-md font-semibold hover:bg-[#1a322f] transition-colors shadow-sm"
+                        >
+                            Cargar más
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -7,7 +7,7 @@ import { RootState } from "@/redux/store";
 import { addToCart } from '@/redux/cartSlice';
 import toast from 'react-hot-toast';
 import FilterTabs from '@/components/FilterTabs';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 import AuthModal from '@/components/AuthModal';
 import Image from 'next/image';
 import ProductImagePreview from '@/components/ProductImagePreview';
@@ -25,8 +25,8 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
   const dispatch = useDispatch();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session } = useSession();
-  const isAuthenticated = !!session;
+  const { isSignedIn, isLoaded } = useUser();
+  const isAuthenticated = isLoaded && isSignedIn;
 
   const [filteredMates, setFilteredMates] = useState<Product[]>(initialProducts);
   const [selectedType, setSelectedType] = useState<string[]>([]);
@@ -180,7 +180,7 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
               {filteredMates.map((product, index) => (
                 <div
                   key={product.id}
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow cursor-pointer max-w-[281px] mx-auto w-full"
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow cursor-pointer max-w-[281px] mx-auto w-full flex flex-col h-full"
                   onClick={() => openProductModal(product)}
                 >
                   <div className="relative w-full aspect-square bg-gray-200">
@@ -202,11 +202,11 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
                       </div>
                     )}
                   </div>
-                  <div className="p-4">
+                  <div className="p-4 flex flex-col flex-1">
                     <h3 className="font-semibold text-lg text-gray-900 truncate">{product.name}</h3>
                     <p className="text-sm text-gray-600 capitalize">{product.category?.description}</p>
-                    <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-                      <div className="flex flex-col w-full gap-3">
+                    <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-2 flex-1">
+                      <div className="flex flex-col w-full gap-3 h-full">
                         <div className="flex items-center justify-between">
                           <span className="text-lg sm:text-xl font-bold text-[#254642]">
                             ${(product.price + (customizationStates[product.id] ? (product.customizationCost || 0) : 0)).toLocaleString('es-AR')}
@@ -241,7 +241,7 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
                             e.stopPropagation();
                             handleAddToCart(product, !!customizationStates[product.id]);
                           }}
-                          className="bg-[#254642] text-white px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base rounded-lg hover:bg-[#254642]/90 transition w-full font-semibold"
+                          className="bg-[#254642] text-white px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base rounded-lg hover:bg-[#254642]/90 transition w-full font-semibold mt-auto"
                         >
                           {customizationStates[product.id] ? 'Agregar Personalizado' : 'Agregar'}
                         </button>

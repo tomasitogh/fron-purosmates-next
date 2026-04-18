@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAllOrders, updateOrder, deleteOrder } from '@/redux/adminSlice';
-import { useSession } from 'next-auth/react';
+import { useAuth as useClerkAuth } from '@clerk/nextjs';
 import { Copy, PenSquare, Trash2, Info, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { AppDispatch, RootState } from '@/redux/store';
@@ -27,7 +27,7 @@ const ORDER_STATUSES = ['ALL', 'PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', '
 
 export default function OrdersPanel() {
     const dispatch = useDispatch<AppDispatch>();
-    const { data: session } = useSession();
+    const { getToken } = useClerkAuth();
     const { orders, loading } = useSelector((state: RootState) => state.admin);
     const [filterStatus, setFilterStatus] = useState('ALL');
 
@@ -43,10 +43,14 @@ export default function OrdersPanel() {
     const [viewingOrderItems, setViewingOrderItems] = useState<any | null>(null);
 
     useEffect(() => {
-        if (session?.user?.accessToken) {
-            dispatch(fetchAllOrders(session.user.accessToken));
-        }
-    }, [dispatch, session]);
+        const fetchOrders = async () => {
+            const token = await getToken();
+            if (token) {
+                dispatch(fetchAllOrders(token));
+            }
+        };
+        fetchOrders();
+    }, [dispatch, getToken]);
 
     const filteredOrders = orders?.filter(order => {
         if (filterStatus === 'ALL') return true;
@@ -68,8 +72,8 @@ export default function OrdersPanel() {
 
     const handleUpdateSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const token = session?.user?.accessToken;
-        if (!session || !editingOrder || !token) return;
+        const token = await getToken();
+        if (!token || !editingOrder) return;
 
         try {
 
@@ -233,8 +237,8 @@ export default function OrdersPanel() {
                                                     <PenSquare className="w-5 h-5" />
                                                 </button>
                                                 <button
-                                                    onClick={() => {
-                                                        const token = session?.user?.accessToken;
+                                                    onClick={async () => {
+                                                        const token = await getToken();
                                                         if (window.confirm('¿Está seguro de eliminar este pedido? Esta acción no se puede deshacer.') && token) {
                                                             dispatch(deleteOrder({ orderId: order.id, token }));
                                                         }
@@ -279,41 +283,66 @@ export default function OrdersPanel() {
                             {viewingOrderItems.user ? `Pedido #${viewingOrderItems.id}` : `Pedido #${viewingOrderItems.id} (Invitado)`}
                         </h3>
 
-                        {!viewingOrderItems.user && (
-                            <div className="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                                <h4 className="font-semibold text-gray-800 mb-3 border-b pb-2">Datos del Cliente</h4>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                                    <div>
-                                        <p className="text-gray-500 text-xs uppercase tracking-wide">Nombre</p>
-                                        <p className="font-medium text-gray-900">
-                                            {viewingOrderItems.guestFirstname} {viewingOrderItems.guestLastname}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p className="text-gray-500 text-xs uppercase tracking-wide">Email</p>
-                                        <p className="font-medium text-gray-900">{viewingOrderItems.guestEmail || '-'}</p>
-                                    </div>
-                                    <div className="sm:col-span-2">
-                                        <p className="text-gray-500 text-xs uppercase tracking-wide">Teléfono</p>
-                                        <div className="flex items-center gap-2">
-                                            <p className="font-medium text-gray-900">{viewingOrderItems.guestPhone || '-'}</p>
-                                            {viewingOrderItems.guestPhone && (
-                                                <button
-                                                    onClick={() => {
-                                                        navigator.clipboard.writeText(viewingOrderItems.guestPhone);
-                                                        toast.success('Copiado');
-                                                    }}
-                                                    className="text-gray-400 hover:text-gray-600"
-                                                    title="Copiar"
-                                                >
-                                                    <Copy className="w-3 h-3" />
-                                                </button>
-                                            )}
-                                        </div>
+                        <div className="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <h4 className="font-semibold text-gray-800 mb-3 border-b pb-2">Datos del Cliente y Envío</h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <p className="text-gray-500 text-xs uppercase tracking-wide">Nombre</p>
+                                    <p className="font-medium text-gray-900">
+                                        {viewingOrderItems.user ? viewingOrderItems.user.name : `${viewingOrderItems.guestFirstname || ''} ${viewingOrderItems.guestLastname || ''}`}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-gray-500 text-xs uppercase tracking-wide">Email</p>
+                                    <p className="font-medium text-gray-900">{viewingOrderItems.user ? viewingOrderItems.user.email : (viewingOrderItems.guestEmail || '-')}</p>
+                                </div>
+                                <div className="sm:col-span-2">
+                                    <p className="text-gray-500 text-xs uppercase tracking-wide">Teléfono</p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="font-medium text-gray-900">{viewingOrderItems.user?.phoneNumber || viewingOrderItems.guestPhone || '-'}</p>
+                                        {(viewingOrderItems.user?.phoneNumber || viewingOrderItems.guestPhone) && (
+                                            <button
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(viewingOrderItems.user?.phoneNumber || viewingOrderItems.guestPhone);
+                                                    toast.success('Copiado');
+                                                }}
+                                                className="text-gray-400 hover:text-gray-600"
+                                                title="Copiar"
+                                            >
+                                                <Copy className="w-3 h-3" />
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
+
+                                <div className="span-col-1">
+                                    <p className="text-gray-500 text-xs uppercase tracking-wide">Preferencia de envío</p>
+                                    <p className="font-medium text-blue-800 bg-blue-100 rounded px-2 w-max mt-1 py-0.5">
+                                        {viewingOrderItems.shippingPreference === 'correo' ? 'Correo Argentino' : (viewingOrderItems.shippingPreference === 'vendedor' ? 'Coordinar con vendedor' : 'No especificado')}
+                                    </p>
+                                </div>
+                                {viewingOrderItems.shippingPreference === 'correo' && (
+                                    <>
+                                        <div>
+                                            <p className="text-gray-500 text-xs uppercase tracking-wide">Localidad</p>
+                                            <p className="font-medium text-gray-900">{viewingOrderItems.locality || '-'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-500 text-xs uppercase tracking-wide">Dirección</p>
+                                            <p className="font-medium text-gray-900">{viewingOrderItems.address || '-'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-500 text-xs uppercase tracking-wide">Piso / Depto</p>
+                                            <p className="font-medium text-gray-900">{viewingOrderItems.floorApartment || '-'}</p>
+                                        </div>
+                                        <div className="sm:col-span-2">
+                                            <p className="text-gray-500 text-xs uppercase tracking-wide">Indicaciones extras</p>
+                                            <p className="font-medium text-gray-900">{viewingOrderItems.extraIndications || '-'}</p>
+                                        </div>
+                                    </>
+                                )}
                             </div>
-                        )}
+                        </div>
 
                         <h4 className="font-bold text-gray-900 mb-2">Productos</h4>
                         <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">

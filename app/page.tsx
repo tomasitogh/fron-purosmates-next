@@ -1,76 +1,37 @@
+
 import { Suspense } from 'react';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import fs from 'fs';
+import path from 'path';
+import HeroCarousel from '@/components/HeroCarousel';
+import CategoryGrid from '@/components/CategoryGrid';
+import Testimonials from '@/components/Testimonials';
 
-import ShopContent from './ShopContent';
-
-// Make this page dynamic to allow useSearchParams in ShopContent
 export const dynamic = 'force-dynamic';
 
-// Server Component - Fetch products server-side
-async function getProducts() {
-  try {
-    const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
-    const res = await fetch(`${API_URL}/products`, {
-      next: { revalidate: 10 } // ISR: revalidate every 10 seconds
-    });
-
-    if (!res.ok) {
-      console.error('Failed to fetch products');
-      return [];
-    }
-
-    return res.json();
-  } catch (error) {
-    console.error('Error fetching products:', error);
-    return [];
-  }
-}
-
-async function getCategories() {
-  try {
-    const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
-    const res = await fetch(`${API_URL}/categories`, {
-      next: { revalidate: 10 } // ISR: revalidate every 10 seconds
-    });
-
-    if (!res.ok) {
-      console.error('Failed to fetch categories');
-      return [];
-    }
-
-    return res.json();
-  } catch (error) {
-    console.error('Error fetching categories:', error);
-    return [];
-  }
-}
-
 export const metadata = {
-  title: "Inicio",
-  description: "Encontrá los mejores mates y accesorios en Puros Mates.",
+  title: 'Inicio',
+  description: 'Descubre los mejores mates y accesorios en Puros Mates.',
 };
 
-export default async function HomePage() {
-  const [products, categoriesData] = await Promise.all([
-    getProducts(),
-    getCategories()
-  ]);
+// Server Component: load config JSON
+async function getHomeConfig() {
+  const configPath = path.join(process.cwd(), 'public', 'homeConfig.json');
+  const data = await fs.promises.readFile(configPath, 'utf8');
+  return JSON.parse(data);
+}
 
-  // Handle paginated response structure { content: [...], ... } or fallback to array
-  const categories = Array.isArray(categoriesData)
-    ? categoriesData
-    : (categoriesData && Array.isArray(categoriesData.content))
-      ? categoriesData.content
-      : [];
+export default async function HomePage() {
+  const config = await getHomeConfig();
+  const { banners, categories, testimonials } = config;
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <main className="flex-1">
-        <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Cargando...</div>}>
-          <ShopContent initialProducts={products} initialCategories={categories} />
-        </Suspense>
-      </main>
-    </div>
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Cargando...</div>}>
+      {/* Hero Carousel */}
+      <HeroCarousel images={banners} />
+      {/* Category Grid */}
+      <CategoryGrid categories={categories} />
+      {/* Testimonials */}
+      <Testimonials data={testimonials} />
+    </Suspense>
   );
 }
