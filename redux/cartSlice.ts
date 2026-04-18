@@ -79,6 +79,11 @@ export const createOrder = createAsyncThunk(
             guestLastname?: string;
             guestEmail?: string;
             guestPhone: string;
+            shippingPreference?: string;
+            locality?: string;
+            address?: string;
+            floorApartment?: string;
+            extraIndications?: string;
         };
         paymentMethod?: string;
     }, { rejectWithValue }) => {

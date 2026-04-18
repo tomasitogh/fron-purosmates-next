@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useSession } from 'next-auth/react';
+import { useUser, useAuth as useClerkAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { fetchAllProductsAdmin } from '@/redux/productSlice';
 import { fetchCategories } from '@/redux/categorySlice';
@@ -15,12 +15,13 @@ import ProductImagePreview from '@/components/ProductImagePreview';
 import { AppDispatch, RootState } from '@/redux/store';
 
 export default function AdminPanel() {
-    const { data: session, status } = useSession();
+    const { user: clerkUser, isLoaded } = useUser();
+    const { getToken } = useClerkAuth();
     const router = useRouter();
     const dispatch = useDispatch<AppDispatch>();
 
-    // Get token from session
-    const token = session?.user?.accessToken;
+    // Get token from Clerk
+    const [token, setToken] = useState<string | null>(null);
 
     // Redux state
     const { items: products, loading: productsLoading } = useSelector((state: RootState) => state.products);
@@ -48,11 +49,31 @@ export default function AdminPanel() {
     });
 
     useEffect(() => {
-        if (status === 'authenticated' && token) {
-            dispatch(fetchAllProductsAdmin(token));
-            dispatch(fetchCategories());
+        if (isLoaded && clerkUser) {
+            // Verificar si es admin
+            const role = (clerkUser.publicMetadata as any)?.role;
+            if (role?.toString().toLowerCase() !== 'admin') {
+                // No es admin, redirigir a home
+                router.push('/');
+                return;
+            }
+            
+            // Es admin, cargar token y datos
+            const fetchToken = async () => {
+                const clerkToken = await getToken();
+                console.log('Clerk token obtained:', clerkToken ? `${clerkToken.substring(0, 20)}...` : 'NULL');
+                setToken(clerkToken);
+                if (clerkToken) {
+                    console.log('Dispatching fetchAllProductsAdmin with token');
+                    dispatch(fetchAllProductsAdmin(clerkToken));
+                    dispatch(fetchCategories());
+                } else {
+                    console.error('Token is null or empty');
+                }
+            };
+            fetchToken();
         }
-    }, [dispatch, status, token]);
+    }, [isLoaded, clerkUser, getToken, dispatch, router]);
 
     useEffect(() => {
         // Si el array está vacío, mostramos todos.

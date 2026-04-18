@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* Hide native horizontal scrollbar */
+::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+
 @layer base {
     #root {
         width: 100%;

@@ -1,24 +1,18 @@
-import { auth } from "@/auth";
-import { NextResponse } from "next/server";
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
 
-export default auth((req) => {
-  const session = req.auth;
-  const isAdminRoute = req.nextUrl.pathname.startsWith('/admin');
-  
-  // Proteger rutas de admin
-  if (isAdminRoute) {
-    if (!session?.user) {
-      return NextResponse.redirect(new URL('/', req.url));
-    }
-    
-    if (session.user.role !== 'ADMIN') {
-      return NextResponse.redirect(new URL('/', req.url));
-    }
+const isAdminRoute = createRouteMatcher(['/admin(.*)']);
+
+export default clerkMiddleware(async (auth, req) => {
+  if (isAdminRoute(req)) {
+    // Proteger ruta - requiere estar autenticado
+    await auth.protect();
   }
-  
-  return NextResponse.next();
 });
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: [
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/(api|trpc)(.*)',
+  ],
 };

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
 import { GoogleAnalytics } from '@next/third-parties/google';
+import { ClerkProvider } from "@clerk/nextjs";
 
 import { Providers } from "@/components/Providers";
 import Navbar from "@/components/Navbar";
@@ -47,24 +48,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
-      <body suppressHydrationWarning>
-        <Providers>
-          <Suspense fallback={<div className="h-16 bg-[#254642]" />}>
-            <Navbar />
-          </Suspense>
+    <ClerkProvider>
+      <html lang="es" suppressHydrationWarning>
+        <body suppressHydrationWarning>
+          <Providers>
+            <Suspense fallback={<div className="h-16 bg-[#254642]" />}>
+              <Navbar />
+            </Suspense>
 
-          <main className="min-h-screen flex flex-col">
-            {children}
-          </main>
-          <Footer />
-          <FloatingWhatsApp />
-          <Suspense fallback={null}>
-            <FacebookPixel />
-          </Suspense>
-        </Providers>
-        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID || ""} />
-      </body>
-    </html>
+            <main className="min-h-screen flex flex-col">
+              {children}
+            </main>
+            <Footer />
+            <FloatingWhatsApp />
+            <Suspense fallback={null}>
+              <FacebookPixel />
+            </Suspense>
+          </Providers>
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID || ""} />
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

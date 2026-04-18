@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { selectCartTotalQty } from '@/redux/cartSlice';
-import { useSession, signOut } from 'next-auth/react';
+import { UserButton, useUser } from '@clerk/nextjs';
+import { useAuth } from '@/context/AuthContext';
 import AuthModal from './AuthModal';
 import Image from 'next/image';
-import { useDispatch } from 'react-redux';
 import { Search, X, ShoppingCart, User } from 'lucide-react';
 
 export default function Navbar() {
@@ -18,12 +18,12 @@ export default function Navbar() {
     const [mounted, setMounted] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
-    const { data: session, status } = useSession();
+    const { user, isSignedIn, isLoaded } = useUser();
+    const { isAdmin } = useAuth();
     const totalQty = useSelector(selectCartTotalQty);
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const dispatch = useDispatch();
 
     useEffect(() => {
         setMounted(true);
@@ -31,10 +31,6 @@ export default function Navbar() {
     }, [searchParams]);
 
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-
-    const handleLogout = () => {
-        signOut({ callbackUrl: '/' });
-    };
 
     const handleCartClick = () => {
         router.push('/carrito');
@@ -53,8 +49,7 @@ export default function Navbar() {
         router.push(`/?${params.toString()}`);
     };
 
-    const isAdmin = session?.user?.role === 'ADMIN';
-    const isAuthenticated = status === 'authenticated';
+    const isAuthenticated = isLoaded && isSignedIn;
 
     return (
         <header className="bg-[#254642] shadow-md sticky top-0 z-50">
@@ -138,25 +133,19 @@ export default function Navbar() {
                             )}
                         </button>
 
-                        {isAuthenticated && isAdmin && (
-                            <Link
-                                href="/admin"
-                                className="text-[#F5F5DC] hover:text-white transition font-medium"
-                            >
-                                🔧 Panel Admin
-                            </Link>
-                        )}
 
                         {isAuthenticated ? (
-                            <div className="flex flex-row items-center gap-4 flex-wrap">
-
-                                <button
-                                    onClick={handleLogout}
-                                    className="bg-white/10 text-[#F5F5DC] px-4 py-2 rounded-lg hover:bg-white/20 transition shadow-sm"
-                                >
-                                    Cerrar sesión
-                                </button>
-                            </div>
+                            <UserButton>
+                                {isAdmin() && (
+                                    <UserButton.MenuItems>
+                                        <UserButton.Action
+                                            label="Administrador"
+                                            labelIcon={<span>🔧</span>}
+                                            onClick={() => router.push('/admin')}
+                                        />
+                                    </UserButton.MenuItems>
+                                )}
+                            </UserButton>
                         ) : (
                             <button
                                 onClick={() => setIsAuthModalOpen(true)}
@@ -218,18 +207,6 @@ export default function Navbar() {
                             </form>
                         </li>
 
-                        {isAuthenticated && isAdmin && (
-                            <li>
-                                <Link
-                                    href="/admin"
-                                    className="block text-gray-700 hover:text-gray-900 transition font-medium"
-                                    onClick={() => setIsMenuOpen(false)}
-                                >
-                                    🔧 Panel Admin
-                                </Link>
-                            </li>
-                        )}
-
                         <li>
                             <div className="flex flex-col items-center gap-3 w-full">
                                 <div className="flex flex-row items-center gap-3 flex-wrap w-full">
@@ -259,16 +236,22 @@ export default function Navbar() {
 
                                     {/* User Button (Login/Logout) */}
                                     {isAuthenticated ? (
-                                        <button
-                                            onClick={() => {
-                                                handleLogout();
-                                                setIsMenuOpen(false);
-                                            }}
-                                            className="inline-flex items-center justify-center h-10 px-3 rounded-xl text-white border border-white/60 bg-transparent hover:bg-white/10 transition"
-                                            aria-label="Cerrar sesión"
-                                        >
-                                            <User className="w-5 h-5" />
-                                        </button>
+                                        <div className="inline-flex items-center justify-center h-10 px-3 rounded-xl">
+                                            <UserButton>
+                                                {isAdmin() && (
+                                                    <UserButton.MenuItems>
+                                                        <UserButton.Action
+                                                            label="Administrador"
+                                                            labelIcon={<span>🔧</span>}
+                                                            onClick={() => {
+                                                                router.push('/admin');
+                                                                setIsMenuOpen(false);
+                                                            }}
+                                                        />
+                                                    </UserButton.MenuItems>
+                                                )}
+                                            </UserButton>
+                                        </div>
                                     ) : (
                                         <button
                                             onClick={() => {
