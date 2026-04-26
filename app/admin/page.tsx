@@ -24,7 +24,7 @@ export default function AdminPanel() {
     const [token, setToken] = useState<string | null>(null);
 
     // Redux state
-    const { items: products, loading: productsLoading } = useSelector((state: RootState) => state.products);
+    const { items: products, loading: productsLoading, error: productsError } = useSelector((state: RootState) => state.products);
     const { items: categories } = useSelector((state: RootState) => state.categories);
     const { loading: adminLoading, error: adminError, successMessage } = useSelector((state: RootState) => state.admin);
 
@@ -100,7 +100,10 @@ export default function AdminPanel() {
             toast.error(`Error: ${adminError}`);
             dispatch(clearAdminMessages());
         }
-    }, [successMessage, adminError, dispatch]);
+        if (productsError) {
+            toast.error(`Error al cargar productos: ${productsError}`);
+        }
+    }, [successMessage, adminError, productsError, dispatch]);
 
     const handleFilterChange = (type: string[]) => {
         setSelectedType(type);

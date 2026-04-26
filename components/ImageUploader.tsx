@@ -94,6 +94,11 @@ export default function ImageUploader({
 
         if (imageFiles.length === 0) return;
 
+        if (!token) {
+            toast.error('Sesión no válida. Por favor, recarga la página.');
+            return;
+        }
+
         dispatch(uploadFiles({ files: imageFiles, token }));
     };
 
