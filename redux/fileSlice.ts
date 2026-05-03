@@ -27,7 +27,8 @@ export const uploadFiles = createAsyncThunk(
 
         const { data } = await axios.post(`${API_URL}/upload-multiple`, formData, {
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'multipart/form-data'
             }
         });
 
