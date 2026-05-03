@@ -1,103 +1,147 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function HeroCarousel({ images }) {
   const containerRef = useRef(null);
   const [current, setCurrent] = useState(0);
+  const [visibleImages, setVisibleImages] = useState([]);
 
-  // Auto scroll every 5 seconds
+  const handleScroll = useCallback(() => {
+    if (!containerRef.current) return;
+    const width = containerRef.current.clientWidth;
+    const scrollLeft = containerRef.current.scrollLeft;
+    const centerIndex = Math.round(scrollLeft / width);
+    setCurrent(centerIndex);
+  }, []);
+
   useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
+
+  useEffect(() => {
+    if (!containerRef.current || images.length <= 1) return;
     const interval = setInterval(() => {
-      if (!containerRef.current) return;
+      if (!containerRef.current || document.hidden) return;
       const total = images.length;
       const nextIndex = (current + 1) % total;
       const width = containerRef.current.clientWidth;
-      containerRef.current.scrollTo({
-        left: nextIndex * width,
-        behavior: 'smooth',
-      });
+      containerRef.current.scrollLeft = nextIndex * width;
       setCurrent(nextIndex);
     }, 5000);
     return () => clearInterval(interval);
-  }, [current, images]);
+  }, [current, images.length]);
 
-  const goTo = (index) => {
+  useEffect(() => {
+    const indices = [];
+    indices.push(current);
+    if (current > 0) indices.push(current - 1);
+    if (current < images.length - 1) indices.push(current + 1);
+    setVisibleImages(indices);
+  }, [current, images.length]);
+
+  const goTo = useCallback((index) => {
     if (!containerRef.current) return;
     const width = containerRef.current.clientWidth;
-    containerRef.current.scrollTo({ left: index * width, behavior: 'smooth' });
+    containerRef.current.scrollLeft = index * width;
     setCurrent(index);
-  };
+  }, []);
 
-  const prev = () => {
+  const prev = useCallback(() => {
     const prevIndex = (current - 1 + images.length) % images.length;
     goTo(prevIndex);
-  };
+  }, [current, images.length, goTo]);
 
-  const next = () => {
+  const next = useCallback(() => {
     const nextIndex = (current + 1) % images.length;
     goTo(nextIndex);
-  };
+  }, [current, images.length, goTo]);
 
   return (
     <div className="relative w-full overflow-hidden">
       <div
         ref={containerRef}
         className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
-        style={{ scrollSnapType: 'x mandatory' }}
+        style={{ scrollSnapType: 'x mandatory', scrollBehavior: 'auto' }}
       >
-        {images.map((img, idx) => (
-          <div key={idx} className="flex-shrink-0 w-full snap-center relative h-[250px] sm:h-[400px] md:h-[600px] lg:h-[750px]">
-            <Image
-              src={img.src}
-              alt={img.alt}
-              fill
-              priority={idx === 0}
-              className="object-cover"
-              sizes="100vw"
-            />
-            {img.caption && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-4">
-                <div className="bg-black/40 backdrop-blur-md text-white px-4 md:px-8 py-2 md:py-4 rounded-lg md:rounded-xl border border-white/20 shadow-2xl transform transition-all">
-                  <span className="text-sm md:text-3xl font-bold tracking-wide uppercase text-center block">
-                    {img.caption}
-                  </span>
+        {images.map((img, idx) => {
+          const linkUrl = img.link;
+          const isVisible = visibleImages.includes(idx);
+          const slideContent = (
+            <div key={idx} className="flex-shrink-0 w-full snap-center relative h-[250px] sm:h-[400px] md:h-[600px] lg:h-[750px]">
+              <Image
+                src={img.src}
+                alt={img.alt}
+                fill
+                priority={idx === 0}
+                loading={idx === 0 ? "eager" : "lazy"}
+                className="object-cover"
+                sizes="100vw"
+                hidden={!isVisible && images.length > 1}
+              />
+              {img.caption && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-4">
+                  <div className="bg-black/40 backdrop-blur-md text-white px-4 md:px-8 py-2 md:py-4 rounded-lg md:rounded-xl border border-white/20 shadow-2xl transform transition-all">
+                    <span className="text-sm md:text-3xl font-bold tracking-wide uppercase text-center block">
+                      {img.caption}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        ))}
+              )}
+            </div>
+          );
+
+          if (linkUrl) {
+            return (
+              <Link key={idx} href={linkUrl} className="flex-shrink-0 w-full snap-center">
+                {slideContent}
+              </Link>
+            );
+          }
+
+          return <div key={idx} className="flex-shrink-0 w-full snap-center">{slideContent}</div>;
+        })}
       </div>
-      {/* Navigation arrows */}
-      <button
-        onClick={prev}
-        aria-label="Previous slide"
-        className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 rounded-full p-1.5 md:p-2 hover:bg-white/90 shadow-md z-10"
-      >
-        <span className="text-xs md:text-base">◀</span>
-      </button>
-      <button
-        onClick={next}
-        aria-label="Next slide"
-        className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 rounded-full p-1.5 md:p-2 hover:bg-white/90 shadow-md z-10"
-      >
-        <span className="text-xs md:text-base">▶</span>
-      </button>
-      {/* Dots */}
-      <div className="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 flex gap-2 md:gap-3 z-10">
-        {images.map((_, idx) => (
+      {images.length > 1 && (
+        <>
           <button
-            key={idx}
-            onClick={() => goTo(idx)}
-            aria-label={`Slide ${idx + 1}`}
-            className={`w-2 h-2 md:w-3 md:h-3 rounded-full transition-all duration-300 ${
-              current === idx 
-              ? 'bg-white scale-125 shadow-[0_0_10px_rgba(255,255,255,0.8)]' 
-              : 'bg-white/40 hover:bg-white/60'
-            }`}
-          />
-        ))}
-      </div>
+            onClick={prev}
+            aria-label="Previous slide"
+            className="absolute border-transparent left-2 top-1/2 -translate-y-1/2 bg-white/50 rounded-full p-2 md:p-3 hover:bg-white/80 transition-all duration-200 z-10 group"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 md:w-5 md:h-5 text-gray-700 group-hover:text-gray-900 transition-colors">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <button
+            onClick={next}
+            aria-label="Next slide"
+            className="absolute border-transparent right-2 top-1/2 -translate-y-1/2 bg-white/50 rounded-full p-2 md:p-3 hover:bg-white/90 transition-all duration-200 z-10 group"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 md:w-5 md:h-5 text-gray-700 group-hover:text-gray-900 transition-colors">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+          <div className="absolute bottom-4 md:bottom-6 left-4 right-4 z-10 flex gap-1">
+            {images.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => goTo(idx)}
+                aria-label={`Slide ${idx + 1}`}
+                className={`flex-1 py-0.5 md:h-1 md:py-1 rounded-lg transition-all border border-transparent duration-300 ${current === idx
+                  ? 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.1)] scale-y-125'
+                  : 'bg-white/30 hover:bg-white/50'
+                  }`}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

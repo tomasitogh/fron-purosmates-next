@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { cloudinaryLoader } from '@/lib/cloudinary';
+import { useState, useEffect } from 'react';
 
 interface ProductImagePreviewProps {
     src: string;
@@ -9,11 +10,13 @@ interface ProductImagePreviewProps {
     width?: number;
     height?: number;
     transform?: { scale: number; x: number; y: number };
-    className?: string; // Clase para el contenedor
-    imageClassName?: string; // Clase para la imagen
+    className?: string;
+    imageClassName?: string;
     priority?: boolean;
     fill?: boolean;
 }
+
+const BLUR_DATA_URL = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iNDAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjVmNWY3Ii8+PC9zdmc+';
 
 export default function ProductImagePreview({
     src,
@@ -26,18 +29,27 @@ export default function ProductImagePreview({
     priority = false,
     fill = false
 }: ProductImagePreviewProps) {
+    const [isLoading, setIsLoading] = useState(true);
     const isCloudinary = src.includes('res.cloudinary.com');
+    const [blurEnabled, setBlurEnabled] = useState(false);
+
+    useEffect(() => {
+        if (!isCloudinary) {
+            setBlurEnabled(true);
+        }
+    }, [isCloudinary]);
 
     return (
         <div className={`relative overflow-hidden ${className}`} style={{ width: fill ? '100%' : width, height: fill ? '100%' : height }}>
             <div
+                className={`transition-opacity duration-300 ${isLoading ? 'opacity-50' : 'opacity-100'}`}
                 style={{
                     width: '100%',
                     height: '100%',
-                    position: 'relative', // Necessary for Next/Image fill
+                    position: 'relative',
                     transform: `translate(${transform.x}%, ${transform.y}%) scale(${transform.scale})`,
                     transformOrigin: 'center',
-                    transition: 'transform 0.1s ease-out'
+                    backgroundColor: isLoading ? '#f5f5f7' : 'transparent',
                 }}
             >
                 <Image
@@ -49,6 +61,9 @@ export default function ProductImagePreview({
                     fill={fill}
                     sizes={fill ? "(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 300px" : undefined}
                     priority={priority}
+                    placeholder={blurEnabled ? "blur" : "empty"}
+                    blurDataURL={blurEnabled ? BLUR_DATA_URL : undefined}
+                    onLoad={() => setIsLoading(false)}
                     className={`object-cover ${imageClassName} ${fill ? '' : 'w-full h-full'}`}
                 />
             </div>

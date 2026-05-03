@@ -10,6 +10,7 @@ import { createProduct, updateProduct, deleteProduct, clearAdminMessages, Produc
 import FilterTabs from '@/components/FilterTabs';
 import ImageUploader from '@/components/ImageUploader';
 import OrdersPanel from '@/components/OrdersPanel';
+import HomeEditor from '@/components/HomeEditor';
 import toast from 'react-hot-toast';
 import ProductImagePreview from '@/components/ProductImagePreview';
 import { AppDispatch, RootState } from '@/redux/store';
@@ -29,7 +30,7 @@ export default function AdminPanel() {
     const { loading: adminLoading, error: adminError, successMessage } = useSelector((state: RootState) => state.admin);
 
     // Local state
-    const [activeTab, setActiveTab] = useState<'products' | 'orders'>('products');
+    const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'home'>('products');
     const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
     const [selectedType, setSelectedType] = useState<string[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -57,7 +58,7 @@ export default function AdminPanel() {
                 router.push('/');
                 return;
             }
-            
+
             // Es admin, cargar token y datos
             const fetchToken = async () => {
                 const clerkToken = await getToken();
@@ -275,7 +276,7 @@ export default function AdminPanel() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
                 <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900 mb-4 md:mb-0">Gestión de Tienda</h2>
@@ -297,6 +298,15 @@ export default function AdminPanel() {
                                     }`}
                             >
                                 Pedidos
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('home')}
+                                className={`px-4 py-2 font-medium rounded-lg transition ${activeTab === 'home'
+                                    ? 'bg-[#254642] text-white shadow-md'
+                                    : 'bg-white text-gray-600 hover:bg-gray-50'
+                                    }`}
+                            >
+                                Home
                             </button>
                         </div>
                     </div>
@@ -412,6 +422,8 @@ export default function AdminPanel() {
                             </div>
                         )}
                     </>
+                ) : activeTab === 'home' ? (
+                    <HomeEditor />
                 ) : (
                     <OrdersPanel />
                 )}

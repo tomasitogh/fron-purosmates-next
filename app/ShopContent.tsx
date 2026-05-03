@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import { RootState } from "@/redux/store";
@@ -20,15 +20,12 @@ interface ShopContentProps {
 }
 
 export default function ShopContent({ initialProducts, initialCategories }: ShopContentProps) {
-  console.log('ShopContent initialProducts:', initialProducts);
-  console.log('ShopContent initialCategories:', initialCategories);
   const dispatch = useDispatch();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isSignedIn, isLoaded } = useUser();
   const isAuthenticated = isLoaded && isSignedIn;
 
-  const [filteredMates, setFilteredMates] = useState<Product[]>(initialProducts);
   const [selectedType, setSelectedType] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState([0, 100000]);
   const [minPrice, setMinPrice] = useState(0);
@@ -52,40 +49,7 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
     return searchParams.get('producto') || null;
   }, [searchParams]);
 
-  useEffect(() => {
-    if (categoryFromUrl) {
-      setSelectedType([categoryFromUrl]);
-    }
-  }, [categoryFromUrl]);
-
-  // Estado derivado para el producto seleccionado basado en la URL
-  const selectedProduct = useMemo(() => {
-    if (!productSlugFromUrl) return null;
-    return initialProducts.find(p => (p.slug || slugify(p.name)) === productSlugFromUrl) || null;
-  }, [productSlugFromUrl, initialProducts]);
-
-  // Resetear estados auxiliares cuando cambia el producto seleccionado
-  useEffect(() => {
-    if (selectedProduct) {
-      setWantsCustomization(false);
-      setSelectedImageIndex(0);
-      setTimeout(() => scrollToImage(0), 0);
-    }
-  }, [selectedProduct?.id]);
-
-
-  useEffect(() => {
-    if (initialProducts.length > 0) {
-      const prices = initialProducts.map(p => p.price);
-      const min = Math.floor(Math.min(...prices));
-      const max = Math.ceil(Math.max(...prices));
-      setMinPrice(min);
-      setMaxPrice(max);
-      setPriceRange([min, max]);
-    }
-  }, [initialProducts]);
-
-  useEffect(() => {
+  const filteredMates = useMemo(() => {
     let list = selectedType.length === 0
       ? initialProducts
       : initialProducts.filter(p => selectedType.includes(p.category?.description?.toLowerCase() || ''));
@@ -94,22 +58,53 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
       list = list.filter(p => p.name.toLowerCase().includes(searchText));
     }
 
-    list = list.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
+    return list.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
+  }, [initialProducts, selectedType, searchText, priceRange]);
 
-    setFilteredMates(list);
-  }, [selectedType, searchText, priceRange, initialProducts]);
+  const priceRangeMemo = useMemo(() => {
+    if (initialProducts.length > 0) {
+      const prices = initialProducts.map(p => p.price);
+      return [Math.floor(Math.min(...prices)), Math.ceil(Math.max(...prices))];
+    }
+    return [0, 100000];
+  }, [initialProducts]);
 
-  // Función helper para scrollear a una imagen específica
-  const scrollToImage = (index: number) => {
+  useEffect(() => {
+    if (categoryFromUrl) {
+      setSelectedType([categoryFromUrl]);
+    }
+  }, [categoryFromUrl]);
+
+  useEffect(() => {
+    setMinPrice(priceRangeMemo[0]);
+    setMaxPrice(priceRangeMemo[1]);
+    setPriceRange(priceRangeMemo);
+  }, [priceRangeMemo]);
+
+
+  const selectedProduct = useMemo(() => {
+    if (!productSlugFromUrl) return null;
+    return initialProducts.find(p => (p.slug || slugify(p.name)) === productSlugFromUrl) || null;
+  }, [productSlugFromUrl, initialProducts]);
+
+  useEffect(() => {
+    if (selectedProduct) {
+      setWantsCustomization(false);
+      setSelectedImageIndex(0);
+    }
+  }, [selectedProduct?.id]);
+
+
+  const scrollToImage = useCallback((index: number) => {
     if (scrollContainerRef.current) {
       const container = scrollContainerRef.current;
       const width = container.clientWidth;
       container.scrollTo({
         left: index * width,
-        behavior: 'smooth'
+        behavior: 'auto'
       });
     }
-  };
+  }, []);
 
   const handleAddToCart = (product: any, withCustomization: boolean = false) => {
     dispatch(addToCart({ ...product, qty: 1, hasCustomization: withCustomization }) as any);
@@ -139,7 +134,7 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
 
   return (
     <>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar */}
           <aside className="lg:w-64 flex-shrink-0">
