@@ -1,8 +1,17 @@
 {
   "banners": [
-    { "src": "/banners/banner1.jpg", "alt": "Banner 1" },
-    { "src": "/banners/banner2.jpg", "alt": "Banner 2" },
-    { "src": "/banners/banner3.jpg", "alt": "Banner 3" }
+    {
+      "src": "/banners/banner1.jpg",
+      "alt": "Banner 1"
+    },
+    {
+      "src": "/banners/banner2.jpg",
+      "alt": "Banner 2"
+    },
+    {
+      "src": "/banners/banner3.jpg",
+      "alt": "Banner 3"
+    }
   ],
   "categories": {
     "mate": "/categories/mate.jpg",
@@ -13,12 +22,12 @@
     {
       "name": "Juan P.",
       "text": "¡Excelente calidad! El mate es tal cual la foto y llegó súper rápido. 100% recomendado.",
-      "rating": 5
+      "rating": 1
     },
     {
       "name": "María G.",
       "text": "La atención por WhatsApp fue muy buena, me sacaron todas las dudas antes de comprar. El kit matero es hermoso.",
-      "rating": 5
+      "rating": 1
     },
     {
       "name": "Carlos M.",

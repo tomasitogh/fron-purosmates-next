@@ -10,7 +10,6 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FacebookPixel from "@/components/FacebookPixel";
 import FloatingWhatsApp from "@/components/FloatingWhatsApp";
-import PushNotificationSetup from "@/components/PushNotificationSetup";
 
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
@@ -63,7 +62,6 @@ export default function RootLayout({
             </main>
             <Footer />
             <FloatingWhatsApp />
-            <PushNotificationSetup />
             <Suspense fallback={null}>
               <FacebookPixel />
             </Suspense>

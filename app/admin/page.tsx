@@ -11,6 +11,7 @@ import FilterTabs from '@/components/FilterTabs';
 import ImageUploader from '@/components/ImageUploader';
 import OrdersPanel from '@/components/OrdersPanel';
 import HomeEditor from '@/components/HomeEditor';
+import SettingsTab from '@/components/SettingsTab';
 import toast from 'react-hot-toast';
 import ProductImagePreview from '@/components/ProductImagePreview';
 import { AppDispatch, RootState } from '@/redux/store';
@@ -30,7 +31,7 @@ export default function AdminPanel() {
     const { loading: adminLoading, error: adminError, successMessage } = useSelector((state: RootState) => state.admin);
 
     // Local state
-    const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'home'>('products');
+    const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'home' | 'settings'>('products');
     const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
     const [selectedType, setSelectedType] = useState<string[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -308,6 +309,15 @@ export default function AdminPanel() {
                             >
                                 Home
                             </button>
+                            <button
+                                onClick={() => setActiveTab('settings')}
+                                className={`px-4 py-2 font-medium rounded-lg transition ${activeTab === 'settings'
+                                    ? 'bg-[#254642] text-white shadow-md'
+                                    : 'bg-white text-gray-600 hover:bg-gray-50'
+                                    }`}
+                            >
+                                Ajustes
+                            </button>
                         </div>
                     </div>
 
@@ -424,6 +434,8 @@ export default function AdminPanel() {
                     </>
                 ) : activeTab === 'home' ? (
                     <HomeEditor />
+                ) : activeTab === 'settings' ? (
+                    <SettingsTab />
                 ) : (
                     <OrdersPanel />
                 )}

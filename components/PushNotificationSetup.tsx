@@ -70,11 +70,11 @@ export default function PushNotificationSetup() {
     }
   };
 
-  if (!isLoaded) return null;
+if (!isLoaded) return null;
 
-  // Siempre mostrar el botón cuando Clerk cargó (sin verificar user)
-  // para que se puedan activar notificaciones de escritorio
-  // El polling realmente funciona solo si es admin (backend valida eso)
+  // Solo mostrar para admins logueados
+  const isAdmin = user?.publicMetadata?.role === 'admin';
+  if (!isAdmin) return null;
 
   return (
     <button

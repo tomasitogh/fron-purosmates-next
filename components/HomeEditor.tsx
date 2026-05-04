@@ -12,7 +12,7 @@ import ImageUploader from '@/components/ImageUploader';
 import { useAuth as useClerkAuth } from '@clerk/nextjs';
 
 export default function HomeEditor() {
-    const [activeTab, setActiveTab] = useState<'banners' | 'home-categories' | 'product-categories'>('banners');
+    const [modalType, setModalType] = useState<'banners' | 'home-categories' | 'product-categories'>('banners');
     const [banners, setBanners] = useState<Banner[]>([]);
     const [homeCategories, setHomeCategories] = useState<HomeImage[]>([]);
     const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
@@ -58,7 +58,8 @@ export default function HomeEditor() {
         init();
     }, []);
 
-    const openCreateModal = () => {
+    const openCreateModal = (type: 'banners' | 'home-categories' | 'product-categories') => {
+        setModalType(type);
         setEditingItem(null);
         setIsEditing(false);
         setFormData({ altText: '', link: '', description: '', active: true });
@@ -66,18 +67,19 @@ export default function HomeEditor() {
         setIsModalOpen(true);
     };
 
-    const openEditModal = (item: any) => {
+    const openEditModal = (item: any, type: 'banners' | 'home-categories' | 'product-categories') => {
+        setModalType(type);
         setEditingItem(item);
         setIsEditing(true);
         
-        if (activeTab === 'product-categories') {
+        if (type === 'product-categories') {
             setFormData({
                 altText: '',
                 link: '',
                 description: item.description,
                 active: item.active,
             });
-        } else if (activeTab === 'banners') {
+        } else if (type === 'banners') {
             setFormData({
                 altText: item.altText || '',
                 link: item.link || '',
@@ -114,7 +116,7 @@ export default function HomeEditor() {
         try {
             const imageUrl = uploadedImages[0]?.url || '';
 
-            if (activeTab === 'product-categories') {
+            if (modalType === 'product-categories') {
                 if (!formData.description) {
                     toast.error('El nombre es obligatorio');
                     return;
@@ -127,7 +129,7 @@ export default function HomeEditor() {
                 } else {
                     await createProductCategory(formData.description, token);
                 }
-            } else if (activeTab === 'banners') {
+            } else if (modalType === 'banners') {
                 if (!imageUrl && !isEditing) {
                     toast.error('La imagen es obligatoria');
                     return;
@@ -183,14 +185,14 @@ export default function HomeEditor() {
         }
     };
 
-    const handleDelete = async (id: number) => {
+    const handleDelete = async (id: number, type: 'banners' | 'home-categories' | 'product-categories') => {
         if (!confirm('¿Eliminar?')) return;
         if (!token) return;
 
         try {
-            if (activeTab === 'banners') {
+            if (type === 'banners') {
                 await deleteBanner(id, token);
-            } else if (activeTab === 'home-categories') {
+            } else if (type === 'home-categories') {
                 await deleteHomeImage(id, token);
             } else {
                 await deleteProductCategory(id, token);
@@ -202,12 +204,12 @@ export default function HomeEditor() {
         }
     };
 
-    const handleToggle = async (item: any) => {
+    const handleToggle = async (item: any, type: 'banners' | 'home-categories' | 'product-categories') => {
         if (!token) return;
         try {
-            if (activeTab === 'banners') {
+            if (type === 'banners') {
                 await updateBanner(item.id, { active: !item.active }, token);
-            } else if (activeTab === 'home-categories') {
+            } else if (type === 'home-categories') {
                 await updateHomeImage(item.id, { active: !item.active }, token);
             } else {
                 await updateProductCategory(item.id, { active: !item.active }, token);
@@ -222,53 +224,108 @@ export default function HomeEditor() {
         return <div className="p-8 text-center">Cargando...</div>;
     }
 
-    const tabs = [
-        { key: 'banners', label: `Banners (${banners.length})` },
-        { key: 'home-categories', label: `Fotos Home (${homeCategories.length})` },
-        { key: 'product-categories', label: `Filtros Tienda (${productCategories.length})` },
-    ];
-
     return (
-        <div className="p-6">
-            <h1 className="text-2xl font-bold mb-6">Administrador</h1>
-
-            <div className="flex gap-2 mb-6">
-                {tabs.map(tab => (
+        <div className="p-6 space-y-12">
+            {/* Sección Banners */}
+            <section>
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold">Banners ({banners.length})</h2>
                     <button
-                        key={tab.key}
-                        onClick={() => setActiveTab(tab.key as any)}
-                        className={`px-4 py-2 rounded-lg font-medium transition ${
-                            activeTab === tab.key 
-                            ? 'bg-[#254642] text-white' 
-                            : 'bg-white text-gray-600 hover:bg-gray-50'
-                        }`}
+                        onClick={() => openCreateModal('banners')}
+                        className="bg-[#254642] text-white px-4 py-2 rounded-lg hover:bg-[#254642]/90"
                     >
-                        {tab.label}
+                        + Agregar Banner
                     </button>
-                ))}
-            </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {banners.map((banner: any) => (
+                        <div key={banner.id} className="bg-white rounded-lg shadow overflow-hidden">
+                            <div className="relative h-40 bg-gray-100">
+                                <img src={banner.imageUrl} alt={banner.altText} className="w-full h-full object-cover" />
+                                {!banner.active && (
+                                    <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
+                                        INACTIVO
+                                    </div>
+                                )}
+                            </div>
+                            <div className="p-3">
+                                <p className="text-sm font-medium truncate">{banner.altText}</p>
+                                <div className="flex gap-2 mt-2">
+                                    <button onClick={() => openEditModal(banner, 'banners')} className="flex-1 bg-gray-100 text-sm py-1 rounded hover:bg-gray-200">
+                                        Editar
+                                    </button>
+                                    <button onClick={() => handleDelete(banner.id, 'banners')} className="flex-1 bg-red-50 text-red-600 text-sm py-1 rounded hover:bg-red-100">
+                                        Eliminar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                {banners.length === 0 && (
+                    <div className="p-8 text-center text-gray-500 bg-white rounded-lg shadow mt-4">
+                        No hay banners.
+                    </div>
+                )}
+            </section>
 
-            {activeTab !== 'product-categories' && (
-                <button
-                    onClick={openCreateModal}
-                    className="bg-[#254642] text-white px-4 py-2 rounded-lg hover:bg-[#254642]/90 mb-6"
-                >
-                    + Agregar {activeTab === 'banners' ? 'Banner' : 'Categoría'}
-                </button>
-            )}
-
-            {activeTab === 'product-categories' && (
-                <div className="mb-6">
+            {/* Sección Fotos Home */}
+            <section>
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold">Fotos Home ({homeCategories.length})</h2>
                     <button
-                        onClick={openCreateModal}
+                        onClick={() => openCreateModal('home-categories')}
+                        className="bg-[#254642] text-white px-4 py-2 rounded-lg hover:bg-[#254642]/90"
+                    >
+                        + Agregar Categoría
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {homeCategories.map((cat: any) => (
+                        <div key={cat.id} className="bg-white rounded-lg shadow overflow-hidden">
+                            <div className="relative h-40 bg-gray-100">
+                                <img src={cat.imageUrl} alt={cat.description} className="w-full h-full object-cover" />
+                                {!cat.active && (
+                                    <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
+                                        INACTIVO
+                                    </div>
+                                )}
+                            </div>
+                            <div className="p-3">
+                                <p className="text-sm font-medium truncate">{cat.description}</p>
+                                <div className="flex gap-2 mt-2">
+                                    <button onClick={() => openEditModal(cat, 'home-categories')} className="flex-1 bg-gray-100 text-sm py-1 rounded hover:bg-gray-200">
+                                        Editar
+                                    </button>
+                                    <button onClick={() => handleDelete(cat.id, 'home-categories')} className="flex-1 bg-red-50 text-red-600 text-sm py-1 rounded hover:bg-red-100">
+                                        Eliminar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                {homeCategories.length === 0 && (
+                    <div className="p-8 text-center text-gray-500 bg-white rounded-lg shadow mt-4">
+                        No hay fotos de home.
+                    </div>
+                )}
+            </section>
+
+            {/* Sección Filtros Tienda */}
+            <section>
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold">Filtros Tienda ({productCategories.length})</h2>
+                    <button
+                        onClick={() => openCreateModal('product-categories')}
                         className="bg-[#254642] text-white px-4 py-2 rounded-lg hover:bg-[#254642]/90"
                     >
                         + Agregar Filtro
                     </button>
                 </div>
-            )}
 
-            {activeTab === 'product-categories' && (
                 <div className="bg-white rounded-lg shadow overflow-hidden">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
@@ -288,10 +345,13 @@ export default function HomeEditor() {
                                         </span>
                                     </td>
                                     <td className="px-4 py-3 text-right">
-                                        <button onClick={() => handleToggle(cat)} className="text-[#254642] hover:underline mr-3">
+                                        <button onClick={() => openEditModal(cat, 'product-categories')} className="text-gray-600 hover:underline mr-3">
+                                            Editar
+                                        </button>
+                                        <button onClick={() => handleToggle(cat, 'product-categories')} className="text-[#254642] hover:underline mr-3">
                                             {cat.active ? 'Desactivar' : 'Activar'}
                                         </button>
-                                        <button onClick={() => handleDelete(cat.id)} className="text-red-600 hover:underline">
+                                        <button onClick={() => handleDelete(cat.id, 'product-categories')} className="text-red-600 hover:underline">
                                             Eliminar
                                         </button>
                                     </td>
@@ -305,74 +365,18 @@ export default function HomeEditor() {
                         </div>
                     )}
                 </div>
-            )}
-
-            {activeTab === 'banners' && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {banners.map((banner: any) => (
-                        <div key={banner.id} className="bg-white rounded-lg shadow overflow-hidden">
-                            <div className="relative h-40 bg-gray-100">
-                                <img src={banner.imageUrl} alt={banner.altText} className="w-full h-full object-cover" />
-                                {!banner.active && (
-                                    <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
-                                        INACTIVO
-                                    </div>
-                                )}
-                            </div>
-                            <div className="p-3">
-                                <p className="text-sm font-medium truncate">{banner.altText}</p>
-                                <div className="flex gap-2 mt-2">
-                                    <button onClick={() => openEditModal(banner)} className="flex-1 bg-gray-100 text-sm py-1 rounded hover:bg-gray-200">
-                                        Editar
-                                    </button>
-                                    <button onClick={() => handleDelete(banner.id)} className="flex-1 bg-red-50 text-red-600 text-sm py-1 rounded hover:bg-red-100">
-                                        Eliminar
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {activeTab === 'home-categories' && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {homeCategories.map((cat: any) => (
-                        <div key={cat.id} className="bg-white rounded-lg shadow overflow-hidden">
-                            <div className="relative h-40 bg-gray-100">
-                                <img src={cat.imageUrl} alt={cat.description} className="w-full h-full object-cover" />
-                                {!cat.active && (
-                                    <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
-                                        INACTIVO
-                                    </div>
-                                )}
-                            </div>
-                            <div className="p-3">
-                                <p className="text-sm font-medium truncate">{cat.description}</p>
-                                <div className="flex gap-2 mt-2">
-                                    <button onClick={() => openEditModal(cat)} className="flex-1 bg-gray-100 text-sm py-1 rounded hover:bg-gray-200">
-                                        Editar
-                                    </button>
-                                    <button onClick={() => handleDelete(cat.id)} className="flex-1 bg-red-50 text-red-600 text-sm py-1 rounded hover:bg-red-100">
-                                        Eliminar
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
+            </section>
 
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-lg max-w-md w-full p-6">
                         <h2 className="text-lg font-bold mb-4">
                             {isEditing ? 'Editar' : 'Crear'} {' '}
-                            {activeTab === 'banners' ? 'Banner' : activeTab === 'home-categories' ? 'Categoría' : 'Filtro'}
+                            {modalType === 'banners' ? 'Banner' : modalType === 'home-categories' ? 'Categoría' : 'Filtro'}
                         </h2>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            {activeTab === 'product-categories' ? (
+                            {modalType === 'product-categories' ? (
                                 <div>
                                     <label className="block text-sm font-medium mb-1">Nombre *</label>
                                     <input
@@ -392,7 +396,7 @@ export default function HomeEditor() {
                                         <span className="text-sm">Activo</span>
                                     </div>
                                 </div>
-                            ) : activeTab === 'home-categories' ? (
+                            ) : modalType === 'home-categories' ? (
                                 <div className="space-y-4">
                                     <div>
                                         <label className="block text-sm font-medium mb-1">Imagen *</label>
