@@ -25,6 +25,12 @@ export interface HomeCategory {
     active: boolean;
 }
 
+export interface ProductCategory {
+    id: number;
+    description: string;
+    active: boolean;
+}
+
 export async function getBanners(): Promise<Banner[]> {
     try {
         const { data } = await axios.get(`${API_URL}/banners`);
@@ -154,6 +160,58 @@ export async function deleteHomeCategory(id: number, token: string) {
         return { success: true };
     } catch (error) {
         console.error('Error deleting home category:', error);
+        throw error;
+    }
+}
+
+export async function getAllCategories(): Promise<ProductCategory[]> {
+    try {
+        console.log('Fetching categories from:', `${API_URL}/categories`);
+        const { data } = await axios.get(`${API_URL}/categories?page=0&size=50`);
+        console.log('Categories response:', data);
+        const content = data.content || data;
+        if (Array.isArray(content)) {
+            return content;
+        }
+        return [];
+    } catch (error: any) {
+        console.error('Error fetching all categories:', error?.response?.status, error?.message);
+        return [];
+    }
+}
+
+export async function createProductCategory(description: string, token: string) {
+    try {
+        const response = await axios.post(`${API_URL}/categories`, { description }, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error creating product category:', error);
+        throw error;
+    }
+}
+
+export async function updateProductCategory(id: number, data: { description?: string; active?: boolean }, token: string) {
+    try {
+        const response = await axios.put(`${API_URL}/categories/${id}`, data, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error updating product category:', error);
+        throw error;
+    }
+}
+
+export async function deleteProductCategory(id: number, token: string) {
+    try {
+        await axios.delete(`${API_URL}/categories/${id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return { success: true };
+    } catch (error) {
+        console.error('Error deleting product category:', error);
         throw error;
     }
 }

@@ -58,6 +58,7 @@ export const uploadFiles = createAsyncThunk(
                 'Content-Type': 'multipart/form-data'
             }
         });
+        console.log('Upload response:', data);
 
         // Convertir las URLs relativas a URLs absolutas
         const fileUrls = data.fileUrls.map((url: string) =>
