@@ -5,7 +5,7 @@ import path from 'path';
 import HeroCarousel from '@/components/HeroCarousel';
 import CategoryGrid from '@/components/CategoryGrid';
 import Testimonials from '@/components/Testimonials';
-import { getBanners, getHomeCategories } from '@/lib/actions/home.actions';
+import { getBanners, getHomeImages } from '@/lib/actions/home.actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,17 +32,17 @@ async function getHomeConfig() {
 export default async function HomePage() {
   const config = await getHomeConfig();
   
-  const [bannersData, homeCategoriesData] = await Promise.all([
+  const [bannersData, homeImagesData] = await Promise.all([
     getBanners(),
-    getHomeCategories()
+    getHomeImages()
   ]);
   
   const banners = bannersData.length > 0 
     ? bannersData.map((b: any) => ({ src: b.imageUrl, alt: b.altText || 'Banner Puros Mates', link: b.link }))
     : config.banners;
   
-  const dynamicCategories = homeCategoriesData.length > 0
-    ? homeCategoriesData
+  const dynamicCategories = homeImagesData.length > 0
+    ? homeImagesData
     : null;
 
   const { categories, testimonials } = config;

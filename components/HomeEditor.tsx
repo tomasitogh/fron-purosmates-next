@@ -4,9 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { 
     getBanners, createBanner, updateBanner, deleteBanner, 
-    getHomeCategories, updateCategoryHome, createHomeCategory, deleteHomeCategory,
+    getAllHomeImages, createHomeImage, updateHomeImage, deleteHomeImage,
     getAllCategories, createProductCategory, updateProductCategory, deleteProductCategory,
-    Banner, HomeCategory, ProductCategory 
+    Banner, HomeImage, ProductCategory 
 } from '@/lib/actions/home.actions';
 import ImageUploader from '@/components/ImageUploader';
 import { useAuth as useClerkAuth } from '@clerk/nextjs';
@@ -14,7 +14,7 @@ import { useAuth as useClerkAuth } from '@clerk/nextjs';
 export default function HomeEditor() {
     const [activeTab, setActiveTab] = useState<'banners' | 'home-categories' | 'product-categories'>('banners');
     const [banners, setBanners] = useState<Banner[]>([]);
-    const [homeCategories, setHomeCategories] = useState<HomeCategory[]>([]);
+    const [homeCategories, setHomeCategories] = useState<HomeImage[]>([]);
     const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -37,7 +37,7 @@ export default function HomeEditor() {
     const refreshData = async () => {
         const [bannersData, homeData, prodCatsData] = await Promise.all([
             getBanners(),
-            getHomeCategories(),
+            getAllHomeImages(),
             getAllCategories(),
         ]);
         setBanners(bannersData);
@@ -89,7 +89,7 @@ export default function HomeEditor() {
             setFormData({
                 altText: '',
                 link: item.link || '',
-                description: item.description,
+                description: item.title || '',
                 active: item.active,
             });
             setUploadedImages([{ url: item.imageUrl }]);
@@ -152,31 +152,34 @@ export default function HomeEditor() {
                     return;
                 }
                 if (isEditing) {
-                    await updateCategoryHome(editingItem.id, {
-                        description: formData.description,
+                    await updateHomeImage(editingItem.id, {
+                        title: formData.description,
                         imageUrl: imageUrl || editingItem.imageUrl,
                         link: formData.link,
-                        showOnHome: true,
                         active: formData.active,
                     }, token);
                 } else {
                     const payload = {
-                        description: formData.description || 'Categoría',
+                        title: formData.description || undefined,
                         imageUrl: imageUrl || '',
                         link: formData.link || '',
-                        showOnHome: true,
                     };
-                    console.log('Creating home category with:', payload);
-                    await createHomeCategory(payload, token);
+                    console.log('Creating home image with:', payload);
+                    await createHomeImage(payload, token);
                 }
             }
 
             toast.success(isEditing ? 'Actualizado' : 'Creado');
             closeModal();
             refreshData();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error:', error);
-            toast.error('Error al guardar');
+            const msg = error?.response?.data?.message || error?.message || '';
+            if (msg.includes('duplicate') || msg.includes('Duplicate')) {
+                toast.error('Ya existe una categoría con ese nombre');
+            } else {
+                toast.error('Error al guardar');
+            }
         }
     };
 
@@ -188,7 +191,7 @@ export default function HomeEditor() {
             if (activeTab === 'banners') {
                 await deleteBanner(id, token);
             } else if (activeTab === 'home-categories') {
-                await deleteHomeCategory(id, token);
+                await deleteHomeImage(id, token);
             } else {
                 await deleteProductCategory(id, token);
             }
@@ -205,7 +208,7 @@ export default function HomeEditor() {
             if (activeTab === 'banners') {
                 await updateBanner(item.id, { active: !item.active }, token);
             } else if (activeTab === 'home-categories') {
-                await updateCategoryHome(item.id, { active: !item.active }, token);
+                await updateHomeImage(item.id, { active: !item.active }, token);
             } else {
                 await updateProductCategory(item.id, { active: !item.active }, token);
             }
@@ -221,7 +224,7 @@ export default function HomeEditor() {
 
     const tabs = [
         { key: 'banners', label: `Banners (${banners.length})` },
-        { key: 'home-categories', label: `Categorías Home (${homeCategories.length})` },
+        { key: 'home-categories', label: `Fotos Home (${homeCategories.length})` },
         { key: 'product-categories', label: `Filtros Tienda (${productCategories.length})` },
     ];
 
@@ -389,7 +392,39 @@ export default function HomeEditor() {
                                         <span className="text-sm">Activo</span>
                                     </div>
                                 </div>
-                            ) : activeTab === 'banners' ? (
+                            ) : activeTab === 'home-categories' ? (
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Imagen *</label>
+                                        <ImageUploader
+                                            images={uploadedImages}
+                                            onChange={handleImageChange}
+                                            required={!isEditing}
+                                            token={token || ''}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Título (opcional)</label>
+                                        <input
+                                            type="text"
+                                            value={formData.description}
+                                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                            placeholder="Ej: Ofertas del mes"
+                                            className="w-full px-3 py-2 border rounded"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Link (opcional)</label>
+                                        <input
+                                            type="text"
+                                            value={formData.link}
+                                            onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                                            placeholder="/shop?category=mate"
+                                            className="w-full px-3 py-2 border rounded"
+                                        />
+                                    </div>
+                                </div>
+                            ) : (
                                 <div className="space-y-4">
                                     <div>
                                         <label className="block text-sm font-medium mb-1">Imagen {!isEditing && '*'}</label>
@@ -406,45 +441,6 @@ export default function HomeEditor() {
                                             type="text"
                                             value={formData.altText}
                                             onChange={(e) => setFormData({ ...formData, altText: e.target.value })}
-                                            className="w-full px-3 py-2 border rounded"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">Link (opcional)</label>
-                                        <input
-                                            type="text"
-                                            value={formData.link}
-                                            onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-                                            placeholder="/shop?category=mate"
-                                            className="w-full px-3 py-2 border rounded"
-                                        />
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            checked={formData.active}
-                                            onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                                        />
-                                        <span className="text-sm">Visible</span>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">Imagen {!isEditing && '*'}</label>
-                                        <ImageUploader
-                                            images={uploadedImages}
-                                            onChange={handleImageChange}
-                                            required={!isEditing}
-                                            token={token || ''}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">Nombre</label>
-                                        <input
-                                            type="text"
-                                            value={formData.description}
-                                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                             className="w-full px-3 py-2 border rounded"
                                         />
                                     </div>

@@ -15,12 +15,11 @@ export interface Banner {
     displayOrder: number;
 }
 
-export interface HomeCategory {
+export interface HomeImage {
     id: number;
-    description: string;
-    imageUrl?: string;
+    title?: string;
+    imageUrl: string;
     link?: string;
-    showOnHome: boolean;
     displayOrder: number;
     active: boolean;
 }
@@ -38,6 +37,69 @@ export async function getBanners(): Promise<Banner[]> {
     } catch (error) {
         console.error('Error fetching banners:', error);
         return [];
+    }
+}
+
+export async function getHomeImages(): Promise<HomeImage[]> {
+    try {
+        const { data } = await axios.get(`${API_URL}/api/v1/home-images`);
+        return data;
+    } catch (error) {
+        console.error('Error fetching home images:', error);
+        return [];
+    }
+}
+
+export async function getAllHomeImages(): Promise<HomeImage[]> {
+    try {
+        const { data } = await axios.get(`${API_URL}/api/v1/home-images/all`);
+        return data;
+    } catch (error) {
+        console.error('Error fetching all home images:', error);
+        return [];
+    }
+}
+
+export async function createHomeImage(
+    data: { title?: string; imageUrl: string; link?: string; displayOrder?: number },
+    token: string
+) {
+    try {
+        const response = await axios.post(`${API_URL}/api/v1/home-images`, data, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error creating home image:', error);
+        throw error;
+    }
+}
+
+export async function updateHomeImage(
+    id: number,
+    data: { title?: string; imageUrl?: string; link?: string; active?: boolean; displayOrder?: number },
+    token: string
+) {
+    try {
+        const response = await axios.put(`${API_URL}/api/v1/home-images/${id}`, data, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error updating home image:', error);
+        throw error;
+    }
+}
+
+export async function deleteHomeImage(id: number, token: string) {
+    try {
+        await axios.delete(`${API_URL}/api/v1/home-images/${id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return { success: true };
+    } catch (error) {
+        console.error('Error deleting home image:', error);
+        throw error;
     }
 }
 
@@ -98,76 +160,10 @@ export async function deleteBanner(id: number, token: string) {
     }
 }
 
-export async function getHomeCategories(): Promise<HomeCategory[]> {
-    try {
-        const { data } = await axios.get(`${API_URL}/categories/home`);
-        return data;
-    } catch (error) {
-        console.error('Error fetching home categories:', error);
-        return [];
-    }
-}
-
-export async function updateCategoryHome(
-    id: number, 
-    data: {
-        description?: string;
-        imageUrl?: string;
-        link?: string;
-        showOnHome?: boolean;
-        displayOrder?: number;
-        active?: boolean;
-    }, 
-    token: string
-) {
-    try {
-        const response = await axios.post(`${API_URL}/categories/home/${id}`, data, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        return response.data;
-    } catch (error) {
-        console.error('Error updating category home:', error);
-        throw error;
-    }
-}
-
-export async function createHomeCategory(
-    data: {
-        description: string;
-        imageUrl?: string;
-        link?: string;
-        showOnHome?: boolean;
-        displayOrder?: number;
-    },
-    token: string
-) {
-    try {
-        const response = await axios.post(`${API_URL}/categories/full`, data, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        return response.data;
-    } catch (error) {
-        console.error('Error creating home category:', error);
-        throw error;
-    }
-}
-
-export async function deleteHomeCategory(id: number, token: string) {
-    try {
-        await axios.delete(`${API_URL}/categories/${id}`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        return { success: true };
-    } catch (error) {
-        console.error('Error deleting home category:', error);
-        throw error;
-    }
-}
-
 export async function getAllCategories(): Promise<ProductCategory[]> {
     try {
-        console.log('Fetching categories from:', `${API_URL}/categories`);
-        const { data } = await axios.get(`${API_URL}/categories?page=0&size=50`);
+        console.log('Fetching categories from:', `${API_URL}/categories/products`);
+        const { data } = await axios.get(`${API_URL}/categories/products?page=0&size=50`);
         console.log('Categories response:', data);
         const content = data.content || data;
         if (Array.isArray(content)) {
