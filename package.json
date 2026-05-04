@@ -16,6 +16,7 @@
     "@reduxjs/toolkit": "^2.11.2",
     "@use-gesture/react": "^10.3.1",
     "axios": "^1.13.4",
+    "browser-image-compression": "^2.0.2",
     "js-cookie": "^3.0.5",
     "lucide-react": "^0.563.0",
     "next": "16.1.4",

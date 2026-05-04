@@ -58,7 +58,7 @@ export default function ImageUploader({
     // Show errors
     useEffect(() => {
         if (error) {
-            toast.error('Error al subir las imágenes: ' + error);
+            toast.error(error);
             dispatch(clearUploadedFiles());
         }
     }, [error, dispatch]);
