@@ -247,7 +247,7 @@ export default function Carrito() {
                                 <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
                                 <div className="flex flex-col">
                                     <p className="text-gray-600">
-                                        Base: ${item.price?.toFixed(2)}
+                                        Base: ${item.price?.toLocaleString('es-AR')}
                                     </p>
                                     {item.isCustomizable && (
                                         <div className="flex items-center mt-1">
@@ -259,7 +259,7 @@ export default function Carrito() {
                                                 className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer mr-2"
                                             />
                                             <label htmlFor={`customization-${item.id}-${item.hasCustomization}`} className="text-sm text-gray-600 cursor-pointer select-none">
-                                                Personalizado (+${item.customizationCost?.toFixed(2)})
+                                                Personalizado (+${item.customizationCost?.toLocaleString('es-AR')})
                                             </label>
                                         </div>
                                     )}
@@ -284,7 +284,7 @@ export default function Carrito() {
 
                             <div className="w-full sm:w-auto text-center sm:text-right border-t sm:border-t-0 pt-4 sm:pt-0">
                                 <p className="text-lg font-bold text-gray-800">
-                                    Subtotal: ${((item.price + ((item.hasCustomization && item.customizationCost) ? item.customizationCost : 0)) * item.qty).toFixed(2)}
+                                    Subtotal: ${((item.price + ((item.hasCustomization && item.customizationCost) ? item.customizationCost : 0)) * item.qty).toLocaleString('es-AR')}
                                 </p>
                                 <button
                                     onClick={() => dispatch(removeItem({ id: item.id, hasCustomization: item.hasCustomization }))}
@@ -305,13 +305,13 @@ export default function Carrito() {
                         <div className="space-y-2 mb-4">
                             <div className="flex justify-between text-gray-600">
                                 <span>Subtotal ({totalQty} productos)</span>
-                                <span>${subtotal.toFixed(2)}</span>
+                                <span>${subtotal.toLocaleString('es-AR')}</span>
                             </div>
 
                             {hasComboDiscount && (
                                 <div className="flex justify-between text-green-600 font-semibold">
                                     <span>🎉 Descuento Combo (10%)</span>
-                                    <span>-${discount.toFixed(2)}</span>
+                                    <span>-${discount.toLocaleString('es-AR')}</span>
                                 </div>
                             )}
                         </div>
@@ -327,7 +327,7 @@ export default function Carrito() {
                         <div className="border-t pt-4 mb-4">
                             <div className="flex justify-between text-lg font-bold text-gray-800">
                                 <span>Total</span>
-                                <span>${totalPrice.toFixed(2)}</span>
+                                <span>${totalPrice.toLocaleString('es-AR')}</span>
                             </div>
                         </div>
 
@@ -586,10 +586,10 @@ export default function Carrito() {
                             {(paymentMethod === 'cash' || paymentMethod === 'transfer') ? (
                                 <>
                                     <div className="text-gray-400 line-through text-lg">
-                                        ${totalPrice.toFixed(2)}
+                                        ${totalPrice.toLocaleString('es-AR')}
                                     </div>
                                     <div className="text-3xl font-bold text-gray-800">
-                                        ${displayTotal.toFixed(2)}
+                                        ${displayTotal.toLocaleString('es-AR')}
                                     </div>
                                     <span className="text-green-600 font-bold bg-green-100 px-2 py-1 rounded text-sm mb-1">
                                         10% OFF
@@ -597,7 +597,7 @@ export default function Carrito() {
                                 </>
                             ) : (
                                 <div className="text-3xl font-bold text-gray-800">
-                                    ${totalPrice.toFixed(2)}
+                                    ${totalPrice.toLocaleString('es-AR')}
                                 </div>
                             )}
                         </div>

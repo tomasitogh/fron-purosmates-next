@@ -27,12 +27,36 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
   const searchParams = useSearchParams();
   const { isSignedIn, isLoaded } = useUser();
 
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000]);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [customizationStates, setCustomizationStates] = useState<Record<number, boolean>>({});
   const [sortBy, setSortBy] = useState<SortOption>('relevance');
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [sidebarCategoryIds, setSidebarCategoryIds] = useState<number[]>([]);
+
+  const activeCategories = useMemo(() => {
+    return initialCategories
+      .filter((c: any) => c.active)
+      .map((c: any) => ({ id: c.id, description: c.description, active: c.active }));
+  }, [initialCategories]);
+
+  const categoryParam = useMemo(() => {
+    return (searchParams.get('category') || '').trim().toLowerCase();
+  }, [searchParams]);
+
+  const urlCategoryIds = useMemo(() => {
+    if (!categoryParam) return [];
+    const matched = activeCategories.find((c: any) => {
+      const catDesc = c.description?.toLowerCase().trim();
+      const normalizedCat = catDesc?.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return normalizedCat === categoryParam || catDesc === categoryParam;
+    });
+    return matched ? [matched.id] : [];
+  }, [categoryParam, activeCategories]);
+
+  const selectedCategoryIds = useMemo(() => {
+    return urlCategoryIds.length > 0 ? urlCategoryIds : sidebarCategoryIds;
+  }, [urlCategoryIds, sidebarCategoryIds]);
 
   const searchText = useMemo(() => {
     return (searchParams.get('q') || '').trim().toLowerCase();
@@ -49,12 +73,6 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
     }
     return [0, 100000] as [number, number];
   }, [initialProducts]);
-
-  const activeCategories = useMemo(() => {
-    return initialCategories
-      .filter((c: any) => c.active)
-      .map((c: any) => ({ id: c.id, description: c.description, active: c.active }));
-  }, [initialCategories]);
 
   const filteredProducts = useMemo(() => {
     let list = [...initialProducts];
@@ -93,9 +111,21 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
     return initialProducts.find(p => (p.slug || slugify(p.name)) === productSlugFromUrl) || null;
   }, [productSlugFromUrl, initialProducts]);
 
-  const handleApplyFilters = useCallback(() => {
-    // Los estados ya se actualizaron automáticamente
-  }, []);
+  const handleCategoryFilterChange = (ids: number[]) => {
+    setSidebarCategoryIds(ids);
+    const matchedCat = activeCategories.find((c: any) => ids.includes(c.id));
+    if (matchedCat) {
+      const catSlug = matchedCat.description.toLowerCase().trim();
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('category', catSlug);
+      router.replace(`/shop?${params.toString()}`, { scroll: false });
+    } else {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('category');
+      const newUrl = params.toString() ? `/shop?${params.toString()}` : '/shop';
+      router.replace(newUrl, { scroll: false });
+    }
+  };
 
   const openProductModal = (product: Product) => {
     const slug = product.slug || slugify(product.name);
@@ -124,10 +154,10 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
               <ShopFilters
                 categories={activeCategories}
                 selectedCategories={selectedCategoryIds}
-                onFilterChange={setSelectedCategoryIds}
+                onFilterChange={handleCategoryFilterChange}
                 priceRange={priceRangeMemo}
                 onPriceChange={setPriceRange}
-                onApply={handleApplyFilters}
+                onApply={() => {}}
               />
             </div>
           </aside>
@@ -138,7 +168,11 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
             <div className="hidden sm:flex sm:items-center justify-between gap-4 mb-6">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {searchText ? `Resultados para "${searchText}"` : 'Todos los Productos'}
+                  {searchText 
+                    ? `Resultados para "${searchText}"` 
+                    : categoryParam 
+                      ? activeCategories.find((c: any) => selectedCategoryIds.includes(c.id))?.description || 'Productos'
+                      : 'Todos los Productos'}
                 </h1>
                 <p className="text-gray-600 mt-1">{filteredProducts.length} productos</p>
               </div>
@@ -171,7 +205,11 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
             {/* Mobile header */}
             <div className="sm:hidden mb-4">
               <h1 className="text-xl font-bold text-gray-900">
-                {searchText ? `Resultados para "${searchText}"` : 'Todos los Productos'}
+                {searchText 
+                  ? `Resultados para "${searchText}"` 
+                  : categoryParam 
+                    ? activeCategories.find((c: any) => selectedCategoryIds.includes(c.id))?.description || 'Productos'
+                    : 'Todos los Productos'}
               </h1>
               <p className="text-gray-600 text-sm">{filteredProducts.length} productos</p>
             </div>
@@ -239,10 +277,10 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
         <ShopFilters
           categories={activeCategories}
           selectedCategories={selectedCategoryIds}
-          onFilterChange={setSelectedCategoryIds}
+          onFilterChange={handleCategoryFilterChange}
           priceRange={priceRangeMemo}
           onPriceChange={setPriceRange}
-          onApply={handleApplyFilters}
+          onApply={() => {}}
           isMobile
           onCloseMobile={() => setIsMobileFiltersOpen(false)}
           sortBy={sortBy}

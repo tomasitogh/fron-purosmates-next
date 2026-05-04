@@ -306,8 +306,8 @@ export default function AboutUsPage() {
                 </p>
                 <p>
                     Cada día intentamos acercar un poco más el mate al que no lo tiene, y al que ya lo tiene tambien.
-                    Cómo comercio no estamos satisfechos con los clientes que tenemos y la calidad humana de estos,
-                    por ello es que nos esforzamos e innovamos en cada esquina del emprendimiento, para poder acerca el mejor mate, al mejor precio, al mejor cebador.
+                    Como comercio nos esforzamos e innovamos en cada rincón del emprendimiento, para poder acercar el mejor mate, al mejor precio, al mejor cebador.
+                    Acá vas a encontrar tu mejor compañero.
                 </p>
                 <p>
                     Si queres más información sobre nosotros o simplemente queres charlar sobre el mate, nos podes mandar un mensaje a{" "}
