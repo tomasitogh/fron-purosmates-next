@@ -103,9 +103,9 @@ export default function SettingsEditor() {
 const openModal = (item?: EditableItem | null, section?: typeof activeSection) => {
     const type = section || activeSection;
     setActiveSection(type);
-    setEditingItem(item || null);
+    setEditingItem(item as any || null);
     setIsEditing(!!item);
-    setUploadedImages(item ? [{ url: item.imageUrl }] : []);
+    setUploadedImages(item && item.imageUrl ? [{ url: item.imageUrl }] : []);
     setFormData({ 
       altText: item?.altText || '', 
       link: item?.link || '', 
@@ -140,7 +140,7 @@ const openModal = (item?: EditableItem | null, section?: typeof activeSection) =
           toast.error('El nombre es obligatorio');
           return;
         }
-        if (isEditing) {
+        if (isEditing && editingItem) {
           await updateProductCategory(editingItem.id, {
             description: formData.description,
             active: formData.active,
@@ -153,9 +153,10 @@ const openModal = (item?: EditableItem | null, section?: typeof activeSection) =
           toast.error('La imagen es obligatoria');
           return;
         }
-        if (isEditing) {
-          await updateBanner(editingItem.id, {
-            imageUrl: imageUrl || editingItem.imageUrl,
+        const bannerItem = editingItem as Banner | null;
+        if (isEditing && bannerItem) {
+          await updateBanner(bannerItem.id, {
+            imageUrl: imageUrl || bannerItem.imageUrl,
             altText: formData.altText,
             link: formData.link,
             active: formData.active,
@@ -172,10 +173,11 @@ const openModal = (item?: EditableItem | null, section?: typeof activeSection) =
           toast.error('La imagen es obligatoria');
           return;
         }
-        if (isEditing) {
-          await updateHomeImage(editingItem.id, {
+        const homeItem = editingItem as HomeImage | null;
+        if (isEditing && homeItem) {
+          await updateHomeImage(homeItem.id, {
             title: formData.description,
-            imageUrl: imageUrl || editingItem.imageUrl,
+            imageUrl: imageUrl || homeItem.imageUrl,
             link: formData.link,
             active: formData.active,
           }, token);
@@ -385,8 +387,9 @@ const openModal = (item?: EditableItem | null, section?: typeof activeSection) =
                           sources: ['local'],
                           multiple: false
                         }, (err: unknown, res: unknown) => {
-                          if (!err && res.event === 'success') {
-                            setUploadedImages([{ url: res.info.secure_url }]);
+                          const result = res as { event?: string; info?: { secure_url?: string } };
+                          if (!err && result.event === 'success' && result.info?.secure_url) {
+                            setUploadedImages([{ url: result.info.secure_url }]);
                           }
                         })}
                         className="w-full py-2 border border-[#254642] text-[#254642] rounded text-sm font-medium"
