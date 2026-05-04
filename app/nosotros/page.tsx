@@ -21,10 +21,10 @@ export default function AboutUsPage() {
             answer: (
                 <>
                     <p className="mb-2">
-                        Para hacer un pedido, armá tu carrito con tus productos desde <Link href="/" className="text-[#254642] font-semibold hover:underline">nuestro shop</Link>. Al momento de elegir un método de pago, ya sea por cualquier método de pago, nosotros nos cumicaremos con vos cuanto antes, para coordinar el envío, y de ser necesario la transferencia o el pago en efectivo.
+                        Para hacer un pedido, armá tu carrito con tus productos desde <Link href="/" className="text-[#254642] font-semibold hover:underline">nuestro shop</Link>. Al momento de elegir un método de pago, ya sea por cualquier método, nosotros nos cumicaremos con vos cuanto antes, para coordinar el envío, y de ser necesario la transferencia o el pago en efectivo.
                     </p>
                     <p>
-                        Es importante ingresar el número de teléfono para que nos podamos poner en contacto con vos. En caso de no recibir un mensaje nuestro despues de 48 horas de que se hizo el pedido, te pedimos amablemente que nos mandes un mensaje a <a href="https://wa.me/5491130548207" target="_blank" rel="noopener noreferrer" className="text-[#254642] font-semibold hover:underline">nuestro número de telefono</a> - 11 3054 8207.
+                        Es importante ingresar el número de teléfono y mail para que nos podamos poner en contacto con vos. En caso de no recibir un mensaje nuestro despues de 48 horas de que se hizo el pedido, te pedimos amablemente que nos mandes un mensaje a <a href="https://wa.me/5491130548207" target="_blank" rel="noopener noreferrer" className="text-[#254642] font-semibold hover:underline">nuestro número de telefono</a> - 11 3054 8207.
                     </p>
                 </>
             ),
