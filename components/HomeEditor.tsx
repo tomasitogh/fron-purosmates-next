@@ -160,12 +160,14 @@ export default function HomeEditor() {
                         active: formData.active,
                     }, token);
                 } else {
-                    await createHomeCategory({
-                        description: formData.description,
-                        imageUrl,
-                        link: formData.link,
+                    const payload = {
+                        description: formData.description || 'Categoría',
+                        imageUrl: imageUrl || '',
+                        link: formData.link || '',
                         showOnHome: true,
-                    }, token);
+                    };
+                    console.log('Creating home category with:', payload);
+                    await createHomeCategory(payload, token);
                 }
             }
 
