@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 
 const ONESIGNAL_APP_ID = '19f32369-e546-4917-8ae4-925ed7be4980';
+const SAFARI_WEB_ID = 'web.onesignal.auto.201c9c11-2835-4563-82b9-55a6f9094e87';
 
 export default function OneSignalSetup() {
   const { user, isLoaded } = useUser();
@@ -15,52 +16,38 @@ export default function OneSignalSetup() {
     const role = (user.publicMetadata?.role as string) || '';
     const isAdmin = role.toUpperCase() === 'ADMIN';
     
-    console.log('[OneSignalSetup] User role check:', isAdmin, 'role:', role, 'metadata:', user.publicMetadata);
+    console.log('[OneSignalSetup] User role check:', isAdmin, 'role:', role);
 
     if (isAdmin && !isInitialized.current) {
-      console.log('[OneSignalSetup] Starting initialization...');
       isInitialized.current = true;
-
-      console.log('[OneSignalSetup] App ID:', ONESIGNAL_APP_ID);
-      console.log('[OneSignalSetup] Current origin:', window.location.origin);
-      console.log('[OneSignalSetup] Is localhost:', window.location.hostname === 'localhost');
-
-      import('react-onesignal').then((OneSignalModule) => {
-        const OneSignal = OneSignalModule.default;
-        console.log('[OneSignalSetup] OneSignal module loaded:', typeof OneSignal);
+      
+      console.log('[OneSignalSetup] Setting up OneSignalDeferred...');
+      
+      (window as any).OneSignalDeferred = (window as any).OneSignalDeferred || [];
+      
+      const deferredPush = async (OneSignal: any) => {
+        console.log('[OneSignalSetup] OneSignal deferred callback executed');
         
-        const initOptions: any = {
-          appId: ONESIGNAL_APP_ID,
-          serviceWorkerParam: {
-            scope: '/',
-          },
-          serviceWorkerPath: '/OneSignalSDKWorker.js',
-        };
-        
-        // Only allow localhost as secure origin in development
-        if (window.location.hostname === 'localhost') {
-          initOptions.allowLocalhostAsSecureOrigin = true;
-        }
-        
-        console.log('[OneSignalSetup] Init options:', initOptions);
-        
-        OneSignal.init(initOptions).then(() => {
-          console.log('[OneSignalSetup] ✅ OneSignal initialized successfully');
-          OneSignal.User.addTag('role', 'admin');
-          console.log('[OneSignalSetup] Admin tag added');
-        }).catch((err) => {
-          console.error('[OneSignalSetup] Error initializing OneSignal:', err);
-          console.error('[OneSignalSetup] Error message:', err.message);
+        try {
+          await OneSignal.init({
+            appId: ONESIGNAL_APP_ID,
+            safari_web_id: SAFARI_WEB_ID,
+            serviceWorkerParam: { scope: '/' },
+            serviceWorkerPath: '/OneSignalSDKWorker.js',
+            allowLocalhostAsSecureOrigin: true,
+          });
           
-          // If error is about domain, try alternative approach
-          if (err.message?.includes('localhost')) {
-            console.log('[OneSignalSetup] Trying alternative init...');
-            // Try without service worker config as fallback
-          }
-        });
-      }).catch(err => {
-        console.error('[OneSignalSetup] Failed to load OneSignal SDK:', err);
-      });
+          console.log('[OneSignalSetup] ✅ OneSignal initialized successfully');
+          
+          await OneSignal.User.addTag('role', 'admin');
+          console.log('[OneSignalSetup] Admin tag added');
+          
+        } catch (err: any) {
+          console.error('[OneSignalSetup] Error initializing OneSignal:', err);
+        }
+      };
+      
+      (window as any).OneSignalDeferred.push(deferredPush);
     }
   }, [isLoaded, user]);
 
