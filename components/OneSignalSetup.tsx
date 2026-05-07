@@ -32,8 +32,6 @@ export default function OneSignalSetup() {
           await OneSignal.init({
             appId: ONESIGNAL_APP_ID,
             safari_web_id: SAFARI_WEB_ID,
-            serviceWorkerParam: { scope: '/' },
-            serviceWorkerPath: '/OneSignalSDKWorker.js',
             allowLocalhostAsSecureOrigin: typeof window !== 'undefined' && window.location.hostname === 'localhost',
           });
           

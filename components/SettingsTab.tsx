@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useUser, useAuth } from '@clerk/nextjs';
 import { Bell, MessageSquare, Plus, Trash2 } from 'lucide-react';
 import HomeEditor from '@/components/HomeEditor';
 
 export default function SettingsTab() {
   const { user, isLoaded } = useUser();
+  const { getToken } = useAuth();
   const [testimonials, setTestimonials] = useState<{ name: string; text: string; rating: number }[]>([]);
   const [saving, setSaving] = useState(false);
   const [showTestimonials, setShowTestimonials] = useState(true);
@@ -98,9 +99,13 @@ export default function SettingsTab() {
           const playerId = OneSignal.User?.PushSubscription?.id;
           console.log('Player ID:', playerId);
           if (playerId) {
+            const token = await getToken();
             await fetch('/api/v1/admin/onesignal-id', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
               body: JSON.stringify({ playerId }),
             });
           }
@@ -154,9 +159,13 @@ export default function SettingsTab() {
           
           if (playerId) {
             console.log('Step 8: Sending player ID to backend...');
+            const token = await getToken();
             await fetch('/api/v1/admin/onesignal-id', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
               body: JSON.stringify({ playerId }),
             });
             console.log('Step 9: Player ID sent successfully');
