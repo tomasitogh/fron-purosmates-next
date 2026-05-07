@@ -1,42 +1,34 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
+
+const ONESIGNAL_APP_ID = '19f32369-e546-4917-8ae4-925ed7be4980';
 
 export default function OneSignalSetup() {
   const { user, isLoaded } = useUser();
   const isInitialized = useRef(false);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    if (isLoaded && user) {
-      const role = user.publicMetadata?.role as string || '';
-      const adminRole = role.toUpperCase() === 'ADMIN';
-      setIsAdmin(adminRole);
-      console.log('[OneSignalSetup] User role check:', adminRole, 'role:', role, 'metadata:', user.publicMetadata);
-    }
-  }, [isLoaded, user]);
+    if (!isLoaded || !user) return;
 
-  useEffect(() => {
-    if (isLoaded && user && isAdmin && !isInitialized.current) {
+    const role = (user.publicMetadata?.role as string) || '';
+    const isAdmin = role.toUpperCase() === 'ADMIN';
+    
+    console.log('[OneSignalSetup] User role check:', isAdmin, 'role:', role, 'metadata:', user.publicMetadata);
+
+    if (isAdmin && !isInitialized.current) {
       console.log('[OneSignalSetup] Starting initialization...');
       isInitialized.current = true;
-      const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || '';
-      
-      if (!appId) {
-        console.warn('[OneSignalSetup] OneSignal App ID is not configured');
-        return;
-      }
 
-      console.log('[OneSignalSetup] App ID:', appId);
+      console.log('[OneSignalSetup] App ID:', ONESIGNAL_APP_ID);
 
-      // Dynamic import to ensure SDK is loaded
       import('react-onesignal').then((OneSignalModule) => {
         const OneSignal = OneSignalModule.default;
         console.log('[OneSignalSetup] OneSignal module loaded:', typeof OneSignal);
         
         OneSignal.init({
-          appId: appId,
+          appId: ONESIGNAL_APP_ID,
           allowLocalhostAsSecureOrigin: true,
           serviceWorkerParam: {
             scope: '/',
@@ -52,10 +44,8 @@ export default function OneSignalSetup() {
       }).catch(err => {
         console.error('[OneSignalSetup] Failed to load OneSignal SDK:', err);
       });
-    } else {
-      console.log('[OneSignalSetup] Skipping initialization - isAdmin:', isAdmin, 'isLoaded:', isLoaded);
     }
-  }, [isLoaded, user, isAdmin]);
+  }, [isLoaded, user]);
 
   return null;
 }

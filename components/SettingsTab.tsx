@@ -83,7 +83,6 @@ export default function SettingsTab() {
         
         console.log('Step 2: OneSignal imported:', typeof OneSignal);
         console.log('Step 3: OneSignal.Notifications:', OneSignal?.Notifications);
-        console.log('Step 4: window.OneSignal:', window.OneSignal);
         
         if (!OneSignal || !OneSignal.Notifications) {
           console.error('OneSignal not properly initialized');
@@ -91,8 +90,52 @@ export default function SettingsTab() {
           return;
         }
         
+        console.log('Step 4: Check current permission...');
+        const currentPermission = OneSignal.Notifications.permissionNative;
+        console.log('Current permission:', currentPermission);
+        
+        if (currentPermission === 'granted') {
+          console.log('Already granted, getting player ID...');
+          const playerId = OneSignal.User?.PushSubscription?.id;
+          console.log('Player ID:', playerId);
+          if (playerId) {
+            await fetch('/api/v1/admin/onesignal-id', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ playerId }),
+            });
+          }
+          setNotificationsEnabled(true);
+          return;
+        }
+        
         console.log('Step 5: Requesting permission...');
-        const granted = await OneSignal.Notifications.requestPermission();
+        
+        // Use promise with timeout as fallback
+        const requestWithTimeout = async () => {
+          try {
+            return await OneSignal.Notifications.requestPermission();
+          } catch (e) {
+            console.error('requestPermission error:', e);
+            // Fallback to native API
+            const result = await Notification.requestPermission();
+            return result === 'granted';
+          }
+        };
+        
+        let granted = false;
+        try {
+          granted = await Promise.race([
+            requestWithTimeout(),
+            new Promise<boolean>((resolve) => 
+              setTimeout(() => resolve(false), 10000)
+            )
+          ]);
+        } catch (e) {
+          console.error('Permission request failed:', e);
+          granted = false;
+        }
+        
         console.log('Permission result:', granted);
         
         if (granted) {
