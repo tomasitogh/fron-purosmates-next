@@ -27,23 +27,26 @@ export default function SettingsTab() {
     const checkSubscription = async () => {
       if (!isLoaded) return;
       setCheckingSubscription(true);
-      try {
-        const OneSignal = (await import('react-onesignal')).default;
-        const status = OneSignal.Notifications.permissionNative;
-        console.log('Permission status:', status);
-        
-        // Check if there's an active subscription
-        const playerId = OneSignal.User.PushSubscription?.id;
-        console.log('Player ID:', playerId);
-        
-        if (status === 'granted' && playerId) {
-          setNotificationsEnabled(true);
+      
+      (window as any).OneSignalDeferred = (window as any).OneSignalDeferred || [];
+      (window as any).OneSignalDeferred.push(async (OneSignal: any) => {
+        try {
+          const status = OneSignal.Notifications?.permissionNative;
+          console.log('Permission status:', status);
+          
+          // Check if there's an active subscription
+          const playerId = OneSignal.User?.PushSubscription?.id;
+          console.log('Player ID:', playerId);
+          
+          if (status === 'granted' && playerId) {
+            setNotificationsEnabled(true);
+          }
+        } catch (e) {
+          console.log('OneSignal check failed:', e);
+        } finally {
+          setCheckingSubscription(false);
         }
-      } catch (e) {
-        console.log('OneSignal not available yet:', e);
-      } finally {
-        setCheckingSubscription(false);
-      }
+      });
     };
     checkSubscription();
   }, [isLoaded]);
@@ -76,13 +79,9 @@ export default function SettingsTab() {
     
     if (!notificationsEnabled) {
       try {
-        console.log('Step 1: Importing react-onesignal...');
+        console.log('Step 1: Getting OneSignal instance...');
         
-        const OneSignalModule = await import('react-onesignal');
-        const OneSignal = OneSignalModule.default;
-        
-        console.log('Step 2: OneSignal imported:', typeof OneSignal);
-        console.log('Step 3: OneSignal.Notifications:', OneSignal?.Notifications);
+        const OneSignal = (window as any).OneSignal;
         
         if (!OneSignal || !OneSignal.Notifications) {
           console.error('OneSignal not properly initialized');
@@ -176,9 +175,10 @@ export default function SettingsTab() {
       }
     } else {
       try {
-        const OneSignalModule = await import('react-onesignal');
-        const OneSignal = OneSignalModule.default;
-        await OneSignal.User.PushSubscription.optOut();
+        const OneSignal = (window as any).OneSignal;
+        if (OneSignal && OneSignal.User && OneSignal.User.PushSubscription) {
+          await OneSignal.User.PushSubscription.optOut();
+        }
         setNotificationsEnabled(false);
       } catch (e) {
         console.error('Error disabling notifications:', e);

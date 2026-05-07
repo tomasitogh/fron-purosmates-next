@@ -34,7 +34,7 @@ export default function OneSignalSetup() {
             safari_web_id: SAFARI_WEB_ID,
             serviceWorkerParam: { scope: '/' },
             serviceWorkerPath: '/OneSignalSDKWorker.js',
-            allowLocalhostAsSecureOrigin: true,
+            allowLocalhostAsSecureOrigin: typeof window !== 'undefined' && window.location.hostname === 'localhost',
           });
           
           console.log('[OneSignalSetup] ✅ OneSignal initialized successfully');
