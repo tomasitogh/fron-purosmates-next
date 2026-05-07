@@ -38,9 +38,7 @@ export default function AjustesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-  const [pollingRef, setPollingRef] = useState<NodeJS.Timeout | null>(null);
-  const lastOrderId = useRef<number>(0);
+
   
   const [bannerToEdit, setBannerToEdit] = useState<Banner | null>(null);
   const [homeImageToEdit, setHomeImageToEdit] = useState<HomeImage | null>(null);
@@ -85,27 +83,7 @@ export default function AjustesPage() {
     }
   };
 
-  useEffect(() => {
-    if (notificationsEnabled) {
-      const poll = async () => {
-        try {
-          const res = await fetch('/api/v1/orders/latest');
-          const data = await res.json();
-          if (data?.id && data.id > lastOrderId.current) {
-            new Notification('Nueva venta en Puros Mates', {
-              body: `Pedido #${data.id} - $${data.total?.toLocaleString('es-AR')}`,
-              icon: '/logo-purosmates.png',
-            });
-            lastOrderId.current = data.id;
-          }
-        } catch (e) {}
-      };
-      poll();
-      const interval = setInterval(poll, 15000);
-      setPollingRef(interval);
-      return () => clearInterval(interval);
-    }
-  }, [notificationsEnabled]);
+
 
   const openModal = (type: 'banner' | 'homeImage' | 'category', item?: any) => {
     setModalType(type);
@@ -208,18 +186,13 @@ export default function AjustesPage() {
   };
 
   const toggleNotifications = async () => {
-    if (!notificationsEnabled) {
-      const perm = await Notification.requestPermission();
-      if (perm === 'granted') {
-        setNotificationsEnabled(true);
-        toast.success('Notificaciones activadas');
-      } else {
-        toast.error('Permiso denegado');
+    if (typeof window !== 'undefined') {
+      try {
+        const OneSignal = (await import('react-onesignal')).default;
+        await OneSignal.Slidedown.promptPush();
+      } catch (err) {
+        toast.error('Error al solicitar permisos');
       }
-    } else {
-      setNotificationsEnabled(false);
-      if (pollingRef) clearInterval(pollingRef);
-      toast.success('Notificaciones desactivadas');
     }
   };
 
@@ -425,8 +398,8 @@ export default function AjustesPage() {
                 <h3 className="font-medium text-gray-800">Alertas de nuevas ventas</h3>
                 <p className="text-sm text-gray-500">Recibir notificaciones cuando se realice una venta</p>
               </div>
-              <button onClick={toggleNotifications} className={`px-4 py-2 rounded-lg font-medium ${notificationsEnabled ? 'bg-red-100 text-red-700' : 'bg-[#254642] text-white'}`}>
-                {notificationsEnabled ? 'Desactivar' : 'Activar'}
+              <button onClick={toggleNotifications} className="px-4 py-2 rounded-lg font-medium bg-[#254642] text-white hover:bg-[#1d3530]">
+                Configurar Notificaciones
               </button>
             </div>
           </div>

@@ -4,16 +4,16 @@ import { useState, useEffect, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { Bell, MessageSquare, Plus, Trash2 } from 'lucide-react';
 import HomeEditor from '@/components/HomeEditor';
+import OneSignal from 'react-onesignal';
 
 export default function SettingsTab() {
   const { user, isLoaded } = useUser();
   const [testimonials, setTestimonials] = useState<{ name: string; text: string; rating: number }[]>([]);
   const [saving, setSaving] = useState(false);
   const [showTestimonials, setShowTestimonials] = useState(true);
-  const [pollingRef, setPollingRef] = useState<NodeJS.Timeout | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-  const lastOrderId = useRef<number>(0);
   const [loading, setLoading] = useState(true);
+  const [checkingSubscription, setCheckingSubscription] = useState(true);
 
   useEffect(() => {
     if (isLoaded && user) {
@@ -25,26 +25,21 @@ export default function SettingsTab() {
   }, [isLoaded, user]);
 
   useEffect(() => {
-    if (notificationsEnabled) {
-      const poll = async () => {
-        try {
-          const res = await fetch('/api/v1/orders/latest');
-          const data = await res.json();
-          if (data?.id && data.id > lastOrderId.current) {
-            new Notification('Nueva venta en Puros Mates', {
-              body: `Pedido #${data.id} - $${data.total?.toLocaleString('es-AR')}`,
-              icon: '/logo-purosmates.png',
-            });
-            lastOrderId.current = data.id;
-          }
-        } catch (e) { }
-      };
-      poll();
-      const interval = setInterval(poll, 15000);
-      setPollingRef(interval);
-      return () => clearInterval(interval);
-    }
-  }, [notificationsEnabled]);
+    const checkSubscription = async () => {
+      setCheckingSubscription(true);
+      try {
+        const isSubscribed = await OneSignal.Notifications.getPermissionStatusAsync();
+        if (isSubscribed === 'granted') {
+          setNotificationsEnabled(true);
+        }
+      } catch (e) {
+        console.log('OneSignal not initialized yet');
+      } finally {
+        setCheckingSubscription(false);
+      }
+    };
+    checkSubscription();
+  }, [isLoaded]);
 
   const handleTestimonialChange = (idx: number, field: string, value: any) => {
     const newT = [...testimonials];
@@ -70,11 +65,24 @@ export default function SettingsTab() {
 
   const toggleNotifications = async () => {
     if (!notificationsEnabled) {
-      const perm = await Notification.requestPermission();
-      if (perm === 'granted') setNotificationsEnabled(true);
+      try {
+        await OneSignal.Notifications.requestPermission();
+        const playerId = await OneSignal.getPlayerId();
+        console.log('OneSignal Player ID:', playerId);
+        if (playerId) {
+          await fetch('/api/v1/admin/onesignal-id', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ playerId }),
+          });
+        }
+        setNotificationsEnabled(true);
+      } catch (e) {
+        console.error('Error enabling notifications:', e);
+      }
     } else {
+      await OneSignal.setSubscription(false);
       setNotificationsEnabled(false);
-      if (pollingRef) clearInterval(pollingRef);
     }
   };
 
@@ -162,8 +170,11 @@ export default function SettingsTab() {
             <h4 className="font-medium">Alertas de nuevas ventas</h4>
             <p className="text-xs text-gray-500">Recibir notificaciones cuando se realice una venta</p>
           </div>
-          <button onClick={toggleNotifications} className={`px-3 py-1.5 rounded text-sm ${notificationsEnabled ? 'bg-red-100 text-red-700' : 'bg-[#254642] text-white'}`}>
-            {notificationsEnabled ? 'Desactivar' : 'Activar'}
+          <button 
+            onClick={toggleNotifications} 
+            disabled={checkingSubscription}
+            className={`px-3 py-1.5 rounded text-sm ${notificationsEnabled ? 'bg-red-100 text-red-700' : 'bg-[#254642] text-white'} ${checkingSubscription ? 'opacity-50 cursor-not-allowed' : ''}`}>
+            {checkingSubscription ? '...' : notificationsEnabled ? 'Desactivar' : 'Activar'}
           </button>
         </div>
       </section>
