@@ -111,32 +111,36 @@ export default function SettingsTab() {
         
         console.log('Step 5: Requesting permission...');
         
-        // Use promise with timeout as fallback
-        const requestWithTimeout = async () => {
-          try {
-            return await OneSignal.Notifications.requestPermission();
-          } catch (e) {
-            console.error('requestPermission error:', e);
-            // Fallback to native API
-            const result = await Notification.requestPermission();
-            return result === 'granted';
-          }
-        };
-        
         let granted = false;
+        
+        // First try Slidedown (shows OneSignal prompt)
         try {
-          granted = await Promise.race([
-            requestWithTimeout(),
-            new Promise<boolean>((resolve) => 
-              setTimeout(() => resolve(false), 10000)
-            )
-          ]);
+          console.log('Trying Slidedown prompt...');
+          await OneSignal.Slidedown.promptPush({ force: true });
+          console.log('Slidedown shown');
+          
+          // Check if permission was granted after slidedown
+          const status = OneSignal.Notifications.permissionNative;
+          granted = status === 'granted';
+          console.log('Permission after slidedown:', status);
         } catch (e) {
-          console.error('Permission request failed:', e);
-          granted = false;
+          console.warn('Slidedown failed:', e);
+          
+          // Fallback to direct request
+          try {
+            const onesignalResult = await OneSignal.Notifications.requestPermission();
+            granted = onesignalResult;
+            console.log('OneSignal permission result:', onesignalResult);
+          } catch (e2) {
+            console.warn('OneSignal requestPermission failed, using native API:', e2);
+            // Fallback to native browser API
+            const nativeResult = await Notification.requestPermission();
+            granted = nativeResult === 'granted';
+            console.log('Native permission result:', nativeResult);
+          }
         }
         
-        console.log('Permission result:', granted);
+        console.log('Final granted:', granted);
         
         if (granted) {
           console.log('Step 6: Waiting for subscription...');

@@ -22,24 +22,41 @@ export default function OneSignalSetup() {
       isInitialized.current = true;
 
       console.log('[OneSignalSetup] App ID:', ONESIGNAL_APP_ID);
+      console.log('[OneSignalSetup] Current origin:', window.location.origin);
+      console.log('[OneSignalSetup] Is localhost:', window.location.hostname === 'localhost');
 
       import('react-onesignal').then((OneSignalModule) => {
         const OneSignal = OneSignalModule.default;
         console.log('[OneSignalSetup] OneSignal module loaded:', typeof OneSignal);
         
-        OneSignal.init({
+        const initOptions: any = {
           appId: ONESIGNAL_APP_ID,
-          allowLocalhostAsSecureOrigin: true,
           serviceWorkerParam: {
             scope: '/',
           },
           serviceWorkerPath: '/OneSignalSDKWorker.js',
-        }).then(() => {
+        };
+        
+        // Only allow localhost as secure origin in development
+        if (window.location.hostname === 'localhost') {
+          initOptions.allowLocalhostAsSecureOrigin = true;
+        }
+        
+        console.log('[OneSignalSetup] Init options:', initOptions);
+        
+        OneSignal.init(initOptions).then(() => {
           console.log('[OneSignalSetup] ✅ OneSignal initialized successfully');
           OneSignal.User.addTag('role', 'admin');
           console.log('[OneSignalSetup] Admin tag added');
         }).catch((err) => {
           console.error('[OneSignalSetup] Error initializing OneSignal:', err);
+          console.error('[OneSignalSetup] Error message:', err.message);
+          
+          // If error is about domain, try alternative approach
+          if (err.message?.includes('localhost')) {
+            console.log('[OneSignalSetup] Trying alternative init...');
+            // Try without service worker config as fallback
+          }
         });
       }).catch(err => {
         console.error('[OneSignalSetup] Failed to load OneSignal SDK:', err);
