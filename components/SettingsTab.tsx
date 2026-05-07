@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { Bell, MessageSquare, Plus, Trash2 } from 'lucide-react';
 import HomeEditor from '@/components/HomeEditor';
-import OneSignal from 'react-onesignal';
 
 export default function SettingsTab() {
   const { user, isLoaded } = useUser();
@@ -26,14 +25,22 @@ export default function SettingsTab() {
 
   useEffect(() => {
     const checkSubscription = async () => {
+      if (!isLoaded) return;
       setCheckingSubscription(true);
       try {
-        const isSubscribed = await OneSignal.Notifications.getPermissionStatusAsync();
-        if (isSubscribed === 'granted') {
+        const OneSignal = (await import('react-onesignal')).default;
+        const status = OneSignal.Notifications.permissionNative;
+        console.log('Permission status:', status);
+        
+        // Check if there's an active subscription
+        const playerId = OneSignal.User.PushSubscription?.id;
+        console.log('Player ID:', playerId);
+        
+        if (status === 'granted' && playerId) {
           setNotificationsEnabled(true);
         }
       } catch (e) {
-        console.log('OneSignal not initialized yet');
+        console.log('OneSignal not available yet:', e);
       } finally {
         setCheckingSubscription(false);
       }
@@ -66,23 +73,43 @@ export default function SettingsTab() {
   const toggleNotifications = async () => {
     if (!notificationsEnabled) {
       try {
-        await OneSignal.Notifications.requestPermission();
-        const playerId = await OneSignal.getPlayerId();
-        console.log('OneSignal Player ID:', playerId);
-        if (playerId) {
-          await fetch('/api/v1/admin/onesignal-id', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ playerId }),
-          });
+        console.log('Requesting notification permission...');
+        
+        const OneSignal = (await import('react-onesignal')).default;
+        
+        const granted = await OneSignal.Notifications.requestPermission();
+        console.log('Permission result:', granted);
+        
+        if (granted) {
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          // Get player ID from PushSubscription
+          const playerId = OneSignal.User.PushSubscription.id;
+          console.log('OneSignal Player ID:', playerId);
+          
+          if (playerId) {
+            await fetch('/api/v1/admin/onesignal-id', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ playerId }),
+            });
+          }
+          setNotificationsEnabled(true);
+        } else {
+          alert('Permiso denegado. Habilitá las notificaciones en la configuración del navegador.');
         }
-        setNotificationsEnabled(true);
       } catch (e) {
         console.error('Error enabling notifications:', e);
+        alert('Error al activar notificaciones: ' + e);
       }
     } else {
-      await OneSignal.setSubscription(false);
-      setNotificationsEnabled(false);
+      try {
+        const OneSignal = (await import('react-onesignal')).default;
+        await OneSignal.User.PushSubscription.optOut();
+        setNotificationsEnabled(false);
+      } catch (e) {
+        console.error('Error disabling notifications:', e);
+      }
     }
   };
 
