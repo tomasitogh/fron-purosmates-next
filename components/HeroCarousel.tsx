@@ -1,12 +1,24 @@
 'use client';
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+
+import { useEffect, useRef, useState, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-export default function HeroCarousel({ images }) {
-  const containerRef = useRef(null);
+interface HeroImage {
+  src: string;
+  alt: string;
+  link?: string;
+  caption?: string;
+}
+
+interface HeroCarouselProps {
+  images: HeroImage[];
+}
+
+export default function HeroCarousel({ images }: HeroCarouselProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [current, setCurrent] = useState(0);
-  const [visibleImages, setVisibleImages] = useState([]);
+  const [visibleImages, setVisibleImages] = useState<number[]>([]);
 
   const handleScroll = useCallback(() => {
     if (!containerRef.current) return;
@@ -38,14 +50,14 @@ export default function HeroCarousel({ images }) {
   }, [current, images.length]);
 
   useEffect(() => {
-    const indices = [];
+    const indices: number[] = [];
     indices.push(current);
     if (current > 0) indices.push(current - 1);
     if (current < images.length - 1) indices.push(current + 1);
     setVisibleImages(indices);
   }, [current, images.length]);
 
-  const goTo = useCallback((index) => {
+  const goTo = useCallback((index: number) => {
     if (!containerRef.current) return;
     const width = containerRef.current.clientWidth;
     containerRef.current.scrollLeft = index * width;
@@ -73,7 +85,7 @@ export default function HeroCarousel({ images }) {
           const linkUrl = img.link;
           const isVisible = visibleImages.includes(idx);
           const slideContent = (
-            <div key={idx} className="flex-shrink-0 w-full snap-center relative h-[250px] sm:h-[400px] md:h-[600px] lg:h-[750px]">
+            <div key={idx} className="flex-shrink-0 w-full snap-center relative aspect-[16/9]">
               <Image
                 src={img.src}
                 alt={img.alt}
