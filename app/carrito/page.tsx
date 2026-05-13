@@ -319,7 +319,7 @@ export default function Carrito() {
                         {hasComboDiscount && (
                             <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
                                 <p className="text-sm text-green-800 font-medium">
-                                    ✅ ¡Combo completo! Tienes Mate + Bombilla + Accesorio
+                                    ✅ ¡Combo aplicado! tenés Mate + Bombilla
                                 </p>
                             </div>
                         )}

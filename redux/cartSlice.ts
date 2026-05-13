@@ -269,8 +269,7 @@ export const selectHasComboDiscount = (state: { cart: CartState }) => {
     const items = state.cart.items;
     const categories = new Set(items.map(item => item.category?.id));
     return categories.has(CategoryId.MATE) &&
-        categories.has(CategoryId.BOMBILLA) &&
-        categories.has(CategoryId.ACCESORIO);
+        categories.has(CategoryId.BOMBILLA);
 };
 
 export const selectCartDiscount = (state: { cart: CartState }) => {
