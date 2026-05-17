@@ -139,9 +139,13 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
     router.replace(newUrl, { scroll: false });
   };
 
-  const handleAddToCart = (product: any, withCustomization: boolean = false) => {
-    dispatch(addToCart({ ...product, qty: 1, hasCustomization: withCustomization }) as any);
-    toast.success(`Agregado: ${product.name}${withCustomization ? ' (Personalizado)' : ''}`);
+  const handleAddToCart = async (product: any, withCustomization: boolean = false) => {
+    const result = await dispatch(addToCart({ ...product, qty: 1, hasCustomization: withCustomization }) as any);
+    if (addToCart.fulfilled.match(result)) {
+      toast.success(`Agregado: ${product.name}${withCustomization ? ' (Personalizado)' : ''}`);
+    } else {
+      toast.error('Este producto no tiene stock disponible');
+    }
   };
 
   return (

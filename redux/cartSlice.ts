@@ -1,5 +1,4 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import toast from 'react-hot-toast';
 import axios from 'axios';
 import { CategoryId } from '@/lib/constants';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
@@ -43,9 +42,7 @@ const initialState: CartState = {
 export const addToCart = createAsyncThunk(
     'cart/addToCart',
     async (product: Omit<CartItem, 'qty'>, { getState, rejectWithValue }) => {
-        // Verificar si el producto tiene stock
         if (!product.stock || product.stock <= 0) {
-            toast.error('Este producto no tiene stock disponible');
             return rejectWithValue('No stock available');
         }
 
@@ -57,9 +54,7 @@ export const addToCart = createAsyncThunk(
         );
 
         if (existingItem) {
-            // Verificar que no se exceda el stock disponible
             if (existingItem.qty >= product.stock) {
-                toast.error(`Solo hay ${product.stock} unidades disponibles de este producto`);
                 return rejectWithValue('Stock limit reached');
             }
         }

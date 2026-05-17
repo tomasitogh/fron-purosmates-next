@@ -274,7 +274,12 @@ export default function Carrito() {
                                     </button>
                                     <span className="text-gray-800 font-medium px-4">{item.qty}</span>
                                     <button
-                                        onClick={() => dispatch(addToCart(item))}
+                                        onClick={async () => {
+                                            const result = await dispatch(addToCart(item));
+                                            if (addToCart.rejected.match(result)) {
+                                                toast.error('Este producto no tiene stock disponible');
+                                            }
+                                        }}
                                         className="p-2 hover:bg-gray-100 rounded transition"
                                     >
                                         <Plus className="w-4 h-4" />

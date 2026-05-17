@@ -53,10 +53,14 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
         }
     };
 
-    const handleAddToCart = () => {
-        dispatch(addToCart({ ...product, qty: 1, hasCustomization: wantsCustomization } as any));
-        toast.success(`Agregado: ${product.name}${wantsCustomization ? ' (Personalizado)' : ''}`);
-        onClose();
+    const handleAddToCart = async () => {
+        const result = await dispatch(addToCart({ ...product, qty: 1, hasCustomization: wantsCustomization } as any));
+        if (addToCart.fulfilled.match(result)) {
+            toast.success(`Agregado: ${product.name}${wantsCustomization ? ' (Personalizado)' : ''}`);
+            onClose();
+        } else {
+            toast.error('Este producto no tiene stock disponible');
+        }
     };
 
     return (
