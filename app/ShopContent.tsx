@@ -223,10 +223,15 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
               {filteredProducts.map((product, index) => (
                 <div
                   key={product.id}
-                  className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer flex flex-col"
+                  className={`bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer flex flex-col ${!product.stock ? 'border border-gray-300 opacity-60' : ''}`}
                   onClick={() => openProductModal(product)}
                 >
                   <div className="relative w-full aspect-square bg-gray-100">
+                    {!product.stock && (
+                      <div className="absolute top-2 left-2 z-10 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md">
+                        Sin Stock
+                      </div>
+                    )}
                     {product.images?.[0] ? (
                       <ProductImagePreview
                         src={product.images[0].url}
@@ -258,9 +263,10 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
                         e.stopPropagation();
                         handleAddToCart(product, !!customizationStates[product.id]);
                       }}
-                      className="mt-2 w-full bg-[#254642] text-white py-2 rounded-lg text-sm font-medium"
+                      disabled={!product.stock}
+                      className={`mt-2 w-full py-2 rounded-lg text-sm font-medium ${!product.stock ? 'bg-gray-400 text-gray-200 cursor-not-allowed' : 'bg-[#254642] text-white'}`}
                     >
-                      Agregar
+                      {!product.stock ? 'Sin Stock' : 'Agregar'}
                     </button>
                   </div>
                 </div>
