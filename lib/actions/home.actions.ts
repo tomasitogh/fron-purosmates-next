@@ -211,3 +211,57 @@ export async function deleteProductCategory(id: number, token: string) {
         throw error;
     }
 }
+
+export interface Testimonial {
+    id?: number;
+    name: string;
+    text: string;
+    rating: number;
+    displayOrder?: number;
+}
+
+export async function getTestimonials(): Promise<Testimonial[]> {
+    try {
+        const { data } = await axios.get(`${API_URL}/api/v1/testimonials`);
+        return data;
+    } catch (error) {
+        console.error('Error fetching testimonials:', error);
+        return [];
+    }
+}
+
+export async function createTestimonial(data: { name: string; text: string; rating: number }, token: string) {
+    try {
+        const response = await axios.post(`${API_URL}/api/v1/testimonials`, data, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error creating testimonial:', error);
+        throw error;
+    }
+}
+
+export async function updateTestimonial(id: number, data: { name?: string; text?: string; rating?: number }, token: string) {
+    try {
+        const response = await axios.put(`${API_URL}/api/v1/testimonials/${id}`, data, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error updating testimonial:', error);
+        throw error;
+    }
+}
+
+export async function deleteTestimonial(id: number, token: string) {
+    try {
+        await axios.delete(`${API_URL}/api/v1/testimonials/${id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return { success: true };
+    } catch (error) {
+        console.error('Error deleting testimonial:', error);
+        throw error;
+    }
+}

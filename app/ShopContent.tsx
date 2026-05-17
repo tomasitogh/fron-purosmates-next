@@ -251,8 +251,8 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
                     )}
                   </div>
                   <div className="p-3 flex flex-col flex-1">
-                    <h3 className="font-semibold text-gray-900 truncate">{product.name}</h3>
-                    <p className="text-sm text-gray-500 capitalize">{product.category?.description}</p>
+                    <h3 className="text-sm font-semibold text-gray-900 truncate">{product.name}</h3>
+                    <p className="text-xs text-gray-500 capitalize">{product.category?.description}</p>
                     <div className="mt-auto pt-2">
                       <span className="text-lg font-bold text-[#254642]">
                         ${product.price.toLocaleString('es-AR')}

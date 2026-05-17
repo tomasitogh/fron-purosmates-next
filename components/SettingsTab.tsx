@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react';
 import { useUser, useAuth } from '@clerk/nextjs';
 import { Bell, MessageSquare, Plus, Trash2 } from 'lucide-react';
 import HomeEditor from '@/components/HomeEditor';
+import { getTestimonials, createTestimonial, updateTestimonial, deleteTestimonial } from '@/lib/actions/home.actions';
 
 export default function SettingsTab() {
   const { user, isLoaded } = useUser();
   const { getToken } = useAuth();
-  const [testimonials, setTestimonials] = useState<{ name: string; text: string; rating: number }[]>([]);
+  const [testimonials, setTestimonials] = useState<{ id?: number; name: string; text: string; rating: number }[]>([]);
   const [saving, setSaving] = useState(false);
   const [showTestimonials, setShowTestimonials] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -17,9 +18,8 @@ export default function SettingsTab() {
 
   useEffect(() => {
     if (isLoaded && user) {
-      fetch('/api/home-config')
-        .then(r => r.json())
-        .then(data => setTestimonials(data.testimonials || []))
+      getTestimonials()
+        .then(data => setTestimonials(data))
         .finally(() => setLoading(false));
     }
   }, [isLoaded, user]);
@@ -64,11 +64,25 @@ export default function SettingsTab() {
   const saveTestimonials = async () => {
     setSaving(true);
     try {
-      await fetch('/api/home-config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ testimonials }),
-      });
+      const token = await getToken();
+      const existing = await getTestimonials();
+      const localIds = testimonials.filter(t => t.id).map(t => t.id!);
+      for (const old of existing) {
+        if (!localIds.includes(old.id!)) {
+          await deleteTestimonial(old.id!, token!);
+        }
+      }
+      for (const t of testimonials) {
+        if (t.id) {
+          await updateTestimonial(t.id, { name: t.name, text: t.text, rating: t.rating }, token!);
+        } else {
+          await createTestimonial({ name: t.name, text: t.text, rating: t.rating }, token!);
+        }
+      }
+      const updated = await getTestimonials();
+      setTestimonials(updated);
+    } catch (err) {
+      console.error('Error saving testimonials:', err);
     } finally {
       setSaving(false);
     }

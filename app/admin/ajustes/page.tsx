@@ -9,13 +9,7 @@ import {
   Trash2, MessageSquare, Bell, 
   ArrowLeft, Image as ImageIcon, Filter, LayoutGrid, Eye, EyeOff 
 } from 'lucide-react';
-import { getBanners, getAllHomeImages, Banner, HomeImage } from '@/lib/actions/home.actions';
-
-interface Testimonial {
-  name: string;
-  text: string;
-  rating: number;
-}
+import { getBanners, getAllHomeImages, getTestimonials, createTestimonial, updateTestimonial, deleteTestimonial, Banner, HomeImage, Testimonial } from '@/lib/actions/home.actions';
 
 interface ProductCategory {
   id: number;
@@ -65,16 +59,16 @@ export default function AjustesPage() {
     setToken(clerkToken);
     
     try {
-      const [bannersData, homeData, configData, catsData] = await Promise.all([
+      const [bannersData, homeData, testimonialsData, catsData] = await Promise.all([
         getBanners(),
         getAllHomeImages(),
-        fetch('/api/home-config').then(r => r.json()).catch(() => ({ testimonials: [] })),
+        getTestimonials(),
         fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'}/api/v1/categories`).then(r => r.json()).catch(() => ({ content: [] }))
       ]);
       
       setBanners(bannersData);
       setHomeImages(homeData);
-      setTestimonials(configData.testimonials || []);
+      setTestimonials(testimonialsData);
       setCategories(catsData.content || catsData || []);
       setLoading(false);
     } catch (err) {
@@ -199,13 +193,26 @@ export default function AjustesPage() {
   const saveTestimonials = async () => {
     setSaving(true);
     try {
-      await fetch('/api/home-config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ testimonials }),
-      });
+      const token = await getToken();
+      const existing = await getTestimonials();
+      const localIds = testimonials.filter(t => t.id).map(t => t.id!);
+      for (const old of existing) {
+        if (!localIds.includes(old.id!)) {
+          await deleteTestimonial(old.id!, token!);
+        }
+      }
+      for (const t of testimonials) {
+        if (t.id) {
+          await updateTestimonial(t.id, { name: t.name, text: t.text, rating: t.rating }, token!);
+        } else {
+          await createTestimonial({ name: t.name, text: t.text, rating: t.rating }, token!);
+        }
+      }
+      const updated = await getTestimonials();
+      setTestimonials(updated);
       toast.success('Testimonios guardados');
     } catch (err) {
+      console.error('Error saving testimonials:', err);
       toast.error('Error al guardar testimonios');
     } finally {
       setSaving(false);
