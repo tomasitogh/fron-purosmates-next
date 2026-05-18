@@ -89,21 +89,20 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
 
     list = list.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
 
-    switch (sortBy) {
-      case 'price-asc':
-        list.sort((a, b) => a.price - b.price);
-        break;
-      case 'price-desc':
-        list.sort((a, b) => b.price - a.price);
-        break;
-      case 'newest':
-        list.sort((a, b) => (b.id || 0) - (a.id || 0));
-        break;
-      default:
-        list.sort((a, b) => (b.id || 0) - (a.id || 0));
-    }
+    const sortFn = (() => {
+      switch (sortBy) {
+        case 'price-asc': return (a: Product, b: Product) => a.price - b.price;
+        case 'price-desc': return (a: Product, b: Product) => b.price - a.price;
+        default: return (a: Product, b: Product) => (b.id || 0) - (a.id || 0);
+      }
+    })();
 
-    return list;
+    const inStock = list.filter(p => p.stock > 0);
+    const outOfStock = list.filter(p => !p.stock || p.stock <= 0);
+    inStock.sort(sortFn);
+    outOfStock.sort(sortFn);
+
+    return [...inStock, ...outOfStock];
   }, [initialProducts, selectedCategoryIds, searchText, priceRange, sortBy]);
 
   const selectedProduct = useMemo(() => {
