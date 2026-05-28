@@ -13,7 +13,7 @@ export const metadata = {
   openGraph: {
     title: 'Puros Mates - Tienda Online de Mates y Accesorios Premium',
     description: 'Los mejores mates artesanales de Argentina.',
-    images: ['/logo-purosmates.png'],
+    images: ['/opengraph-image'],
   },
 };
 
