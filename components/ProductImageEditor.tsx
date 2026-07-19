@@ -21,14 +21,18 @@ export default function ProductImageEditor({
     aspectRatio = 1
 }: ProductImageEditorProps) {
     const [scale, setScale] = useState(initialTransform.scale);
-    const [position, setPosition] = useState({ x: initialTransform.x, y: initialTransform.y });
     const containerRef = useRef<HTMLDivElement>(null);
+    const containerWidth = 300;
+    const containerHeight = 300 / aspectRatio;
+
+    // Convert initialTransform from percentages to pixels for the gesture engine
+    const [position, setPosition] = useState(() => ({
+        x: (initialTransform.x * containerWidth) / 100,
+        y: (initialTransform.y * containerHeight) / 100,
+    }));
 
     // Calculate bounds based on scale
     const getBounds = (currentScale: number) => {
-        const containerWidth = 300;
-        const containerHeight = 300 / aspectRatio;
-
         const maxTranslateX = (containerWidth * (currentScale - 1)) / 2;
         const maxTranslateY = (containerHeight * (currentScale - 1)) / 2;
 
@@ -55,11 +59,6 @@ export default function ProductImageEditor({
             setPosition({ x: dx, y: dy });
         },
         onPinch: ({ offset: [s], memo }) => {
-            // When pinching, we also need to clamp the position if we zoom out
-            // memo stores the initial position when pinch started if needed, 
-            // but here we just update scale and rely on a useEffect or immediate clamp?
-            // simpler: just set scale here, let the drag bounds handle the rest? 
-            // no, if we zoom out, we might be out of bounds.
             setScale(s);
             return memo;
         },
@@ -167,11 +166,6 @@ export default function ProductImageEditor({
                     </button>
                     <button
                         onClick={() => {
-                            // Convertir px a porcentaje basado en el ancho del contenedor (300px)
-                            // Asumimos cuadro cuadrado o ratio fijo. El frame es 300px de ancho.
-                            const containerWidth = 300;
-                            const containerHeight = 300 / aspectRatio;
-
                             const xPercent = (position.x / containerWidth) * 100;
                             const yPercent = (position.y / containerHeight) * 100;
 

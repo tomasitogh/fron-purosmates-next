@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { X, Upload, Pencil } from 'lucide-react';
 import { uploadFiles, clearUploadedFiles } from '@/redux/fileSlice';
 import { AppDispatch, RootState } from '@/redux/store';
+import { TokenGetter } from '@/lib/apiClient';
 import toast from 'react-hot-toast';
 import ProductImageEditor from './ProductImageEditor';
 import ProductImagePreview from './ProductImagePreview';
@@ -18,14 +19,14 @@ interface ImageUploaderProps {
     images?: ProductImage[];
     onChange: (images: ProductImage[]) => void;
     required?: boolean;
-    token: string;
+    getToken: TokenGetter;
 }
 
 export default function ImageUploader({
     images = [],
     onChange,
     required = false,
-    token
+    getToken
 }: ImageUploaderProps) {
     const [dragActive, setDragActive] = useState(false);
     const [previewImages, setPreviewImages] = useState<ProductImage[]>(images);
@@ -94,12 +95,7 @@ export default function ImageUploader({
 
         if (imageFiles.length === 0) return;
 
-        if (!token) {
-            toast.error('Sesión no válida. Por favor, recarga la página.');
-            return;
-        }
-
-        dispatch(uploadFiles({ files: imageFiles, token }));
+        dispatch(uploadFiles({ files: imageFiles, getToken }));
     };
 
     const removeImage = (index: number) => {
@@ -258,6 +254,7 @@ export default function ImageUploader({
             {/* Editor Modal */}
             {editingIndex !== null && previewImages[editingIndex] && (
                 <ProductImageEditor
+                    key={previewImages[editingIndex].url}
                     imageUrl={previewImages[editingIndex].url}
                     initialTransform={{
                         scale: previewImages[editingIndex].scale || 1,

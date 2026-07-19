@@ -37,7 +37,7 @@ export default function Carrito() {
     const hasComboDiscount = useSelector(selectHasComboDiscount);
 
     const router = useRouter();
-    const { isAuthenticated, token } = useAuth();
+    const { isAuthenticated, getToken } = useAuth();
     const [showCheckout, setShowCheckout] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<'cash' | 'mp' | 'transfer'>('cash');
     const [guestData, setGuestData] = useState({
@@ -57,28 +57,35 @@ export default function Carrito() {
 
     useEffect(() => {
         setMounted(true);
-        if (isAuthenticated && token) {
-            axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/users/me`, {
-                headers: { Authorization: `Bearer ${token}` }
-            }).then(response => {
-                const data = response.data;
-                if (data) {
-                    setGuestData(prev => ({
-                        ...prev,
-                        phone: data.phoneNumber || prev.phone,
-                        shippingPreference: data.shippingPreference || 'vendedor',
-                        locality: data.locality || '',
-                        address: data.address || '',
-                        floorApartment: data.floorApartment || '',
-                        extraIndications: data.extraIndications || '',
-                        // Extract firstname/lastname from name
-                        firstname: prev.firstname || (data.name ? data.name.split(' ')[0] : ''),
-                        lastname: prev.lastname || (data.name ? data.name.split(' ').slice(1).join(' ') : ''),
-                    }));
+        if (isAuthenticated) {
+            (async () => {
+                try {
+                    const token = await getToken();
+                    if (!token) return;
+                    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/users/me`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    const data = response.data;
+                    if (data) {
+                        setGuestData(prev => ({
+                            ...prev,
+                            phone: data.phoneNumber || prev.phone,
+                            shippingPreference: data.shippingPreference || 'vendedor',
+                            locality: data.locality || '',
+                            address: data.address || '',
+                            floorApartment: data.floorApartment || '',
+                            extraIndications: data.extraIndications || '',
+                            // Extract firstname/lastname from name
+                            firstname: prev.firstname || (data.name ? data.name.split(' ')[0] : ''),
+                            lastname: prev.lastname || (data.name ? data.name.split(' ').slice(1).join(' ') : ''),
+                        }));
+                    }
+                } catch (e) {
+                    console.error("Error fetching user data", e);
                 }
-            }).catch(e => console.error("Error fetching user data", e));
+            })();
         }
-    }, [isAuthenticated, token]);
+    }, [isAuthenticated, getToken]);
 
     const handleConfirmCart = () => {
         setShowCheckout(true);
@@ -108,7 +115,7 @@ export default function Carrito() {
         try {
             const orderData = {
                 items,
-                token: isAuthenticated ? token || undefined : undefined,
+                getToken: isAuthenticated ? getToken : undefined,
                 guestData: {
                     guestPhone: guestData.phone,
                     guestFirstname: guestData.firstname,
@@ -137,7 +144,7 @@ export default function Carrito() {
                 if (paymentMethod === 'mp') {
                     const loadingToast = toast.loading('Generando pago...');
                     try {
-                        const prefResult = await dispatch(createPreference({ orderId: order.id, token: token || '' }));
+                        const prefResult = await dispatch(createPreference({ orderId: order.id, getToken: isAuthenticated ? getToken : undefined }));
 
                         toast.dismiss(loadingToast);
 

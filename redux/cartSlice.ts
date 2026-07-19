@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { CategoryId } from '@/lib/constants';
+import { TokenGetter, withAuthRetry } from '@/lib/apiClient';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 
 // Types
@@ -66,9 +67,9 @@ export const addToCart = createAsyncThunk(
 // Async Thunk for creating order
 export const createOrder = createAsyncThunk(
     'cart/createOrder',
-    async ({ items, token, guestData, paymentMethod }: {
+    async ({ items, getToken, guestData, paymentMethod }: {
         items: CartItem[];
-        token?: string;
+        getToken?: TokenGetter;
         guestData?: {
             guestFirstname?: string;
             guestLastname?: string;
@@ -95,9 +96,14 @@ export const createOrder = createAsyncThunk(
                 paymentMethod
             };
 
-            const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+            const doPost = async (token?: string) => {
+                const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+                return axios.post(`${API_URL}/orders`, payload, config);
+            };
 
-            const response = await axios.post(`${API_URL}/orders`, payload, config);
+            const response = getToken
+                ? await withAuthRetry(getToken, (token) => doPost(token))
+                : await doPost();
             return response.data;
         } catch (error: any) {
             if (error.response?.data) {
@@ -111,11 +117,16 @@ export const createOrder = createAsyncThunk(
 // Async Thunk for creating MP Preference
 export const createPreference = createAsyncThunk(
     'cart/createPreference',
-    async ({ orderId, token }: { orderId: number; token: string }, { rejectWithValue }) => {
+    async ({ orderId, getToken }: { orderId: number; getToken?: TokenGetter }, { rejectWithValue }) => {
         try {
-            const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+            const doPost = async (token?: string) => {
+                const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+                return axios.post(`${API_URL}/mp/create_preference/${orderId}`, {}, config);
+            };
 
-            const response = await axios.post(`${API_URL}/mp/create_preference/${orderId}`, {}, config);
+            const response = getToken
+                ? await withAuthRetry(getToken, (token) => doPost(token))
+                : await doPost();
             return response.data;
         } catch (error: any) {
             if (error.response?.data) {

@@ -1,16 +1,14 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
 import imageCompression from "browser-image-compression";
+import { TokenGetter, withAuthRetry } from "@/lib/apiClient";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 const API_URL = `${API_BASE_URL}/files`;
 
-const MAX_FILE_SIZE_MB = 8;
-const IMAGE_COMPRESSION_OPTIONS = {
-    maxSizeMBytes: MAX_FILE_SIZE_MB,
-    maxWidthOrHeight: 2048,
-    useWebWorker: true,
-};
+const MAX_IMAGE_WIDTH = 2048;
+const MAX_TARGET_SIZE_MB = 2;
+const SKIP_COMPRESSION_THRESHOLD_BYTES = 500 * 1024; // 500KB
 
 interface FileState {
     uploadedUrls: string[];
@@ -25,15 +23,16 @@ const initialState: FileState = {
 };
 
 async function compressImage(file: File): Promise<File> {
-    if (file.size <= MAX_FILE_SIZE_MB * 1024 * 1024) {
+    if (file.size <= SKIP_COMPRESSION_THRESHOLD_BYTES) {
         return file;
     }
     try {
-        const compressedFile = await imageCompression(file, IMAGE_COMPRESSION_OPTIONS);
+        const compressedFile = await imageCompression(file, {
+            maxSizeMB: MAX_TARGET_SIZE_MB,
+            maxWidthOrHeight: MAX_IMAGE_WIDTH,
+            useWebWorker: true,
+        });
         console.log(`Compressed ${file.name}: ${file.size} -> ${compressedFile.size} bytes`);
-        if (compressedFile.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-            throw new Error(`Archivo muy grande (${Math.round(file.size / 1024 / 1024)}MB). Máximo: ${MAX_FILE_SIZE_MB}MB`);
-        }
         return compressedFile;
     } catch (error) {
         console.error("Compression failed, using original:", error);
@@ -44,20 +43,22 @@ async function compressImage(file: File): Promise<File> {
 // Thunk para subir múltiples archivos
 export const uploadFiles = createAsyncThunk(
     'files/uploadMultiple',
-    async ({ files, token }: { files: File[], token: string }) => {
+    async ({ files, getToken }: { files: File[], getToken: TokenGetter }) => {
         const compressedFiles = await Promise.all(files.map(compressImage));
-        
+
         const formData = new FormData();
         compressedFiles.forEach(file => {
             formData.append('files', file);
         });
 
-        const { data } = await axios.post(`${API_URL}/upload-multiple`, formData, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'multipart/form-data'
-            }
-        });
+        const { data } = await withAuthRetry(getToken, (token) =>
+            axios.post(`${API_URL}/upload-multiple`, formData, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
+        );
         console.log('Upload response:', data);
 
         // Convertir las URLs relativas a URLs absolutas

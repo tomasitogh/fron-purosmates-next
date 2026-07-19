@@ -1,6 +1,7 @@
 'use server';
 
 import axios from 'axios';
+import { revalidatePath } from 'next/cache';
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL 
     ? process.env.NEXT_PUBLIC_API_BASE_URL 
@@ -68,6 +69,7 @@ export async function createHomeImage(
         const response = await axios.post(`${API_URL}/api/v1/home-images`, data, {
             headers: { Authorization: `Bearer ${token}` }
         });
+        revalidatePath('/');
         return response.data;
     } catch (error) {
         console.error('Error creating home image:', error);
@@ -84,6 +86,7 @@ export async function updateHomeImage(
         const response = await axios.put(`${API_URL}/api/v1/home-images/${id}`, data, {
             headers: { Authorization: `Bearer ${token}` }
         });
+        revalidatePath('/');
         return response.data;
     } catch (error) {
         console.error('Error updating home image:', error);
@@ -96,6 +99,7 @@ export async function deleteHomeImage(id: number, token: string) {
         await axios.delete(`${API_URL}/api/v1/home-images/${id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
+        revalidatePath('/');
         return { success: true };
     } catch (error) {
         console.error('Error deleting home image:', error);
@@ -123,6 +127,7 @@ export async function createBanner(data: {
         const response = await axios.post(`${API_URL}/banners`, data, {
             headers: { Authorization: `Bearer ${token}` }
         });
+        revalidatePath('/');
         return response.data;
     } catch (error) {
         console.error('Error creating banner:', error);
@@ -141,6 +146,7 @@ export async function updateBanner(id: number, data: {
         const response = await axios.put(`${API_URL}/banners/${id}`, data, {
             headers: { Authorization: `Bearer ${token}` }
         });
+        revalidatePath('/');
         return response.data;
     } catch (error) {
         console.error('Error updating banner:', error);
@@ -153,6 +159,7 @@ export async function deleteBanner(id: number, token: string) {
         await axios.delete(`${API_URL}/banners/${id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
+        revalidatePath('/');
         return { success: true };
     } catch (error) {
         console.error('Error deleting banner:', error);
@@ -181,6 +188,7 @@ export async function createProductCategory(description: string, token: string) 
         const response = await axios.post(`${API_URL}/categories`, { description }, {
             headers: { Authorization: `Bearer ${token}` }
         });
+        revalidatePath('/shop');
         return response.data;
     } catch (error) {
         console.error('Error creating product category:', error);
@@ -193,6 +201,7 @@ export async function updateProductCategory(id: number, data: { description?: st
         const response = await axios.put(`${API_URL}/categories/${id}`, data, {
             headers: { Authorization: `Bearer ${token}` }
         });
+        revalidatePath('/shop');
         return response.data;
     } catch (error) {
         console.error('Error updating product category:', error);
@@ -205,6 +214,7 @@ export async function deleteProductCategory(id: number, token: string) {
         await axios.delete(`${API_URL}/categories/${id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
+        revalidatePath('/shop');
         return { success: true };
     } catch (error) {
         console.error('Error deleting product category:', error);
@@ -235,6 +245,7 @@ export async function createTestimonial(data: { name: string; text: string; rati
         const response = await axios.post(`${API_URL}/api/v1/testimonials`, data, {
             headers: { Authorization: `Bearer ${token}` }
         });
+        revalidatePath('/');
         return response.data;
     } catch (error) {
         console.error('Error creating testimonial:', error);
@@ -247,6 +258,7 @@ export async function updateTestimonial(id: number, data: { name?: string; text?
         const response = await axios.put(`${API_URL}/api/v1/testimonials/${id}`, data, {
             headers: { Authorization: `Bearer ${token}` }
         });
+        revalidatePath('/');
         return response.data;
     } catch (error) {
         console.error('Error updating testimonial:', error);
@@ -259,6 +271,7 @@ export async function deleteTestimonial(id: number, token: string) {
         await axios.delete(`${API_URL}/api/v1/testimonials/${id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
+        revalidatePath('/');
         return { success: true };
     } catch (error) {
         console.error('Error deleting testimonial:', error);

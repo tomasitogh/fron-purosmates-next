@@ -3,12 +3,17 @@
 import { createContext, useContext, useEffect, ReactNode } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useUser, useAuth as useClerkAuth } from '@clerk/nextjs';
-import { logout as logoutAction, setAuthFromStorage } from '@/redux/authSlice';
+import { logout as logoutAction, setUser } from '@/redux/authSlice';
 import { AppDispatch, RootState } from '@/redux/store';
+import { TokenGetter } from '@/lib/apiClient';
 
 interface AuthContextType {
-    user: any;
-    token: string | null;
+    user: { email: string; role: string } | null;
+    /**
+     * Función de Clerk para obtener un token FRESCO por request.
+     * Los JWT de Clerk vencen a los ~60s: NUNCA cachear el resultado.
+     */
+    getToken: TokenGetter;
     logout: () => void;
     isAdmin: () => boolean;
     loading: boolean;
@@ -27,36 +32,27 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const dispatch = useDispatch<AppDispatch>();
-    // @ts-ignore
-    const { user, token, loading, error } = useSelector((state: RootState) => state.auth);
+    const { user, loading } = useSelector((state: RootState) => state.auth);
 
     const { user: clerkUser, isLoaded, isSignedIn } = useUser();
     const { getToken, signOut: clerkSignOut } = useClerkAuth();
 
     useEffect(() => {
-        const syncAuth = async () => {
+        const syncAuth = () => {
             if (isLoaded && isSignedIn && clerkUser) {
-                try {
-                    const token = await getToken();
-                    if (token) {
-                        dispatch(setAuthFromStorage({
-                            user: {
-                                email: clerkUser.primaryEmailAddress?.emailAddress || '',
-                                role: (clerkUser.publicMetadata?.role as string) || 'USER'
-                            },
-                            token: token
-                        }));
+                dispatch(setUser({
+                    user: {
+                        email: clerkUser.primaryEmailAddress?.emailAddress || '',
+                        role: (clerkUser.publicMetadata?.role as string) || 'USER'
                     }
-                } catch (e) {
-                    console.error("AuthContext - Error syncing token:", e);
-                }
+                }));
             } else if (isLoaded && !isSignedIn) {
                 // If Clerk says NOT signed in, clear redux state
                 dispatch(logoutAction());
             }
         };
         syncAuth();
-    }, [isLoaded, isSignedIn, clerkUser, getToken, dispatch]);
+    }, [isLoaded, isSignedIn, clerkUser, dispatch]);
 
     const logout = () => {
         dispatch(logoutAction());
@@ -70,7 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const value = {
         user,
-        token,
+        getToken,
         logout,
         isAdmin,
         loading: !isLoaded || loading,

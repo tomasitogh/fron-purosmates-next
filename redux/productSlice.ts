@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
+import { TokenGetter, withAuthRetry } from "@/lib/apiClient";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 const API_URL = `${API_BASE_URL}/products`;
@@ -46,12 +47,14 @@ export const fetchProducts = createAsyncThunk('products/fetchProducts', async ()
 // Thunk para obtener TODOS los productos (activos e inactivos - solo admin)
 export const fetchAllProductsAdmin = createAsyncThunk(
     'products/fetchAllProductsAdmin',
-    async (token: string) => {
-        const { data } = await axios.get(`${API_URL}/admin/all`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+    async (getToken: TokenGetter) => {
+        const { data } = await withAuthRetry(getToken, (token) =>
+            axios.get(`${API_URL}/admin/all`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+        );
         return data as Product[];
     }
 );

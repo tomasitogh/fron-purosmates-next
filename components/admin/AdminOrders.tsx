@@ -2,11 +2,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchAllOrders, updateOrder, deleteOrder } from '@/redux/adminSlice';
-import { useAuth as useClerkAuth } from '@clerk/nextjs';
-import { Copy, PenSquare, Trash2, Info, X } from 'lucide-react';
+import { fetchAllOrders, updateOrder, deleteOrder, clearAdminMessages, Order } from '@/redux/adminSlice';
+
+interface ExtendedOrder extends Order {
+  shippingPreference?: string;
+  locality?: string;
+  address?: string;
+  floorApartment?: string;
+  extraIndications?: string;
+}
+import { Copy, PenSquare, Trash2, Info, X, ShoppingBag } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { AppDispatch, RootState } from '@/redux/store';
+import { TokenGetter } from '@/lib/apiClient';
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
     'PENDING': { label: 'Pendiente', color: 'bg-yellow-100 text-yellow-800' },
@@ -25,39 +33,45 @@ const PAYMENT_STATUS_LABELS: Record<string, { label: string; color: string }> = 
 
 const ORDER_STATUSES = ['ALL', 'PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
 
-export default function OrdersPanel() {
+interface AdminOrdersProps {
+  getToken: TokenGetter;
+}
+
+export default function AdminOrders({ getToken }: AdminOrdersProps) {
     const dispatch = useDispatch<AppDispatch>();
-    const { getToken } = useClerkAuth();
-    const { orders, loading } = useSelector((state: RootState) => state.admin);
+    const { orders, loading, successMessage, error: adminError } = useSelector((state: RootState) => state.admin);
     const [filterStatus, setFilterStatus] = useState('ALL');
 
-    // Edit State
-    const [editingOrder, setEditingOrder] = useState<any | null>(null);
+    const [editingOrder, setEditingOrder] = useState<ExtendedOrder | null>(null);
     const [editFormData, setEditFormData] = useState({
         status: '',
         paymentStatus: '',
         total: ''
     });
 
-    // View Items State
-    const [viewingOrderItems, setViewingOrderItems] = useState<any | null>(null);
+    const [viewingOrderItems, setViewingOrderItems] = useState<ExtendedOrder | null>(null);
 
     useEffect(() => {
-        const fetchOrders = async () => {
-            const token = await getToken();
-            if (token) {
-                dispatch(fetchAllOrders(token));
-            }
-        };
-        fetchOrders();
+        dispatch(fetchAllOrders(getToken));
     }, [dispatch, getToken]);
 
-    const filteredOrders = orders?.filter(order => {
+    useEffect(() => {
+        if (successMessage) {
+            toast.success(successMessage);
+            dispatch(clearAdminMessages());
+        }
+        if (adminError) {
+            toast.error(`Error: ${adminError}`);
+            dispatch(clearAdminMessages());
+        }
+    }, [successMessage, adminError, dispatch]);
+
+    const filteredOrders = (orders as ExtendedOrder[] | undefined)?.filter(order => {
         if (filterStatus === 'ALL') return true;
         return order.status === filterStatus;
     }) || [];
 
-    const handleEditClick = (order: any) => {
+    const handleEditClick = (order: ExtendedOrder) => {
         setEditingOrder(order);
         setEditFormData({
             status: order.status || '',
@@ -72,82 +86,70 @@ export default function OrdersPanel() {
 
     const handleUpdateSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const token = await getToken();
-        if (!token || !editingOrder) return;
+        if (!editingOrder) return;
 
         try {
-
-            const result = await dispatch(updateOrder({
+            await dispatch(updateOrder({
                 orderId: editingOrder.id,
                 status: editFormData.status,
                 paymentStatus: editFormData.paymentStatus,
                 total: parseFloat(editFormData.total),
-                token
+                getToken
             })).unwrap();
             closeEditModal();
-            // Toast handled by AdminPanel via Redux state
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Update failed:', error);
-            // Toast handled by AdminPanel via Redux state
         }
+    };
+
+    const handleDelete = async (orderId: number) => {
+        if (!window.confirm('¿Está seguro de eliminar este pedido? Esta acción no se puede deshacer.')) return;
+        dispatch(deleteOrder({ orderId, getToken }));
     };
 
     if (loading && !editingOrder && !viewingOrderItems) {
         return (
-            <div className="flex justify-center items-center py-12">
-                <div className="text-xl text-gray-500">Cargando pedidos...</div>
+            <div className="flex items-center justify-center py-20">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="w-8 h-8 border-2 border-[#254642] border-t-transparent rounded-full animate-spin" />
+                    <span className="text-sm text-gray-500">Cargando pedidos...</span>
+                </div>
             </div>
         );
     }
 
     return (
         <div className="space-y-6">
-            {/* Filtros de Estado */}
-            <div className="flex flex-wrap gap-2">
-                {ORDER_STATUSES.map((status) => (
-                    <button
-                        key={status}
-                        onClick={() => setFilterStatus(status)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition ${filterStatus === status
-                            ? 'bg-[#254642] text-white'
-                            : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-                            }`}
-                    >
-                        {status === 'ALL' ? 'Todos' : STATUS_LABELS[status]?.label || status}
-                    </button>
-                ))}
+            {/* Dropdown de filtros */}
+            <div className="flex items-center gap-3">
+                <label className="text-sm font-medium text-gray-600 whitespace-nowrap">Filtrar por estado:</label>
+                <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#254642] focus:border-[#254642] w-full md:w-auto"
+                >
+                    {ORDER_STATUSES.map((status) => (
+                        <option key={status} value={status}>
+                            {status === 'ALL' ? 'Todos' : STATUS_LABELS[status]?.label || status}
+                        </option>
+                    ))}
+                </select>
             </div>
 
-            {/* Tabla de Pedidos */}
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            {/* Vista Desktop */}
+            <div className="hidden md:block bg-white rounded-xl border border-gray-100 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    ID Pedido
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Usuario
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Teléfono
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Fecha
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Total
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Estado
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Pago
-                                </th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Acciones
-                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Pedido</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pago</th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -161,7 +163,7 @@ export default function OrdersPanel() {
                                             {order.user ? (
                                                 <div className="flex flex-col">
                                                     <span className="font-medium text-gray-900">
-                                                        {order.user.firstname} {order.user.lastname}
+                                                        {order.user.name}
                                                     </span>
                                                     <span className="text-xs text-gray-400">
                                                         {order.user.email}
@@ -179,18 +181,14 @@ export default function OrdersPanel() {
                                                         onClick={() => {
                                                             const phoneNumber = order.user?.phoneNumber || order.guestPhone;
                                                             if (!phoneNumber) return;
-
                                                             const prefixes = ['+54', '+598', '+56', '+55', '+595', '+1', '+34'];
                                                             let phoneToCopy = phoneNumber;
-
-                                                            // Intentar remover el prefijo si existe
                                                             for (const prefix of prefixes) {
                                                                 if (phoneToCopy.startsWith(prefix)) {
                                                                     phoneToCopy = phoneToCopy.substring(prefix.length);
-                                                                    break; // Solo remover el primer match
+                                                                    break;
                                                                 }
                                                             }
-
                                                             navigator.clipboard.writeText(phoneToCopy);
                                                             toast.success('Número copiado: ' + phoneToCopy);
                                                         }}
@@ -209,14 +207,12 @@ export default function OrdersPanel() {
                                             ${order.total?.toLocaleString('es-AR')}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${STATUS_LABELS[order.status]?.color || 'bg-gray-100 text-gray-800'
-                                                }`}>
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${STATUS_LABELS[order.status]?.color || 'bg-gray-100 text-gray-800'}`}>
                                                 {STATUS_LABELS[order.status]?.label || order.status || 'Desconocido'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${PAYMENT_STATUS_LABELS[order.paymentStatus || 'PENDING']?.color || 'bg-gray-100 text-gray-800'
-                                                }`}>
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${PAYMENT_STATUS_LABELS[order.paymentStatus || 'PENDING']?.color || 'bg-gray-100 text-gray-800'}`}>
                                                 {PAYMENT_STATUS_LABELS[order.paymentStatus || 'PENDING']?.label || 'Sin pagar'}
                                             </span>
                                         </td>
@@ -237,12 +233,7 @@ export default function OrdersPanel() {
                                                     <PenSquare className="w-5 h-5" />
                                                 </button>
                                                 <button
-                                                    onClick={async () => {
-                                                        const token = await getToken();
-                                                        if (window.confirm('¿Está seguro de eliminar este pedido? Esta acción no se puede deshacer.') && token) {
-                                                            dispatch(deleteOrder({ orderId: order.id, token }));
-                                                        }
-                                                    }}
+                                                    onClick={() => handleDelete(order.id)}
                                                     className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-50 transition"
                                                     title="Eliminar Pedido"
                                                 >
@@ -254,8 +245,12 @@ export default function OrdersPanel() {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
-                                        No se encontraron pedidos
+                                    <td colSpan={8} className="px-6 py-16 text-center">
+                                        <ShoppingBag className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                                        <p className="text-gray-500 font-medium">No se encontraron pedidos</p>
+                                        {filterStatus !== 'ALL' && (
+                                            <p className="text-gray-400 text-sm mt-1">Probá con otro filtro</p>
+                                        )}
                                     </td>
                                 </tr>
                             )}
@@ -264,15 +259,47 @@ export default function OrdersPanel() {
                 </div>
             </div>
 
+            {/* Vista Mobile */}
+            <div className="md:hidden space-y-3">
+                {filteredOrders.length > 0 ? (
+                    filteredOrders.map((order) => (
+                        <div key={order.id} className="bg-white rounded-xl border border-gray-100 p-4 space-y-3">
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm font-bold text-gray-900">Pedido #{order.id}</span>
+                                <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${STATUS_LABELS[order.status]?.color || 'bg-gray-100 text-gray-800'}`}>
+                                    {STATUS_LABELS[order.status]?.label || order.status || 'Desconocido'}
+                                </span>
+                            </div>
+                            <div className="flex justify-end gap-1 pt-2 border-t border-gray-100">
+                                <button onClick={() => setViewingOrderItems(order)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Ver Productos">
+                                    <Info className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => handleEditClick(order)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition" title="Editar Pedido">
+                                    <PenSquare className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => handleDelete(order.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Eliminar Pedido">
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    ))
+                ) : (
+                    <div className="text-center py-16 bg-white rounded-xl border border-gray-100">
+                        <ShoppingBag className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                        <p className="text-gray-500 font-medium">No se encontraron pedidos</p>
+                    </div>
+                )}
+            </div>
+
             {/* View Items Modal */}
             {viewingOrderItems && (
                 <div
-                    className="fixed inset-0 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200"
+                    className="fixed inset-0 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 bg-black/50"
                     onClick={(e) => {
                         if (e.target === e.currentTarget) setViewingOrderItems(null);
                     }}
                 >
-                    <div className="bg-white rounded-lg max-w-lg w-full p-6 shadow-xl relative">
+                    <div className="bg-white rounded-lg max-w-lg w-full p-6 shadow-xl relative max-h-[90vh] overflow-y-auto">
                         <button
                             onClick={() => setViewingOrderItems(null)}
                             className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
@@ -303,7 +330,7 @@ export default function OrdersPanel() {
                                         {(viewingOrderItems.user?.phoneNumber || viewingOrderItems.guestPhone) && (
                                             <button
                                                 onClick={() => {
-                                                    navigator.clipboard.writeText(viewingOrderItems.user?.phoneNumber || viewingOrderItems.guestPhone);
+                                                    navigator.clipboard.writeText(viewingOrderItems.user?.phoneNumber || viewingOrderItems.guestPhone || '');
                                                     toast.success('Copiado');
                                                 }}
                                                 className="text-gray-400 hover:text-gray-600"
@@ -315,7 +342,7 @@ export default function OrdersPanel() {
                                     </div>
                                 </div>
 
-                                <div className="span-col-1">
+                                <div className="sm:col-span-1">
                                     <p className="text-gray-500 text-xs uppercase tracking-wide">Preferencia de envío</p>
                                     <p className="font-medium text-blue-800 bg-blue-100 rounded px-2 w-max mt-1 py-0.5">
                                         {viewingOrderItems.shippingPreference === 'correo' ? 'Correo Argentino' : (viewingOrderItems.shippingPreference === 'vendedor' ? 'Coordinar con vendedor' : 'No especificado')}
@@ -346,6 +373,7 @@ export default function OrdersPanel() {
 
                         <h4 className="font-bold text-gray-900 mb-2">Productos</h4>
                         <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                             {viewingOrderItems.items?.map((item: any) => (
                                 <div key={item.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                                     <div className="flex items-center gap-3">
@@ -395,7 +423,7 @@ export default function OrdersPanel() {
 
             {/* Edit Modal */}
             {editingOrder && (
-                <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
+                <div className="fixed inset-0 flex items-center justify-center p-4 z-50 bg-black/50">
                     <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-lg">
                         <h3 className="text-lg font-bold mb-4">Editar Pedido #{editingOrder.id}</h3>
                         <form onSubmit={handleUpdateSubmit}>

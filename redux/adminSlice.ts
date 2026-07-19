@@ -1,5 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
+import { revalidateStorefront } from "@/lib/actions/revalidate.actions";
+import { TokenGetter, withAuthRetry } from "@/lib/apiClient";
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL
     ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/products`
@@ -17,8 +19,7 @@ export interface Order {
     createdAt: string;
     items: any[];
     user?: {
-        firstname: string;
-        lastname: string;
+        name: string;
         email: string;
         phoneNumber?: string;
     };
@@ -56,12 +57,14 @@ interface AdminState {
 
 export const fetchAllOrders = createAsyncThunk(
     'admin/fetchAllOrders',
-    async (token: string) => {
-        const { data } = await axios.get(ORDERS_API_URL, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+    async (getToken: TokenGetter) => {
+        const { data } = await withAuthRetry(getToken, (token) =>
+            axios.get(ORDERS_API_URL, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+        );
         return data;
     }
 );
@@ -69,19 +72,21 @@ export const fetchAllOrders = createAsyncThunk(
 // Thunk para actualizar un pedido (admin)
 export const updateOrder = createAsyncThunk(
     'admin/updateOrder',
-    async ({ orderId, status, paymentStatus, total, token }: {
+    async ({ orderId, status, paymentStatus, total, getToken }: {
         orderId: number;
         status: string;
         paymentStatus?: string;
         total: number;
-        token: string;
+        getToken: TokenGetter;
     }) => {
-        const { data } = await axios.put(`${ORDERS_API_URL}/${orderId}`, { status, paymentStatus, total }, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const { data } = await withAuthRetry(getToken, (token) =>
+            axios.put(`${ORDERS_API_URL}/${orderId}`, { status, paymentStatus, total }, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+        );
         return data;
     }
 );
@@ -89,13 +94,15 @@ export const updateOrder = createAsyncThunk(
 // Thunk para eliminar un pedido (admin)
 export const deleteOrder = createAsyncThunk(
     'admin/deleteOrder',
-    async ({ orderId, token }: { orderId: number; token: string }) => {
-        await axios.delete(`${ORDERS_API_URL}/${orderId}`, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
+    async ({ orderId, getToken }: { orderId: number; getToken: TokenGetter }) => {
+        await withAuthRetry(getToken, (token) =>
+            axios.delete(`${ORDERS_API_URL}/${orderId}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+        );
         return orderId;
     }
 );
@@ -103,13 +110,16 @@ export const deleteOrder = createAsyncThunk(
 // Thunk para crear un producto
 export const createProduct = createAsyncThunk(
     'admin/createProduct',
-    async ({ productData, token }: { productData: ProductData; token: string }) => {
-        const { data } = await axios.post(API_URL, productData, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
+    async ({ productData, getToken }: { productData: ProductData; getToken: TokenGetter }) => {
+        const { data } = await withAuthRetry(getToken, (token) =>
+            axios.post(API_URL, productData, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+        );
+        revalidateStorefront(['/shop']).catch((e) => console.error('Error revalidating /shop:', e));
         return data;
     }
 );
@@ -117,17 +127,20 @@ export const createProduct = createAsyncThunk(
 // Thunk para actualizar un producto
 export const updateProduct = createAsyncThunk(
     'admin/updateProduct',
-    async ({ productId, productData, token }: {
+    async ({ productId, productData, getToken }: {
         productId: number;
         productData: ProductData;
-        token: string;
+        getToken: TokenGetter;
     }) => {
-        const { data } = await axios.put(`${API_URL}/${productId}`, productData, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const { data } = await withAuthRetry(getToken, (token) =>
+            axios.put(`${API_URL}/${productId}`, productData, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+        );
+        revalidateStorefront(['/shop']).catch((e) => console.error('Error revalidating /shop:', e));
         return data;
     }
 );
@@ -135,13 +148,16 @@ export const updateProduct = createAsyncThunk(
 // Thunk para eliminar un producto
 export const deleteProduct = createAsyncThunk(
     'admin/deleteProduct',
-    async ({ productId, token }: { productId: number; token: string }) => {
-        await axios.delete(`${API_URL}/${productId}`, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
+    async ({ productId, getToken }: { productId: number; getToken: TokenGetter }) => {
+        await withAuthRetry(getToken, (token) =>
+            axios.delete(`${API_URL}/${productId}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+        );
+        revalidateStorefront(['/shop']).catch((e) => console.error('Error revalidating /shop:', e));
         return productId;
     }
 );

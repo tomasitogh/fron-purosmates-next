@@ -1,48 +1,48 @@
+import { Suspense } from 'react';
 import ShopContent from '@/app/ShopContent';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export const metadata = {
   title: 'Catálogo de Productos - Puros Mates',
   description: 'Explora nuestra amplia variedad de mates, bombillas y accesorios artesanales. Elige la mejor calidad para tu set matero.',
 };
 
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+
+async function getProducts() {
+  try {
+    const res = await fetch(`${API_URL}/products`, {
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) {
+      console.error('Failed to fetch products');
+      return [];
+    }
+    return await res.json();
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    return [];
+  }
+}
+
+async function getCategories() {
+  try {
+    const res = await fetch(`${API_URL}/categories`, {
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) {
+      console.error('Failed to fetch categories');
+      return [];
+    }
+    return await res.json();
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    return [];
+  }
+}
+
 export default async function ShopPage() {
-  // Reuse the data fetching logic from the previous home page
-  async function getProducts() {
-    try {
-      const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
-      const res = await fetch(`${API_URL}/products`, {
-        next: { revalidate: 10 },
-      });
-      if (!res.ok) {
-        console.error('Failed to fetch products');
-        return [];
-      }
-      return await res.json();
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      return [];
-    }
-  }
-
-  async function getCategories() {
-    try {
-      const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
-      const res = await fetch(`${API_URL}/categories`, {
-        next: { revalidate: 10 },
-      });
-      if (!res.ok) {
-        console.error('Failed to fetch categories');
-        return [];
-      }
-      return await res.json();
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      return [];
-    }
-  }
-
   const [products, categoriesData] = await Promise.all([getProducts(), getCategories()]);
   const categories = Array.isArray(categoriesData)
     ? categoriesData
@@ -50,5 +50,9 @@ export default async function ShopPage() {
     ? categoriesData.content
     : [];
 
-  return <ShopContent initialProducts={products} initialCategories={categories} />;
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-[#254642]">Cargando productos...</div>}>
+      <ShopContent initialProducts={products} initialCategories={categories} />
+    </Suspense>
+  );
 }

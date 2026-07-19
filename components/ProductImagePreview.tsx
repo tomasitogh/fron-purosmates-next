@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { cloudinaryLoader } from '@/lib/cloudinary';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 interface ProductImagePreviewProps {
     src: string;
@@ -31,13 +31,8 @@ export default function ProductImagePreview({
 }: ProductImagePreviewProps) {
     const [isLoading, setIsLoading] = useState(true);
     const isCloudinary = src.includes('res.cloudinary.com');
-    const [blurEnabled, setBlurEnabled] = useState(false);
-
-    useEffect(() => {
-        if (!isCloudinary) {
-            setBlurEnabled(true);
-        }
-    }, [isCloudinary]);
+    // Se deriva en render: no hace falta estado ni efecto.
+    const blurEnabled = !isCloudinary;
 
     return (
         <div className={`relative overflow-hidden ${className}`} style={{ width: fill ? '100%' : width, height: fill ? '100%' : height }}>

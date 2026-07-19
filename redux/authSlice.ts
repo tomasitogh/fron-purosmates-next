@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 
 // Define the shape of the user state
@@ -9,18 +9,16 @@ interface User {
 
 interface AuthState {
     user: User | null;
-    token: string | null;
     loading: boolean;
     error: string | null;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
-
-// Async thunks for local login/register removed as backend only supports OAuth2 (Google)
+// NOTA: El JWT de Clerk NO se guarda acá. Los tokens de Clerk vencen a los
+// ~60 segundos, por lo que cachearlos en Redux/estado produce errores 401.
+// El token se obtiene fresco por request vía useAuth() -> getToken (Clerk).
 
 const initialState: AuthState = {
     user: null,
-    token: null,
     loading: false,
     error: null
 };
@@ -31,23 +29,19 @@ const authSlice = createSlice({
     reducers: {
         logout: (state) => {
             state.user = null;
-            state.token = null;
             state.error = null;
             if (typeof window !== 'undefined') {
+                // Limpieza de claves legacy de la época pre-Clerk
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
                 localStorage.removeItem('authToken');
             }
         },
-        setAuthFromStorage: (state, action: PayloadAction<{ user: User, token: string }>) => {
+        setUser: (state, action: PayloadAction<{ user: User }>) => {
             state.user = action.payload.user;
-            state.token = action.payload.token;
         }
-    },
-    extraReducers: (builder) => {
-        // No extra reducers needed for now as auth is handled by NextAuth + AuthContext sync
     }
 });
 
-export const { logout, setAuthFromStorage } = authSlice.actions;
+export const { logout, setUser } = authSlice.actions;
 export default authSlice.reducer;

@@ -30,7 +30,7 @@ The application expects a backend API running on `http://localhost:8080`. The Ne
 
 ### State Management
 - **Redux Toolkit**: Central state management with the following slices:
-  - `authSlice`: User authentication, JWT tokens stored in cookies and localStorage
+  - `authSlice`: User session info (email/role) synced from Clerk. Does NOT store JWTs.
   - `cartSlice`: Shopping cart with localStorage persistence
   - `adminSlice`: Admin operations (products, orders)
   - `productSlice`: Product data fetching
@@ -41,11 +41,11 @@ The application expects a backend API running on `http://localhost:8080`. The Ne
 - **Provider Setup**: Redux is wrapped in `components/Providers.tsx` and mounted in `app/layout.tsx`
 
 ### Authentication System
-- **Implementation**: JWT-based authentication using cookies (7-day expiration)
-- **Context**: `context/AuthContext.tsx` provides the `useAuth()` hook
-- **Storage**: Tokens stored in both cookies (for SSR) and localStorage (for client-side)
-- **Token Validation**: Automatic token expiration checking on app initialization
-- **Roles**: `USER` and `ADMIN` roles supported
+- **Implementation**: Clerk (`@clerk/nextjs`). The backend validates Clerk session JWTs as an OAuth2 resource server.
+- **Context**: `context/AuthContext.tsx` provides the `useAuth()` hook (`user`, `getToken`, `isAdmin`, `isAuthenticated`, `logout`).
+- **Tokens — CRITICAL RULE**: Clerk session JWTs expire after ~60 seconds. NEVER cache the result of `getToken()` in state, Redux, or localStorage. Always call `getToken()` immediately before each request (the Clerk SDK caches and auto-renews internally, so this is cheap).
+- **Helper**: `lib/apiClient.ts` exposes `TokenGetter`, `requireFreshToken(getToken)`, and `withAuthRetry(getToken, req)` (fresh token per request + one retry on 401). All authenticated thunks/components receive `getToken` (the function) instead of a token string.
+- **Roles**: `USER` and `ADMIN` roles, read from `clerkUser.publicMetadata.role`. The backend (`JwtAuthConverter`) reads the role from the JWT claims, which requires the Clerk session token to be customized (Clerk Dashboard → Sessions) to include `publicMetadata`.
 
 ### API Communication
 All Redux slices use axios for API calls with the following patterns:
@@ -68,7 +68,10 @@ All Redux slices use axios for API calls with the following patterns:
 - **AuthModal**: `components/AuthModal.tsx` - Login/register modal
 - **ImageUploader**: `components/ImageUploader.tsx` - Product image upload with drag-and-drop
 - **ProductImageEditor**: `components/ProductImageEditor.tsx` - Image transformation (scale, position)
-- **OrdersPanel**: `components/OrdersPanel.tsx` - Admin order management
+- **AdminLayout**: `components/admin/AdminLayout.tsx` - Admin panel layout with tabs
+- **AdminProducts**: `components/admin/AdminProducts.tsx` - Admin product CRUD
+- **AdminOrders**: `components/admin/AdminOrders.tsx` - Admin order management
+- **AdminSettings**: `components/admin/AdminSettings.tsx` - Admin settings (banners, home images, categories, testimonials, push notifications)
 - **FilterTabs**: `components/FilterTabs.tsx` - Category filtering
 
 ### Image Handling
@@ -107,9 +110,9 @@ Product images support transformations (scale, x, y positioning) stored in the d
 
 ### Admin Route Protection
 The `app/admin/` route checks:
-1. Token presence in cookies/localStorage
-2. User role is `ADMIN` via `isAdmin()` from `useAuth()`
-3. Redirects to home if unauthorized
+1. `middleware.ts` requires an active Clerk session (`auth.protect()`)
+2. `app/admin/page.tsx` verifies `clerkUser.publicMetadata.role === 'ADMIN'` and redirects to home otherwise
+3. The admin page passes Clerk's `getToken` down to `AdminProducts`/`AdminOrders`/`AdminSettings`; every API call obtains a fresh token (see "Tokens — CRITICAL RULE" above)
 
 ### Environment Variables
 The application uses the following environment variables:
@@ -141,8 +144,10 @@ Products have an `active` boolean field:
 - `false`: Hidden from public view (shown as "INACTIVO" in admin)
 
 ### Order Management
-Orders are managed through `OrdersPanel` component:
+Orders are managed through `AdminOrders` component:
 - Fetched via `fetchAllOrders` thunk from `/api/v1/orders`
+- Desktop view shows full table; mobile view shows simplified cards with order ID, status, and action buttons
+- Status filters are shown as a dropdown select
 - Can be updated or deleted by admin users
 
 ## Testing Notes
@@ -168,4 +173,9 @@ SEO metadata is configured in `app/layout.tsx` with Spanish locale (`es_AR`) and
 The root layout uses `suppressHydrationWarning` to prevent hydration mismatches from auth state initialization.
 
 ### Dynamic Routes
-The home page is marked `dynamic = 'force-dynamic'` to allow `useSearchParams` usage in the `ShopContent` client component.
+The home (`/`) and shop (`/shop`) pages use ISR with `export const revalidate = 60`, so they are prerendered statically and the backend is hit at most once per 60s per data fetch. Home content (banners, home images, testimonials) is fetched via cached getters in `lib/data/home.ts` (native `fetch` + `next.revalidate`). `ShopContent` uses `useSearchParams`, so it is wrapped in a `<Suspense>` boundary in `app/shop/page.tsx` instead of forcing dynamic rendering. Cloudinary-hosted images (hero, category grid, product images) bypass the Next.js image optimizer via `cloudinaryLoader` (`lib/cloudinary.ts`) and are served directly from the Cloudinary CDN with `f_auto,q_auto,w_*` transformations.
+
+### On-Demand Revalidation
+Admin mutations invalidate the ISR cache immediately via `revalidatePath`, so storefront changes are visible instantly (no need to wait for the 60s window):
+- Server actions in `lib/actions/home.actions.ts` (banners, home images, testimonials, categories) call `revalidatePath('/')` or `revalidatePath('/shop')` after a successful backend mutation.
+- Client-side mutations (product CRUD in `redux/adminSlice.ts`, direct fetches in `components/admin/AdminSettings.tsx`) call the `revalidateStorefront(paths)` server action from `lib/actions/revalidate.actions.ts`, which verifies the caller has the `ADMIN` role via Clerk session claims before revalidating. These calls are fire-and-forget so they never block the admin UI.

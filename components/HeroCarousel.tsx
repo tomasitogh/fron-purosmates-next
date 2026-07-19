@@ -3,6 +3,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { cloudinaryLoader } from '@/lib/cloudinary';
+
+const loaderFor = (src: string) =>
+  src.includes('res.cloudinary.com') ? cloudinaryLoader : undefined;
 
 interface HeroImage {
   src: string;
@@ -18,7 +22,9 @@ interface HeroCarouselProps {
 export default function HeroCarousel({ images }: HeroCarouselProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [current, setCurrent] = useState(0);
-  const [visibleImages, setVisibleImages] = useState<number[]>([]);
+  // Inicializamos con el primer slide (y el siguiente) visibles para que
+  // la imagen LCP se pinte en el SSR sin esperar hidratación.
+  const [visibleImages, setVisibleImages] = useState<number[]>([0, 1]);
 
   const handleScroll = useCallback(() => {
     if (!containerRef.current) return;
@@ -89,6 +95,7 @@ export default function HeroCarousel({ images }: HeroCarouselProps) {
               <Image
                 src={img.src}
                 alt={img.alt}
+                loader={loaderFor(img.src)}
                 fill
                 priority={idx === 0}
                 loading={idx === 0 ? "eager" : "lazy"}
