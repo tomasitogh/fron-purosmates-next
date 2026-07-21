@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
-import { CategoryId } from '@/lib/constants';
+// import { CategoryId } from '@/lib/constants'; // [DESHABILITADO] Solo se usaba para detectar combo Mate+Bombilla
 import { TokenGetter, withAuthRetry } from '@/lib/apiClient';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 
@@ -114,28 +114,28 @@ export const createOrder = createAsyncThunk(
     }
 );
 
-// Async Thunk for creating MP Preference
-export const createPreference = createAsyncThunk(
-    'cart/createPreference',
-    async ({ orderId, getToken }: { orderId: number; getToken?: TokenGetter }, { rejectWithValue }) => {
-        try {
-            const doPost = async (token?: string) => {
-                const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-                return axios.post(`${API_URL}/mp/create_preference/${orderId}`, {}, config);
-            };
-
-            const response = getToken
-                ? await withAuthRetry(getToken, (token) => doPost(token))
-                : await doPost();
-            return response.data;
-        } catch (error: any) {
-            if (error.response?.data) {
-                return rejectWithValue(error.response.data);
-            }
-            return rejectWithValue(error.message);
-        }
-    }
-);
+// [DESHABILITADO] Thunk de preferencia MercadoPago — no se usa hasta reactivar MP
+// export const createPreference = createAsyncThunk(
+//     'cart/createPreference',
+//     async ({ orderId, getToken }: { orderId: number; getToken?: TokenGetter }, { rejectWithValue }) => {
+//         try {
+//             const doPost = async (token?: string) => {
+//                 const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+//                 return axios.post(`${API_URL}/mp/create_preference/${orderId}`, {}, config);
+//             };
+//
+//             const response = getToken
+//                 ? await withAuthRetry(getToken, (token) => doPost(token))
+//                 : await doPost();
+//             return response.data;
+//         } catch (error: any) {
+//             if (error.response?.data) {
+//                 return rejectWithValue(error.response.data);
+//             }
+//             return rejectWithValue(error.message);
+//         }
+//     }
+// );
 
 const cartSlice = createSlice({
     name: 'cart',
@@ -244,17 +244,17 @@ const cartSlice = createSlice({
                 state.status = 'failed';
                 state.error = action.payload as string;
             })
-            // Create Preference
-            .addCase(createPreference.pending, (state) => {
-                state.status = 'loading';
-            })
-            .addCase(createPreference.fulfilled, (state) => {
-                state.status = 'succeeded';
-            })
-            .addCase(createPreference.rejected, (state, action) => {
-                state.status = 'failed';
-                state.error = action.payload as string;
-            });
+            // [DESHABILITADO] Create Preference (MP) — no se usa hasta reactivar MP
+            // .addCase(createPreference.pending, (state) => {
+            //     state.status = 'loading';
+            // })
+            // .addCase(createPreference.fulfilled, (state) => {
+            //     state.status = 'succeeded';
+            // })
+            // .addCase(createPreference.rejected, (state, action) => {
+            //     state.status = 'failed';
+            //     state.error = action.payload as string;
+            // });
     }
 });
 
@@ -271,17 +271,21 @@ export const selectCartSubtotal = (state: { cart: CartState }) =>
         return acc + itemPrice * item.qty;
     }, 0);
 
+// [DESHABILITADO] Descuento combo — siempre retorna false hasta reactivar
 export const selectHasComboDiscount = (state: { cart: CartState }) => {
-    const items = state.cart.items;
-    const categories = new Set(items.map(item => item.category?.id));
-    return categories.has(CategoryId.MATE) &&
-        categories.has(CategoryId.BOMBILLA);
+    // const items = state.cart.items;
+    // const categories = new Set(items.map(item => item.category?.id));
+    // return categories.has(CategoryId.MATE) &&
+    //     categories.has(CategoryId.BOMBILLA);
+    return false;
 };
 
+// [DESHABILITADO] Descuento — siempre retorna 0 hasta reactivar
 export const selectCartDiscount = (state: { cart: CartState }) => {
-    const hasCombo = selectHasComboDiscount(state);
-    const subtotal = selectCartSubtotal(state);
-    return hasCombo ? subtotal * 0.10 : 0;
+    // const hasCombo = selectHasComboDiscount(state);
+    // const subtotal = selectCartSubtotal(state);
+    // return hasCombo ? subtotal * 0.10 : 0;
+    return 0;
 };
 
 export const selectCartTotalPrice = (state: { cart: CartState }) => {

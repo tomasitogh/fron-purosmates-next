@@ -12,7 +12,7 @@ import {
     selectCartDiscount,
     selectHasComboDiscount,
     createOrder,
-    createPreference,
+    // createPreference, // [DESHABILITADO] MP — no se usa hasta reactivar
     toggleCustomization
 } from "@/redux/cartSlice";
 import { useRouter } from "next/navigation";
@@ -20,7 +20,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
 import toast from 'react-hot-toast';
 import axios from 'axios';
-import PaymentMethodModal from "@/components/PaymentMethodModal";
+// import PaymentMethodModal from "@/components/PaymentMethodModal"; // [DESHABILITADO] MP — no se usa hasta reactivar
 import { AppDispatch } from "@/redux/store";
 import { Minus, Plus, Trash2, Copy } from "lucide-react";
 import AuthModal from "@/components/AuthModal";
@@ -33,13 +33,16 @@ export default function Carrito() {
     const totalQty = useSelector(selectCartTotalQty);
     const totalPrice = useSelector(selectCartTotalPrice);
     const subtotal = useSelector(selectCartSubtotal);
-    const discount = useSelector(selectCartDiscount);
-    const hasComboDiscount = useSelector(selectHasComboDiscount);
+    // [DESHABILITADO] Descuentos — siempre 0 / false hasta reactivar
+    // const discount = useSelector(selectCartDiscount);
+    // const hasComboDiscount = useSelector(selectHasComboDiscount);
+    const discount = 0;
+    const hasComboDiscount = false;
 
     const router = useRouter();
     const { isAuthenticated, getToken } = useAuth();
     const [showCheckout, setShowCheckout] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'mp' | 'transfer'>('cash');
+    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer'>('cash');
     const [guestData, setGuestData] = useState({
         firstname: '',
         lastname: '',
@@ -141,30 +144,29 @@ export default function Carrito() {
             if (createOrder.fulfilled.match(resultAction)) {
                 const order = resultAction.payload;
 
-                if (paymentMethod === 'mp') {
-                    const loadingToast = toast.loading('Generando pago...');
-                    try {
-                        const prefResult = await dispatch(createPreference({ orderId: order.id, getToken: isAuthenticated ? getToken : undefined }));
-
-                        toast.dismiss(loadingToast);
-
-                        if (createPreference.fulfilled.match(prefResult)) {
-                            // Redirigir a Mercado Pago
-                            window.location.href = prefResult.payload;
-                        } else {
-                            console.error('Error createPreference:', prefResult.payload || prefResult.error);
-                            if (typeof prefResult.payload === 'string') {
-                                toast.error(`Error: ${prefResult.payload}`);
-                            } else {
-                                toast.error('Error al generar pago con Mercado Pago. Intente nuevamente.');
-                            }
-                        }
-                    } catch (error) {
-                        toast.dismiss(loadingToast);
-                        console.error('Error createPreference catch:', error);
-                        toast.error('Ocurrió un error inesperado al generar el pago.');
-                    }
-                } else if (paymentMethod === 'transfer') {
+                // [DESHABILITADO] MercadoPago — no se usa hasta reactivar MP
+                // if (paymentMethod === 'mp') {
+                //     const loadingToast = toast.loading('Generando pago...');
+                //     try {
+                //         const prefResult = await dispatch(createPreference({ orderId: order.id, getToken: isAuthenticated ? getToken : undefined }));
+                //         toast.dismiss(loadingToast);
+                //         if (createPreference.fulfilled.match(prefResult)) {
+                //             window.location.href = prefResult.payload;
+                //         } else {
+                //             console.error('Error createPreference:', prefResult.payload || prefResult.error);
+                //             if (typeof prefResult.payload === 'string') {
+                //                 toast.error(`Error: ${prefResult.payload}`);
+                //             } else {
+                //                 toast.error('Error al generar pago con Mercado Pago. Intente nuevamente.');
+                //             }
+                //         }
+                //     } catch (error) {
+                //         toast.dismiss(loadingToast);
+                //         console.error('Error createPreference catch:', error);
+                //         toast.error('Ocurrió un error inesperado al generar el pago.');
+                //     }
+                // } else
+                if (paymentMethod === 'transfer') {
                     // Show Success and Instructions?
                     // User said: "abajo aparece un mensaje chiquito... podes transferir..."
                     // The instructions are already visible in the form.
@@ -192,10 +194,11 @@ export default function Carrito() {
         }
     };
 
-    // Calculate display total with discount
-    const displayTotal = (paymentMethod === 'cash' || paymentMethod === 'transfer')
-        ? totalPrice * 0.9
-        : totalPrice;
+    // [DESHABILITADO] Descuento por método de pago — precio final siempre es el total
+    // const displayTotal = (paymentMethod === 'cash' || paymentMethod === 'transfer')
+    //     ? totalPrice * 0.9
+    //     : totalPrice;
+    const displayTotal = totalPrice;
 
     if (!mounted) {
         return null;
@@ -320,14 +323,17 @@ export default function Carrito() {
                                 <span>${subtotal.toLocaleString('es-AR')}</span>
                             </div>
 
+                            {/* [DESHABILITADO] Descuento combo — hasta reactivar
                             {hasComboDiscount && (
                                 <div className="flex justify-between text-green-600 font-semibold">
                                     <span>🎉 Descuento Combo (10%)</span>
                                     <span>-${discount.toLocaleString('es-AR')}</span>
                                 </div>
                             )}
+                            */}
                         </div>
 
+                        {/* [DESHABILITADO] Banner combo — hasta reactivar
                         {hasComboDiscount && (
                             <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
                                 <p className="text-sm text-green-800 font-medium">
@@ -335,6 +341,7 @@ export default function Carrito() {
                                 </p>
                             </div>
                         )}
+                        */}
 
                         <div className="border-t pt-4 mb-4">
                             <div className="flex justify-between text-lg font-bold text-gray-800">
@@ -381,14 +388,16 @@ export default function Carrito() {
                                 />
                                 <div>
                                     <span className="font-medium text-gray-800">Efectivo </span>
+                                    {/* [DESHABILITADO] Badge descuento — hasta reactivar
                                     <span className="text-green-600 font-bold text-sm bg-green-100 px-2 py-0.5 rounded ml-2">10% OFF</span>
+                                    */}
                                     <p className="text-sm text-gray-500 mt-1">
                                         El vendedor se comunicará con vos para coordinar el pago y el envío.
                                     </p>
                                 </div>
                             </label>
 
-                            {/* Mercado Pago */}
+                            {/* [DESHABILITADO] MercadoPago — no se muestra hasta reactivar
                             <label className="flex items-start space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-gray-50 transition">
                                 <input
                                     type="radio"
@@ -405,6 +414,7 @@ export default function Carrito() {
                                     </p>
                                 </div>
                             </label>
+                            */}
 
                             {/* Transferencia */}
                             <label className="flex items-start space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-gray-50 transition">
@@ -418,7 +428,9 @@ export default function Carrito() {
                                 />
                                 <div>
                                     <span className="font-medium text-gray-800">Transferencia bancaria </span>
+                                    {/* [DESHABILITADO] Badge descuento — hasta reactivar
                                     <span className="text-green-600 font-bold text-sm bg-green-100 px-2 py-0.5 rounded ml-2">10% OFF</span>
+                                    */}
                                     
                                     <div className="mt-3 bg-gray-50 p-4 rounded-md border border-gray-200 text-sm text-gray-700">
                                         <p className="mb-2">El alias a transferir es:</p>
@@ -595,6 +607,7 @@ export default function Carrito() {
                     {/* Total y Comprar */}
                     <div className="border-t pt-6 flex flex-col items-end">
                         <div className="flex items-end gap-x-3 mb-6">
+                            {/* [DESHABILITADO] Descuento por método de pago — hasta reactivar
                             {(paymentMethod === 'cash' || paymentMethod === 'transfer') ? (
                                 <>
                                     <div className="text-gray-400 line-through text-lg">
@@ -612,6 +625,10 @@ export default function Carrito() {
                                     ${totalPrice.toLocaleString('es-AR')}
                                 </div>
                             )}
+                            */}
+                            <div className="text-3xl font-bold text-gray-800">
+                                ${totalPrice.toLocaleString('es-AR')}
+                            </div>
                         </div>
 
                         <button

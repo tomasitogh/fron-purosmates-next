@@ -210,10 +210,10 @@ export default function AboutUsPage() {
             question: "¿Qué métodos de pago aceptamos?",
             answer: (
                 <>
-                    Cómo métodos de pago aceptamos efectivo con 10% de descuento, tranferencia bancaria con 10% de descuento, y transferencia a través de Mercado Pago.
+                    Cómo métodos de pago aceptamos efectivo y transferencia bancaria.
                 </>
             ),
-            schemaAnswer: "Efectivo (10% off), transferencia bancaria (10% off) y transferencia Mercado Pago."
+            schemaAnswer: "Efectivo y transferencia bancaria."
         },
         {
             question: "¿Cúal es el mejor mate para principiantes?",
