@@ -36,6 +36,8 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
   const [modalType, setModalType] = useState<'banner' | 'homeImage' | 'category'>('banner');
   const [formData, setFormData] = useState({ altText: '', link: '', description: '', active: true });
   const [uploadedImage, setUploadedImage] = useState('');
+  const [orderDraft, setOrderDraft] = useState<Record<number, number>>({});
+  const [savingOrder, setSavingOrder] = useState(false);
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -100,6 +102,54 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
   const revalidate = (paths: string[]) =>
     revalidateStorefront(paths).catch((e) => console.error('Error revalidating:', e));
 
+  const handleOrderChange = (id: number, value: string) => {
+    if (value === '') {
+      setOrderDraft(prev => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      return;
+    }
+    const parsed = parseInt(value, 10);
+    if (parsed >= 1 && !Number.isNaN(parsed)) {
+      setOrderDraft(prev => ({ ...prev, [id]: parsed }));
+    }
+  };
+
+  const handleSaveOrder = async () => {
+    setSavingOrder(true);
+    try {
+      const token = await requireFreshToken(getToken);
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+
+      const withPos = banners.map((b, idx) => ({
+        id: b.id,
+        pos: orderDraft[b.id] ?? idx + 1
+      }));
+      withPos.sort((a, b) => a.pos - b.pos);
+      const orderedIds = withPos.map(p => p.id);
+
+      const res = await fetch(`${baseUrl}/banners/reorder`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(orderedIds)
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}: ${await res.text()}`);
+
+      revalidate(['/']);
+      const newBanners = await getAllBanners();
+      setBanners(newBanners);
+      setOrderDraft({});
+      toast.success('Orden guardado');
+    } catch (err) {
+      console.error('Error saving order:', err);
+      toast.error('Error al guardar el orden');
+    } finally {
+      setSavingOrder(false);
+    }
+  };
+
   const handleSaveItem = async () => {
     setSaving(true);
 
@@ -108,7 +158,7 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
       const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
       if (modalType === 'banner') {
-        const payload = { imageUrl: uploadedImage, altText: formData.altText, link: formData.link, active: formData.active };
+        const payload = { imageUrl: uploadedImage, altText: formData.altText, link: formData.link, active: formData.active, displayOrder: bannerToEdit ? bannerToEdit.displayOrder : banners.length };
         const url = bannerToEdit ? `${baseUrl}/banners/${bannerToEdit.id}` : `${baseUrl}/banners`;
         const method = bannerToEdit ? 'PUT' : 'POST';
 
@@ -255,14 +305,31 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
               <ImageIcon className="w-5 h-5 text-[#254642]" />
               <h2 className="text-lg font-bold text-gray-900">Banners del Carrusel</h2>
             </div>
-            <button onClick={() => openModal('banner')} className="text-sm text-[#254642] font-medium hover:underline">
-              + Agregar
-            </button>
+            <div className="flex items-center gap-2">
+              {banners.some(b => orderDraft[b.id] !== undefined) && (
+                <button onClick={handleSaveOrder} disabled={savingOrder} className="text-xs px-3 py-1 bg-[#254642] text-white rounded-lg font-medium hover:bg-[#1d3530] disabled:opacity-50">
+                  {savingOrder ? 'Guardando...' : 'Guardar orden'}
+                </button>
+              )}
+              <button onClick={() => openModal('banner')} className="text-sm text-[#254642] font-medium hover:underline">
+                + Agregar
+              </button>
+            </div>
           </div>
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {banners.map((banner) => (
+              {banners.map((banner, index) => (
                 <div key={banner.id} className="relative aspect-[16/9] rounded-lg overflow-hidden bg-gray-100">
+                  <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-black/60 rounded px-2 py-1">
+                    <span className="text-white text-xs font-bold">#</span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={orderDraft[banner.id] ?? index + 1}
+                      onChange={(e) => handleOrderChange(banner.id, e.target.value)}
+                      className="w-10 px-1 py-0.5 text-xs text-center bg-white/90 border border-gray-300 rounded"
+                    />
+                  </div>
                   <img src={banner.imageUrl} alt={banner.altText} className="w-full h-full object-cover" />
                   {!banner.active && <div className="absolute inset-0 bg-black/50" />}
                   <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/70 to-transparent flex justify-between items-end">
