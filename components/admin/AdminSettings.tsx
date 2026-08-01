@@ -387,7 +387,6 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
                 <div key={cat.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-gray-50">
                   <span className="font-medium text-gray-800">{cat.description}</span>
                   <div className="flex items-center gap-2">
-                    {cat.active ? <Eye className="w-4 h-4 text-green-600" /> : <EyeOff className="w-4 h-4 text-gray-400" />}
                     <button onClick={() => openModal('category', cat)} className="text-sm text-[#254642] hover:underline">Editar</button>
                   </div>
                 </div>
@@ -414,7 +413,7 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
                 <button onClick={() => removeTestimonial(idx)} className="absolute top-2 right-2 text-red-400 hover:text-red-600">
                   <Trash2 className="w-4 h-4" />
                 </button>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
                   <div>
                     <label className="text-xs font-bold text-gray-500">Nombre</label>
                     <input type="text" value={t.name} onChange={(e) => handleTestimonialChange(idx, 'name', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" />
