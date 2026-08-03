@@ -373,19 +373,41 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
 
                         <h4 className="font-bold text-gray-900 mb-2">Productos</h4>
                         <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                            {viewingOrderItems.items?.map((item: any) => (
+                            {viewingOrderItems.items?.map((item) => {
+                                // H2: thumbnail usa variantImageUrl si está; sino la del product.
+                                const thumbUrl = item.variantImageUrl ?? item.product?.imageUrl;
+                                // H2: chips de atributos — mismo formato que el ticket
+                                // (C6) y que el carrito (G2): "Marrón / Pampa".
+                                const attrValues = Object.values(item.variantAttributes ?? {});
+                                const attrLine = attrValues.length > 0 ? ` — ${attrValues.join(' / ')}` : '';
+                                return (
                                 <div key={item.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                                     <div className="flex items-center gap-3">
-                                        <div className="h-10 w-10 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500 font-medium">
-                                            {item.product?.imageUrl ?
-                                                <img src={item.product.imageUrl} alt={item.product.name} className="h-full w-full object-cover rounded" />
-                                                : 'N/A'
-                                            }
+                                        <div className="h-10 w-10 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500 font-medium overflow-hidden">
+                                            {thumbUrl ? (
+                                                <img src={thumbUrl} alt={item.product?.name} className="h-full w-full object-cover rounded" />
+                                            ) : 'N/A'}
                                         </div>
                                         <div>
-                                            <p className="font-medium text-gray-900">{item.product?.name}</p>
-                                            <p className="text-sm text-gray-500">Cantidad: {item.quantity}</p>
+                                            <p
+                                                className="font-medium text-gray-900"
+                                                title={item.variantSku} // H2: tooltip con el SKU
+                                            >
+                                                {item.product?.name}{attrLine}
+                                            </p>
+                                            {attrValues.length > 0 && (
+                                                <div className="flex flex-wrap gap-1 mt-0.5">
+                                                    {attrValues.map((v, i) => (
+                                                        <span
+                                                            key={i}
+                                                            className="inline-block bg-[#254642]/10 text-[#254642] text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+                                                        >
+                                                            {v}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            <p className="text-sm text-gray-500 mt-0.5">Cantidad: {item.quantity}</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
@@ -406,7 +428,8 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
                                         </div>
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                             {(!viewingOrderItems.items || viewingOrderItems.items.length === 0) && (
                                 <p className="text-center text-gray-500 py-4">No hay productos en este pedido.</p>
                             )}

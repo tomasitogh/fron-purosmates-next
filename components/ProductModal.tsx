@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react';
 import { useDispatch } from 'react-redux';
 import { addToCart } from '@/redux/cartSlice';
+import type { ProductVariant } from '@/redux/productSlice';
 import toast from 'react-hot-toast';
 import ProductImagePreview from './ProductImagePreview';
 import { AppDispatch } from '@/redux/store';
 
+// --- F1: tipos extendidos ---
 export interface Product {
     id: number;
     name: string;
@@ -17,12 +19,18 @@ export interface Product {
         scale?: number;
         x?: number;
         y?: number;
+        // E6: dirección imagen→variant (la imagen del producto trae la FK
+        // lógica a la variant). El variantDTO llega con `imageUrl` derivado
+        // por el backend; acá navegamos al revés cuando lo necesitemos.
+        variantId?: number | null;
     }[];
     category?: { id: number; description: string };
     stock: number;
+    totalStock?: number; // H3: suma del stock de variants activas (derivado del backend)
     description?: string;
     isCustomizable?: boolean;
     customizationCost?: number;
+    variants?: ProductVariant[];
 }
 
 interface ProductModalProps {
@@ -30,17 +38,23 @@ interface ProductModalProps {
     onClose: () => void;
 }
 
+// E7: las variants son independientes con `name` libre. No hay selección
+// por atributos, solo por id de variant.
+
 export default function ProductModal({ product, onClose }: ProductModalProps) {
     const dispatch = useDispatch<AppDispatch>();
     const [wantsCustomization, setWantsCustomization] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+    // E7: en vez de un `Record<attributeName, value>`, ahora es solo el `id`
+    // de la variant seleccionada. La variant es independiente con `name` libre.
+    const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        setWantsCustomization(false);
-        setSelectedImageIndex(0);
-        setTimeout(() => scrollToImage(0), 0);
-    }, [product.id]);
+    // E7: filtrar variants con stock > 0 (las de stock 0 no se muestran).
+    const availableVariants = useMemo(
+        () => (product.variants ?? []).filter(v => v.stock > 0),
+        [product.variants]
+    );
 
     const scrollToImage = (index: number) => {
         if (scrollContainerRef.current) {
@@ -53,10 +67,62 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
         }
     };
 
+    // Pre-selección: la primera variant con stock > 0. Si no hay ninguna, null.
+    /* eslint-disable react-hooks/set-state-in-effect -- reset de state al
+       cambiar de producto (patrón estándar, no derivable en render con key) */
+    useEffect(() => {
+        setWantsCustomization(false);
+        setSelectedImageIndex(0);
+        const first = (product.variants ?? []).find(v => v.stock > 0);
+        setSelectedVariantId(first?.id ?? null);
+        setTimeout(() => scrollToImage(0), 0);
+    }, [product.id, product.variants]);
+    /* eslint-enable react-hooks/set-state-in-effect */
+
+    const selectedVariant = useMemo(
+        () => (product.variants ?? []).find(v => v.id === selectedVariantId) ?? null,
+        [product.variants, selectedVariantId]
+    );
+
+    // F4: si la variant seleccionada tiene imageUrl, saltar a esa imagen.
+    /* eslint-disable react-hooks/set-state-in-effect -- sincroniza state de
+       React con scroll del DOM externo cuando cambia la variant */
+    useLayoutEffect(() => {
+        const imageUrl = selectedVariant?.imageUrl;
+        if (!imageUrl || !product.images) return;
+        const idx = product.images.findIndex(img => img.url === imageUrl);
+        if (idx < 0 || idx === selectedImageIndex) return;
+        setSelectedImageIndex(idx);
+        scrollToImage(idx);
+    }, [selectedVariant?.imageUrl, product.images, selectedImageIndex]);
+    /* eslint-enable react-hooks/set-state-in-effect */
+
+    const canAddToCart = !!selectedVariant && selectedVariant.stock > 0;
+
     const handleAddToCart = async () => {
-        const result = await dispatch(addToCart({ ...product, qty: 1, hasCustomization: wantsCustomization } as any));
+        if (!selectedVariant) {
+            toast.error('No hay una variante disponible');
+            return;
+        }
+        if (selectedVariant.stock <= 0) {
+            toast.error('Esta variante no tiene stock disponible');
+            return;
+        }
+        const result = await dispatch(
+            addToCart({
+                ...product,
+                hasCustomization: wantsCustomization,
+                variantId: selectedVariant.id,
+                variantSku: selectedVariant.sku,
+                variantName: selectedVariant.name,
+                variantStock: selectedVariant.stock,
+                variantImageUrl: selectedVariant.imageUrl,
+            })
+        );
         if (addToCart.fulfilled.match(result)) {
-            toast.success(`Agregado: ${product.name}${wantsCustomization ? ' (Personalizado)' : ''}`);
+            toast.success(
+                `Agregado: ${product.name}${wantsCustomization ? ' (Personalizado)' : ''}`
+            );
             onClose();
         } else {
             toast.error('Este producto no tiene stock disponible');
@@ -205,6 +271,29 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
                                 </p>
                             </div>
 
+                            {/* E7: selector único de variant (dropdown con nombres). */}
+                            {availableVariants.length > 0 ? (
+                                <div className="mt-6 pt-6 border-t border-gray-100">
+                                    <h4 className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">
+                                        Variante
+                                    </h4>
+                                    <select
+                                        value={selectedVariantId ?? ''}
+                                        onChange={(e) => {
+                                            const raw = e.target.value;
+                                            setSelectedVariantId(raw === '' ? null : Number(raw));
+                                        }}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#254642] bg-white"
+                                    >
+                                        {availableVariants.map(v => (
+                                            <option key={v.id} value={v.id}>
+                                                {v.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            ) : null}
+
                             <div className="mt-8 pt-6 border-t border-gray-100">
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div>
@@ -244,9 +333,14 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
 
                                 <button
                                     onClick={handleAddToCart}
-                                    className="w-full bg-[#254642] text-white py-3 rounded-lg hover:bg-[#254642]/90 transition font-semibold mt-4 shadow-lg active:scale-[0.98]"
+                                    disabled={!canAddToCart}
+                                    className="w-full bg-[#254642] text-white py-3 rounded-lg hover:bg-[#254642]/90 transition font-semibold mt-4 shadow-lg active:scale-[0.98] disabled:bg-gray-400 disabled:cursor-not-allowed disabled:shadow-none"
                                 >
-                                    Agregar al Carrito
+                                    {!selectedVariant
+                                        ? 'No hay variantes disponibles'
+                                        : !canAddToCart
+                                            ? 'Sin stock'
+                                            : 'Agregar al Carrito'}
                                 </button>
                             </div>
                         </div>

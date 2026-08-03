@@ -14,6 +14,9 @@ export interface CartItem {
         scale?: number;
         x?: number;
         y?: number;
+        // E6: dirección imagen→variant. Null en el cart porque se persiste
+        // en el OrderItem como `variantImageUrl` snapshot.
+        variantId?: number | null;
     }[];
     category?: {
         id: number;
@@ -24,6 +27,12 @@ export interface CartItem {
     isCustomizable?: boolean;
     customizationCost?: number;
     hasCustomization?: boolean;
+    // --- Variante (G1) ---
+    variantId: number;
+    variantSku: string;
+    variantName?: string;
+    variantStock: number;
+    variantImageUrl?: string;
 }
 
 interface CartState {
@@ -43,19 +52,25 @@ const initialState: CartState = {
 export const addToCart = createAsyncThunk(
     'cart/addToCart',
     async (product: Omit<CartItem, 'qty'>, { getState, rejectWithValue }) => {
-        if (!product.stock || product.stock <= 0) {
+        // G1: la variant es la unidad de stock ahora. Si el producto no trae
+        // variantId/variantStock, no se puede agregar (legacy flow no soportado).
+        if (!product.variantId || product.variantStock == null) {
+            return rejectWithValue('Falta variante del producto');
+        }
+        if (product.variantStock <= 0) {
             return rejectWithValue('No stock available');
         }
 
         const state = getState() as { cart: CartState };
-        // Buscar item que coincida en ID y estado de personalización
-        const existingItem = state.cart.items.find(p =>
-            p.id === product.id &&
-            !!p.hasCustomization === !!product.hasCustomization
+        // G1: dedupe por variantId (no más por id+hasCustomization). La misma
+        // variant con o sin customización son DOS líneas distintas del carrito
+        // (customization es ortogonal).
+        const existingItem = state.cart.items.find(
+            p => p.variantId === product.variantId && !!p.hasCustomization === !!product.hasCustomization
         );
 
         if (existingItem) {
-            if (existingItem.qty >= product.stock) {
+            if (existingItem.qty >= existingItem.variantStock) {
                 return rejectWithValue('Stock limit reached');
             }
         }
@@ -84,8 +99,10 @@ export const createOrder = createAsyncThunk(
         paymentMethod?: string;
     }, { rejectWithValue }) => {
         try {
+            // G3: cada item del carrito referencia una variant (no un product).
+            // El backend (C2) acepta `variantId` en `OrderItemRequest`.
             const orderItems = items.map(item => ({
-                productId: item.id,
+                variantId: item.variantId,
                 quantity: item.qty,
                 hasCustomization: item.hasCustomization
             }));
@@ -144,10 +161,13 @@ const cartSlice = createSlice({
         setCart: (state, action: PayloadAction<CartItem[]>) => {
             state.items = action.payload;
         },
-        decrementItem: (state, action: PayloadAction<{ id: number; hasCustomization?: boolean }>) => {
-            const { id, hasCustomization } = action.payload;
+        decrementItem: (state, action: PayloadAction<{ variantId: number; hasCustomization?: boolean }>) => {
+            // G1: matchear por variantId (no por id) — cada variant es una
+            // línea distinta del carrito. hasCustomization sigue siendo parte
+            // del match porque es ortogonal a la variant.
+            const { variantId, hasCustomization } = action.payload;
             const existingItem = state.items.find(item =>
-                item.id === id && !!item.hasCustomization === !!hasCustomization
+                item.variantId === variantId && !!item.hasCustomization === !!hasCustomization
             );
 
             if (existingItem) {
@@ -155,57 +175,43 @@ const cartSlice = createSlice({
                     existingItem.qty -= 1;
                 } else {
                     state.items = state.items.filter(item =>
-                        !(item.id === id && !!item.hasCustomization === !!hasCustomization)
+                        !(item.variantId === variantId && !!item.hasCustomization === !!hasCustomization)
                     );
                 }
             }
         },
-        removeItem: (state, action: PayloadAction<{ id: number; hasCustomization?: boolean }>) => {
-            const { id, hasCustomization } = action.payload;
+        removeItem: (state, action: PayloadAction<{ variantId: number; hasCustomization?: boolean }>) => {
+            const { variantId, hasCustomization } = action.payload;
             state.items = state.items.filter(item =>
-                !(item.id === id && !!item.hasCustomization === !!hasCustomization)
+                !(item.variantId === variantId && !!item.hasCustomization === !!hasCustomization)
             );
         },
         clearCart: (state) => {
             state.items = [];
         },
-        toggleCustomization: (state, action: PayloadAction<{ id: number; hasCustomization: boolean }>) => {
-            // Nota: Esto es complejo porque cambiar la customización podría fusionar items
-            // Por simplicidad, asumimos que se llama desde el carrito y actualizamos el flag
-            // Idealmente, deberíamos verificar si al cambiarlo choca con otro item igual
-            const { id, hasCustomization } = action.payload;
-            const item = state.items.find(i => i.id === id && i.hasCustomization !== hasCustomization);
-            // Buscamos el item que NO tiene el estado al que queremos cambiar (o sea el actual)
-            // Esto es tricky si hay múltiples del mismo ID con diferente customización.
-            // Mejor pasamos un identificador único de línea de carrito si fuera posible, pero usamos ID y estado actual logic
-
-            // Revisión de la lógica:
-            // Si el usuario hace toggle en una fila del carrito, esa fila tiene un estado actual.
-            // Si quiero ACTIVAR (hasCustomization=true), busco el item con ID y hasCustomization=false.
-            // Si quiero DESACTIVAR, busco el item con ID y hasCustomization=true.
-
+        toggleCustomization: (state, action: PayloadAction<{ variantId: number; hasCustomization: boolean }>) => {
+            // G1: la unidad de identidad en el cart es `variantId`, no `id`.
+            // Mismo merge logic que antes (mover item a su versión con/sin
+            // customización, fusionar si ya existe otra línea con ese estado).
+            const { variantId, hasCustomization } = action.payload;
             const targetItemIndex = state.items.findIndex(i =>
-                i.id === id && i.hasCustomization !== hasCustomization
+                i.variantId === variantId && i.hasCustomization !== hasCustomization
             );
 
             if (targetItemIndex !== -1) {
                 const targetItem = state.items[targetItemIndex];
                 const newItemState = { ...targetItem, hasCustomization: hasCustomization };
 
-                // Verificar si ya existe un item con el NUEVO estado para fusionarlos
                 const existingMergeIndex = state.items.findIndex((i, idx) =>
                     idx !== targetItemIndex &&
-                    i.id === id &&
+                    i.variantId === variantId &&
                     i.hasCustomization === hasCustomization
                 );
 
                 if (existingMergeIndex !== -1) {
-                    // Fusionar
                     state.items[existingMergeIndex].qty += targetItem.qty;
-                    // Eliminar el antiguo
                     state.items.splice(targetItemIndex, 1);
                 } else {
-                    // Solo actualizar flag
                     state.items[targetItemIndex].hasCustomization = hasCustomization;
                 }
             }
@@ -213,20 +219,22 @@ const cartSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-            .addCase(addToCart.fulfilled, (state, action) => {
-                const product = action.payload;
-                const existingItem = state.items.find(item =>
-                    item.id === product.id &&
-                    !!item.hasCustomization === !!product.hasCustomization
-                );
+        .addCase(addToCart.fulfilled, (state, action) => {
+            const product = action.payload;
+            // G1: dedupe por variantId (no id). Misma variant + misma
+            // customización = misma línea; incrementa qty. Si difieren, nueva línea.
+            const existingItem = state.items.find(item =>
+                item.variantId === product.variantId &&
+                !!item.hasCustomization === !!product.hasCustomization
+            );
 
-                if (existingItem) {
-                    existingItem.qty += 1;
-                } else {
-                    state.items.push({ ...product, qty: 1 });
-                }
-                state.status = 'succeeded';
-            })
+            if (existingItem) {
+                existingItem.qty += 1;
+            } else {
+                state.items.push({ ...product, qty: 1 });
+            }
+            state.status = 'succeeded';
+        })
             .addCase(addToCart.rejected, (state, action) => {
                 state.status = 'failed';
                 state.error = action.payload as string;

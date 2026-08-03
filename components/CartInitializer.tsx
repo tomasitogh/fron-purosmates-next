@@ -2,7 +2,18 @@
 
 import { useEffect, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
-import { setCart } from '@/redux/cartSlice';
+import { setCart, type CartItem } from '@/redux/cartSlice';
+
+/**
+ * Items persistidos en localStorage antes de G1 no tienen `variantId` (la
+ * unidad de stock vivía en `stock` plano del product). El cart slice ahora
+ * requiere `variantId` para poder matchear/deduplicar, así que descartamos
+ * items legacy one-shot y dejamos que el usuario los vuelva a agregar
+ * (abriendo el modal para elegir la variant).
+ */
+function isLegacyItem(item: CartItem): boolean {
+    return typeof item.variantId !== 'number' || item.variantStock == null;
+}
 
 export default function CartInitializer() {
     const dispatch = useAppDispatch();
@@ -17,7 +28,16 @@ export default function CartInitializer() {
                 if (storedCart) {
                     const parsedCart = JSON.parse(storedCart);
                     if (Array.isArray(parsedCart) && parsedCart.length > 0) {
-                        dispatch(setCart(parsedCart));
+                        const hasLegacy = parsedCart.some(isLegacyItem);
+                        if (hasLegacy) {
+                            console.warn(
+                                "[CartInitializer] Cart legacy detectado (sin variantId) — descartando. " +
+                                "El usuario deberá volver a agregar los productos."
+                            );
+                            // No dispatch setCart → queda el initialState ([])
+                        } else {
+                            dispatch(setCart(parsedCart as CartItem[]));
+                        }
                     }
                 }
             } catch (error) {

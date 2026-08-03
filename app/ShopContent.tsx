@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
-import { RootState } from "@/redux/store";
+import { RootState, AppDispatch } from "@/redux/store";
 import { addToCart } from '@/redux/cartSlice';
 import toast from 'react-hot-toast';
 import { useUser } from '@clerk/nextjs';
@@ -22,7 +22,7 @@ interface ShopContentProps {
 type SortOption = 'relevance' | 'newest' | 'price-asc' | 'price-desc';
 
 export default function ShopContent({ initialProducts, initialCategories }: ShopContentProps) {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isSignedIn, isLoaded } = useUser();
@@ -97,8 +97,15 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
       }
     })();
 
-    const inStock = list.filter(p => p.stock > 0);
-    const outOfStock = list.filter(p => !p.stock || p.stock <= 0);
+    // H3: el stock total del product es la suma del stock de las variants.
+    // D1 normalizer popula `product.stock` desde `totalStock` para backward
+    // compat, pero usamos `totalStock ?? stock` para que el código sea
+    // forward-compatible si en el futuro se elimina el campo deprecated.
+    const inStock = list.filter(p => (p.totalStock ?? p.stock) > 0);
+    const outOfStock = list.filter(p => {
+        const s = p.totalStock ?? p.stock;
+        return !s || s <= 0;
+    });
     inStock.sort(sortFn);
     outOfStock.sort(sortFn);
 
@@ -138,8 +145,27 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
     router.replace(newUrl, { scroll: false });
   };
 
-  const handleAddToCart = async (product: any, withCustomization: boolean = false) => {
-    const result = await dispatch(addToCart({ ...product, qty: 1, hasCustomization: withCustomization }) as any);
+  const handleAddToCart = async (product: Product, withCustomization: boolean = false) => {
+    // G1: si el product tiene múltiples variants, no se puede agregar
+    // directo — el usuario debe abrir el modal y elegir la variant.
+    const hasMultipleVariants = (product.variants?.length ?? 0) > 1;
+    if (hasMultipleVariants) {
+      openProductModal(product);
+      return;
+    }
+    // Single-variant (Bombilla) o legacy sin variants: agregar directo con la
+    // única variant (o con placeholder variantId=0 si el backend no devuelve
+    // ninguna, lo cual es edge case pre-A4).
+    const onlyVariant = product.variants?.[0];
+    const result = await dispatch(addToCart({
+      ...product,
+      hasCustomization: withCustomization,
+      variantId: onlyVariant?.id ?? 0,
+      variantSku: onlyVariant?.sku ?? '',
+      variantName: onlyVariant?.name ?? '',
+      variantStock: onlyVariant?.stock ?? 0,
+      variantImageUrl: onlyVariant?.imageUrl,
+    }));
     if (addToCart.fulfilled.match(result)) {
       toast.success(`Agregado: ${product.name}${withCustomization ? ' (Personalizado)' : ''}`);
     } else {
@@ -219,14 +245,20 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
 
             {/* Products Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-              {filteredProducts.map((product, index) => (
+              {filteredProducts.map((product, index) => {
+                // E7: "out of stock" = no hay NINGUNA variant con stock > 0.
+                // Las variants con stock 0 están ocultas en el shop.
+                const variants = product.variants ?? [];
+                const hasStock = variants.some(v => v.stock > 0);
+                const outOfStock = !hasStock;
+                return (
                 <div
                   key={product.id}
-                  className={`bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer flex flex-col ${!product.stock ? 'border border-gray-300 opacity-60' : ''}`}
+                  className={`bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer flex flex-col ${outOfStock ? 'border border-gray-300 opacity-60' : ''}`}
                   onClick={() => openProductModal(product)}
                 >
                   <div className="relative w-full aspect-square bg-gray-100">
-                    {!product.stock && (
+                    {outOfStock && (
                       <div className="absolute top-2 left-2 z-10 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md">
                         Sin Stock
                       </div>
@@ -262,14 +294,19 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
                         e.stopPropagation();
                         handleAddToCart(product, !!customizationStates[product.id]);
                       }}
-                      disabled={!product.stock}
-                      className={`mt-2 w-full py-2 rounded-lg text-sm font-medium ${!product.stock ? 'bg-gray-400 text-gray-200 cursor-not-allowed' : 'bg-[#254642] text-white'}`}
+                      disabled={outOfStock}
+                      className={`mt-2 w-full py-2 rounded-lg text-sm font-medium ${outOfStock ? 'bg-gray-400 text-gray-200 cursor-not-allowed' : 'bg-[#254642] text-white'}`}
                     >
-                      {!product.stock ? 'Sin Stock' : 'Agregar'}
+                      {outOfStock
+                        ? 'Sin Stock'
+                        : variants.length > 1
+                          ? 'Elegir opciones'
+                          : 'Agregar'}
                     </button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {filteredProducts.length === 0 && (

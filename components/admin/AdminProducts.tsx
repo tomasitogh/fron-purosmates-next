@@ -2,16 +2,70 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchAllProductsAdmin, Product } from '@/redux/productSlice';
+import { fetchAllProductsAdmin, Product, type ProductVariant } from '@/redux/productSlice';
 import { fetchCategories } from '@/redux/categorySlice';
 import { createProduct, updateProduct, deleteProduct, clearAdminMessages, ProductData } from '@/redux/adminSlice';
 import FilterTabs from '@/components/FilterTabs';
 import ImageUploader from '@/components/ImageUploader';
 import ProductImagePreview from '@/components/ProductImagePreview';
+import VariantsGrid from '@/components/admin/VariantsGrid';
+import VariantImageAssigner, { type VariantImageAssignerImage } from '@/components/admin/VariantImageAssigner';
 import toast from 'react-hot-toast';
 import { Package } from 'lucide-react';
 import { AppDispatch, RootState } from '@/redux/store';
 import { TokenGetter } from '@/lib/apiClient';
+
+// E4: helpers de módulo (puros, sin closure deps) para el resumen de variantes
+// en la card de admin.
+function formatVariantsTooltip(variants: ProductVariant[]): string {
+    if (!variants || variants.length === 0) return '';
+    return variants
+        .map(v => {
+            const label = v.name || v.sku;
+            return `${label} (stock: ${v.stock})`;
+        })
+        .join('\n');
+}
+
+/**
+ * E6: merge por URL entre las imágenes previas (que ya tienen `variantId`
+ * asignado) y las que vienen de `ImageUploader` (que no lo tienen).
+ * `ImageUploader` reemplaza el array completo cuando edita; este helper
+ * preserva el `variantId` de las imágenes cuya URL sigue en la lista.
+ * - Imágenes nuevas (URL no estaba antes): entran con `variantId: undefined`.
+ * - Imágenes borradas (URL no está en el nuevo): se eliminan y, con ellas,
+ *   su asignación a variant. Si esa variant tenía esa imagen asignada, queda
+ *   huérfana — el admin la reasigna con el dropdown de abajo.
+ */
+function mergeImagesPreservingVariant(
+    prev: VariantImageAssignerImage[],
+    next: VariantImageAssignerImage[]
+): VariantImageAssignerImage[] {
+    const prevByUrl = new Map(prev.map(img => [img.url, img]));
+    return next.map(img => {
+        const before = prevByUrl.get(img.url);
+        if (!before) {
+            return { ...img, variantId: img.variantId ?? null };
+        }
+        return { ...img, variantId: before.variantId };
+    });
+}
+
+function formatVariantSummary(product: Product): { text: string; tooltip: string } {
+    const totalStock = product.totalStock ?? product.stock;
+    const variants = product.variants ?? [];
+    if (variants.length === 0) {
+        // Fallback para respuestas sin variantes (producto legacy o backend
+        // sin A4). No se muestra tooltip porque no hay SKUs que listar.
+        return { text: `Stock: ${totalStock}`, tooltip: '' };
+    }
+    const activeCount = variants.filter(v => v.active).length;
+    const variantLabel = activeCount === 1 ? 'variante activa' : 'variantes activas';
+    return {
+        text: `Stock total: ${totalStock} (${activeCount} ${variantLabel})`,
+        tooltip: formatVariantsTooltip(variants),
+    };
+}
 
 interface AdminProductsProps {
   getToken: TokenGetter;
@@ -28,17 +82,43 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    price: string;
+    categoryId: string;
+    images: VariantImageAssignerImage[];
+    active: boolean;
+    isCustomizable: boolean;
+    customizationCost: string;
+  }>({
     name: '',
     description: '',
     price: '',
-    stock: '',
     categoryId: '',
-    images: [] as { url: string; scale?: number; x?: number; y?: number }[],
+    images: [],
     active: true,
     isCustomizable: false,
     customizationCost: '',
   });
+
+  // E7: estado local de variants. Cada variant tiene `name` libre.
+  // `excludedSkus` permite que el admin oculte filas sin perder los datos
+  // (la fila se esconde, no se borra del estado; al guardar el backend
+  // la borra porque el SKU no aparece en el DTO).
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const [excludedSkus, setExcludedSkus] = useState<Set<string>>(new Set());
+
+  // Variants que efectivamente se mandan al backend (filtro por excludedSkus).
+  const variantsToSend = useMemo(
+    () => variants.filter(v => !excludedSkus.has(v.sku)),
+    [variants, excludedSkus]
+  );
+
+  // Validación: al menos 1 variant con stock > 0 para que el producto
+  // sea vendible. Si no, warning inline.
+  const hasSellableVariant = variantsToSend.some(v => v.stock > 0);
+  const showValidationWarning = variantsToSend.length > 0 && !hasSellableVariant;
 
   useEffect(() => {
     dispatch(fetchAllProductsAdmin(getToken));
@@ -78,13 +158,14 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
       name: '',
       description: '',
       price: '',
-      stock: '',
       categoryId: '',
       images: [],
       active: true,
       isCustomizable: false,
       customizationCost: '',
     });
+    setVariants([]);              // E7: reset
+    setExcludedSkus(new Set());   // E7: reset
     setSelectedProduct(null);
     setIsEditing(false);
     setIsModalOpen(true);
@@ -95,13 +176,17 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
       name: product.name,
       description: product.description || '',
       price: product.price.toString(),
-      stock: product.stock.toString(),
       categoryId: String(product.category?.id ?? ''),
       images: product.images || [],
       active: product.active !== undefined ? product.active : true,
       isCustomizable: product.isCustomizable || false,
       customizationCost: product.customizationCost ? product.customizationCost.toString() : '',
     });
+    // E7: popular con las variants del producto. No podemos saber cuáles
+    // fueron excluidas por un admin previo, así que arrancamos con set vacío
+    // (todas visibles).
+    setVariants(product.variants ?? []);
+    setExcludedSkus(new Set());
     setSelectedProduct(product);
     setIsEditing(true);
     setIsModalOpen(true);
@@ -136,18 +221,32 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
       return;
     }
 
+    // E7: validación — al menos 1 variant con nombre y stock > 0.
+    if (variantsToSend.length === 0) {
+      toast.error('Agregá al menos una variante con nombre');
+      return;
+    }
+    if (!hasSellableVariant) {
+      toast.error('Al menos una variante debe tener stock mayor a 0');
+      return;
+    }
+    // Bloquear submit si hay variants sin nombre (estado intermedio).
+    const incompleteVariants = variantsToSend.filter(v => !v.name?.trim());
+    if (incompleteVariants.length > 0) {
+      toast.error('Todas las variantes deben tener un nombre. Completá las que faltan o borralas.');
+      return;
+    }
+
     const productData: ProductData = {
       name: formData.name,
       description: formData.description,
       price: parseFloat(formData.price),
-      stock: parseInt(formData.stock),
-      category: {
-        id: parseInt(formData.categoryId),
-      },
+      categoryId: parseInt(formData.categoryId),
       images: formData.images,
       active: formData.active,
       isCustomizable: formData.isCustomizable,
       customizationCost: formData.isCustomizable ? parseFloat(formData.customizationCost) : 0,
+      variants: variantsToSend,
     };
 
     try {
@@ -178,16 +277,19 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
     }
 
     try {
+      // E3: el backend (B2 updateProduct) hace replace-all de variantes. Si no
+      // mandamos `variants` y `attributeDefinitions`, los wipea. Por eso mandamos
+      // los datos existentes del producto y solo cambiamos `active`.
       const productData: ProductData = {
         name: product.name,
         description: product.description,
         price: product.price,
-        stock: product.stock,
-        category: {
-          id: product.category?.id ?? 0,
-        },
+        categoryId: product.category?.id ?? 0, // fix mini-commit: shape flat
         images: product.images || [],
         active: newActiveState,
+        isCustomizable: product.isCustomizable,
+        customizationCost: product.customizationCost,
+        variants: product.variants ?? [],
       };
 
       await dispatch(updateProduct({
@@ -276,7 +378,7 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                   INACTIVO
                 </div>
               )}
-              {product.stock === 0 && (
+              {(product.totalStock ?? product.stock) === 0 && (
                 <div className="absolute top-2 left-2 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
                   SIN STOCK
                 </div>
@@ -294,9 +396,18 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                 <span className="text-green-600 font-bold">
                   ${product.price ? product.price.toLocaleString('es-AR') : '0'}
                 </span>
-                <span className="text-sm text-gray-600">
-                  Stock: {product.stock}
-                </span>
+                {(() => {
+                  // E4: resumen de variantes con tooltip de SKUs/stocks
+                  const { text, tooltip } = formatVariantSummary(product);
+                  return (
+                    <span
+                      className="text-sm text-gray-600 cursor-help"
+                      title={tooltip || undefined}
+                    >
+                      {text}
+                    </span>
+                  );
+                })()}
               </div>
               <div className="text-xs text-gray-500 mb-4">
                 Categoría: {product.category?.description || 'Sin categoría'}
@@ -402,43 +513,37 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                     </label>
                     <ImageUploader
                       images={formData.images}
-                      onChange={(images) => setFormData(prev => ({ ...prev, images }))}
+                      onChange={(images) => {
+                        // E6: merge por URL para preservar el `variantId` de
+                        // las imágenes que ya estaban. `ImageUploader` reemplaza
+                        // el array completo cuando sube/edita; si copiáramos
+                        // tal cual, perderíamos la asignación imagen→variant.
+                        setFormData(prev => ({
+                          ...prev,
+                          images: mergeImagesPreservingVariant(prev.images, images),
+                        }));
+                      }}
                       required={true}
                       getToken={getToken}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Precio *
-                      </label>
-                      <input
-                        type="number"
-                        name="price"
-                        required
-                        step="0.01"
-                        min="0"
-                        value={formData.price}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#254642]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Stock *
-                      </label>
-                      <input
-                        type="number"
-                        name="stock"
-                        required
-                        min="0"
-                        value={formData.stock}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#254642]"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Precio *
+                    </label>
+                    <input
+                      type="number"
+                      name="price"
+                      required
+                      step="0.01"
+                      min="0"
+                      value={formData.price}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#254642]"
+                    />
                   </div>
+                </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -508,6 +613,36 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                     </div>
                   )}
                 </div>
+
+                {/* E7: ya no hay editor de definiciones de atributos.
+                   Las variants tienen `name` libre, las creás directo abajo. */}
+
+                {/* E7: variantes. El admin tipea nombre + stock por variante. */}
+                <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200">
+                  <VariantsGrid
+                    value={variants}
+                    onChange={setVariants}
+                    excludedSkus={excludedSkus}
+                    onExcludedSkusChange={setExcludedSkus}
+                  />
+                  {showValidationWarning ? (
+                    <p className="mt-3 text-xs text-orange-700 bg-orange-50 border border-orange-200 rounded px-2 py-1.5">
+                      ⚠ Al menos una variante debe tener stock mayor a 0 para que el producto sea vendible.
+                    </p>
+                  ) : null}
+                </div>
+
+                {/* E6: asignación de imágenes a variantes. Aparece DESPUÉS de las
+                   variants para que el admin ya tenga SKUs para asignar. */}
+                {variants.length > 0 ? (
+                  <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200">
+                    <VariantImageAssigner
+                      images={formData.images}
+                      variants={variants}
+                      onChange={(images) => setFormData(prev => ({ ...prev, images }))}
+                    />
+                  </div>
+                ) : null}
 
                 <div className="mt-6 flex space-x-4">
                   <button

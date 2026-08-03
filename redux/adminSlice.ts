@@ -2,6 +2,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 import { revalidateStorefront } from "@/lib/actions/revalidate.actions";
 import { TokenGetter, withAuthRetry } from "@/lib/apiClient";
+import type { ProductVariant } from "./productSlice";
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL
     ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/products`
@@ -11,13 +12,34 @@ const ORDERS_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL
     : 'http://localhost:8080/api/v1/orders';
 
 // Types
+export interface OrderItem {
+    id: number;
+    quantity: number;
+    price: number;
+    hasCustomization?: boolean;
+    // --- Variante (H1) — snapshot del backend C5 ---
+    // `variantAttributes` viene como Map<String,String> en el JSON (Jackson
+    // serializa Map nativamente, no necesita parse).
+    variantId?: number;
+    variantSku?: string;
+    variantAttributes?: Record<string, string>;
+    variantImageUrl?: string;
+    // Snapshot del producto (ProductSummaryDTO del backend) para mostrar en UI
+    product?: {
+        id?: number;
+        name: string;
+        imageUrl?: string;
+        customizationCost?: number;
+    };
+}
+
 export interface Order {
     id: number;
     status: string;
     paymentStatus?: string;
     total: number;
     createdAt: string;
-    items: any[];
+    items: OrderItem[];
     user?: {
         name: string;
         email: string;
@@ -33,19 +55,31 @@ export interface ProductData {
     name: string;
     description: string;
     price: number;
-    stock: number;
-    category: {
-        id: number;
-    };
+    /**
+     * @deprecated Removido del form en E3. El stock vive en `variants[].stock`.
+     * El backend ignora este campo desde A5. Queda opcional en el type para
+     * no romper consumidores viejos; nuevo código no lo setea.
+     */
+    stock?: number;
+    // El backend (`ProductPayload`) espera `categoryId: Long` flat. Antes E3-fix
+    // el form mandaba `category: {id: N}` (shape viejo, no matcheaba) y el
+    // backend tiraba 400 en cada submit. Ahora se manda `categoryId` flat.
+    categoryId: number;
     images: {
         url: string;
         scale?: number;
         x?: number;
         y?: number;
+        // E6: dirección imagen→variant. Null = imagen genérica.
+        variantId?: number | null;
     }[];
     active: boolean;
     isCustomizable?: boolean;
     customizationCost?: number;
+    // --- Variantes (D2 + E3 + E7) ---
+    // E7: las variants son independientes con `name` libre. El backend crea
+    // un default variant si la lista viene vacía.
+    variants?: ProductVariant[];
 }
 
 interface AdminState {

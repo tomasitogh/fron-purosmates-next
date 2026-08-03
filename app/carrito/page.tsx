@@ -228,88 +228,124 @@ export default function Carrito() {
             <h1 className="text-3xl font-bold text-gray-800 mb-8">Tu Carrito</h1>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Lista de productos */}
-                <div className="lg:col-span-2 space-y-4">
-                    {items.map((item) => (
-                        <div key={`${item.id}-${item.hasCustomization}`} className="bg-white rounded-lg shadow-md p-4 sm:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-4">
+                {/* Lista de productos — layout tipo prototipo:
+                       [img-badge]   nombre           $precio
+                                     variant
+                                     [controles]                */}
+                <div className="lg:col-span-2 space-y-3">
+                    {items.map((item, index) => {
+                        // G2: thumbnail usa variantImageUrl si está (foto del SKU
+                        // específico), sino la primera imagen del product.
+                        const thumbUrl = item.variantImageUrl ?? item.images?.[0]?.url;
+                        const thumbTransform = item.variantImageUrl
+                            ? null // las imágenes de variant no tienen transform del admin editor
+                            : item.images?.[0];
+                        // E7: chip con el `name` de la variant.
+                        const variantLabel = item.variantName || item.variantSku;
+                        return (
+                        <div
+                            key={`${item.variantId}-${!!item.hasCustomization}`}
+                            className="bg-white rounded-lg shadow-sm p-4 sm:p-5 flex items-center gap-4"
+                        >
+                            {/* Imagen con badge numerado */}
                             <div
-                                className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200"
+                                className="relative w-20 h-20 sm:w-24 sm:h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 transition"
                                 onClick={() => setSelectedProduct(item)}
                             >
-                                {item.images?.[0] ? (
+                                {thumbUrl ? (
                                     <img
-                                        src={item.images[0].url}
+                                        src={thumbUrl}
                                         alt={item.name}
                                         className="w-full h-full object-cover"
-                                        style={{
-                                            transform: `scale(${item.images[0].scale || 1}) translate(${item.images[0].x || 0}%, ${item.images[0].y || 0}%)`,
+                                        style={thumbTransform ? {
+                                            transform: `scale(${thumbTransform.scale || 1}) translate(${thumbTransform.x || 0}%, ${thumbTransform.y || 0}%)`,
                                             transformOrigin: 'center'
-                                        }}
+                                        } : undefined}
                                     />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100">
                                         <span className="text-xs">Sin img</span>
                                     </div>
                                 )}
+                                {/* Badge numerado — esquina superior derecha */}
+                                <div className="absolute top-0 right-0 w-6 h-6 bg-white border border-gray-300 rounded-full flex items-center justify-center text-xs font-bold text-gray-700 shadow-sm">
+                                    {index + 1}
+                                </div>
                             </div>
 
-                            <div className="flex-grow text-center sm:text-left">
-                                <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
-                                <div className="flex flex-col">
-                                    <p className="text-gray-600">
-                                        Base: ${item.price?.toLocaleString('es-AR')}
+                            {/* Centro: nombre + variant + controles */}
+                            <div className="flex-1 min-w-0">
+                                <p className="font-bold text-gray-900 truncate">{item.name}</p>
+                                {variantLabel && (
+                                    <p className="text-sm text-gray-500 truncate" title={item.variantSku}>
+                                        {variantLabel}
                                     </p>
+                                )}
+
+                                {/* Controles: cantidad, personalizar, eliminar */}
+                                <div className="flex flex-wrap items-center gap-3 mt-2">
+                                    <div className="flex items-center gap-1 border border-gray-200 rounded-md">
+                                        <button
+                                            onClick={() => dispatch(decrementItem({ variantId: item.variantId, hasCustomization: item.hasCustomization }))}
+                                            className="p-1.5 hover:bg-gray-100 rounded-l-md transition"
+                                            aria-label="Disminuir cantidad"
+                                        >
+                                            <Minus className="w-3.5 h-3.5" />
+                                        </button>
+                                        <span className="text-gray-800 font-medium px-2 text-sm">{item.qty}</span>
+                                        <button
+                                            onClick={async () => {
+                                                const result = await dispatch(addToCart(item));
+                                                if (addToCart.rejected.match(result)) {
+                                                    toast.error('Este producto no tiene stock disponible');
+                                                }
+                                            }}
+                                            disabled={item.qty >= item.variantStock}
+                                            className="p-1.5 hover:bg-gray-100 rounded-r-md transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                            aria-label="Aumentar cantidad"
+                                        >
+                                            <Plus className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+
                                     {item.isCustomizable && (
-                                        <div className="flex items-center mt-1">
+                                        <label className="flex items-center gap-1.5 cursor-pointer select-none">
                                             <input
                                                 type="checkbox"
-                                                id={`customization-${item.id}-${item.hasCustomization}`}
                                                 checked={item.hasCustomization || false}
-                                                onChange={() => dispatch(toggleCustomization({ id: item.id, hasCustomization: !item.hasCustomization }))}
-                                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer mr-2"
+                                                onChange={() => dispatch(toggleCustomization({ variantId: item.variantId, hasCustomization: !item.hasCustomization }))}
+                                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
                                             />
-                                            <label htmlFor={`customization-${item.id}-${item.hasCustomization}`} className="text-sm text-gray-600 cursor-pointer select-none">
+                                            <span className="text-xs text-gray-600">
                                                 Personalizado (+${item.customizationCost?.toLocaleString('es-AR')})
-                                            </label>
-                                        </div>
+                                            </span>
+                                        </label>
                                     )}
-                                </div>
 
-                                <div className="flex items-center justify-center sm:justify-start gap-2 mt-2">
                                     <button
-                                        onClick={() => dispatch(decrementItem({ id: item.id, hasCustomization: item.hasCustomization }))}
-                                        className="p-2 hover:bg-gray-100 rounded transition"
+                                        onClick={() => dispatch(removeItem({ variantId: item.variantId, hasCustomization: item.hasCustomization }))}
+                                        className="text-red-600 hover:text-red-800 transition text-xs flex items-center gap-1 ml-auto"
+                                        aria-label="Eliminar del carrito"
                                     >
-                                        <Minus className="w-4 h-4" />
-                                    </button>
-                                    <span className="text-gray-800 font-medium px-4">{item.qty}</span>
-                                    <button
-                                        onClick={async () => {
-                                            const result = await dispatch(addToCart(item));
-                                            if (addToCart.rejected.match(result)) {
-                                                toast.error('Este producto no tiene stock disponible');
-                                            }
-                                        }}
-                                        className="p-2 hover:bg-gray-100 rounded transition"
-                                    >
-                                        <Plus className="w-4 h-4" />
+                                        <Trash2 className="w-3.5 h-3.5" /> Eliminar
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="w-full sm:w-auto text-center sm:text-right border-t sm:border-t-0 pt-4 sm:pt-0">
-                                <p className="text-lg font-bold text-gray-800">
-                                    Subtotal: ${((item.price + ((item.hasCustomization && item.customizationCost) ? item.customizationCost : 0)) * item.qty).toLocaleString('es-AR')}
+                            {/* Precio a la derecha */}
+                            <div className="text-right flex-shrink-0">
+                                <p className="font-bold text-gray-900">
+                                    ${item.price.toLocaleString('es-AR')}
                                 </p>
-                                <button
-                                    onClick={() => dispatch(removeItem({ id: item.id, hasCustomization: item.hasCustomization }))}
-                                    className="text-red-600 hover:text-red-800 transition text-sm mt-2 flex items-center justify-center sm:justify-end w-full gap-1"
-                                >
-                                    <Trash2 className="w-4 h-4" /> Eliminar
-                                </button>
+                                {item.qty > 1 && (
+                                    <p className="text-xs text-gray-500 mt-0.5">
+                                        x{item.qty} = ${(item.price * item.qty).toLocaleString('es-AR')}
+                                    </p>
+                                )}
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
                 {/* Resumen del pedido */}
