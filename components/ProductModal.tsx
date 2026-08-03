@@ -49,6 +49,7 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
     // de la variant seleccionada. La variant es independiente con `name` libre.
     const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const syncedVariantIdRef = useRef<number | null>(null);
 
     // E7: filtrar variants con stock > 0 (las de stock 0 no se muestran).
     const availableVariants = useMemo(
@@ -73,6 +74,7 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
     useEffect(() => {
         setWantsCustomization(false);
         setSelectedImageIndex(0);
+        syncedVariantIdRef.current = null;
         const first = (product.variants ?? []).find(v => v.stock > 0);
         setSelectedVariantId(first?.id ?? null);
         setTimeout(() => scrollToImage(0), 0);
@@ -84,17 +86,22 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
         [product.variants, selectedVariantId]
     );
 
-    // F4: si la variant seleccionada tiene imageUrl, saltar a esa imagen.
+    // F4: sincronizar imagen al cambiar de variant.
+    // Usa un ref para no re-sincronizar cuando el usuario navega manualmente.
     /* eslint-disable react-hooks/set-state-in-effect -- sincroniza state de
        React con scroll del DOM externo cuando cambia la variant */
     useLayoutEffect(() => {
         const imageUrl = selectedVariant?.imageUrl;
         if (!imageUrl || !product.images) return;
         const idx = product.images.findIndex(img => img.url === imageUrl);
-        if (idx < 0 || idx === selectedImageIndex) return;
+        if (idx < 0) return;
+        // Si ya sincronizamos esta variant, no volver a hacerlo
+        // (permite que el usuario navegue imágenes manualmente)
+        if (syncedVariantIdRef.current === selectedVariant?.id) return;
+        syncedVariantIdRef.current = selectedVariant?.id ?? null;
         setSelectedImageIndex(idx);
         scrollToImage(idx);
-    }, [selectedVariant?.imageUrl, product.images, selectedImageIndex]);
+    }, [selectedVariant?.imageUrl, selectedVariant?.id, product.images]);
     /* eslint-enable react-hooks/set-state-in-effect */
 
     const canAddToCart = !!selectedVariant && selectedVariant.stock > 0;
@@ -281,7 +288,10 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
                                         value={selectedVariantId ?? ''}
                                         onChange={(e) => {
                                             const raw = e.target.value;
-                                            setSelectedVariantId(raw === '' ? null : Number(raw));
+                                            const newId = raw === '' ? null : Number(raw);
+                                            // Resetear ref para que useLayoutEffect sincronice la imagen
+                                            syncedVariantIdRef.current = null;
+                                            setSelectedVariantId(newId);
                                         }}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#254642] bg-white"
                                     >
