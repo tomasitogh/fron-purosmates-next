@@ -9,7 +9,7 @@ interface ShopFiltersProps {
   onFilterChange: (ids: number[]) => void;
   priceRange: [number, number];
   onPriceChange: (range: [number, number]) => void;
-  onApply: () => void;
+  onApply: (categoryIds: number[], priceRange: [number, number]) => void;
   isMobile?: boolean;
   onCloseMobile?: () => void;
   sortBy?: string;
@@ -58,7 +58,7 @@ export default function ShopFilters({
     if (isMobile && onCloseMobile) {
       onCloseMobile();
     }
-    queueMicrotask(onApply);
+    onApply(pendingCategoryIds, pendingPriceRange);
   };
 
   const content = (

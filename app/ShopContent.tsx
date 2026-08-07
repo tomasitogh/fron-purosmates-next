@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/redux/store';
@@ -77,9 +77,13 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
     return [];
   }, [categoriesParam, categoryParam, activeCategories]);
 
-  const selectedCategoryIds = useMemo(() => {
-    return urlCategoryIds.length > 0 ? urlCategoryIds : sidebarCategoryIds;
-  }, [urlCategoryIds, sidebarCategoryIds]);
+  // Sync sidebar state from URL on mount and when URL changes (back/forward nav)
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSidebarCategoryIds(urlCategoryIds);
+  }, [urlCategoryIds]);
+
+  const selectedCategoryIds = sidebarCategoryIds;
 
   const searchText = useMemo(() => {
     return (searchParams.get('q') || '').trim().toLowerCase();
@@ -149,10 +153,11 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
     setSidebarCategoryIds(ids);
   };
 
-  const handleApplyFilters = () => {
+  const handleApplyFilters = (categoryIds: number[]) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (sidebarCategoryIds.length > 0) {
-      const catSlugs = sidebarCategoryIds
+    params.delete('category'); // eliminar param viejo para evitar duplicados
+    if (categoryIds.length > 0) {
+      const catSlugs = categoryIds
         .map((id) =>
           activeCategories
             .find((c: any) => c.id === id)
@@ -219,7 +224,7 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
             <div className="sticky top-24">
               <ShopFilters
                 categories={activeCategories}
-                selectedCategories={sidebarCategoryIds}
+                selectedCategories={selectedCategoryIds}
                 onFilterChange={handleCategoryFilterChange}
                 priceRange={priceRangeMemo}
                 onPriceChange={setPriceRange}
@@ -365,7 +370,7 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
       {isMobileFiltersOpen && (
         <ShopFilters
           categories={activeCategories}
-          selectedCategories={sidebarCategoryIds}
+          selectedCategories={selectedCategoryIds}
           onFilterChange={handleCategoryFilterChange}
           priceRange={priceRangeMemo}
           onPriceChange={setPriceRange}
