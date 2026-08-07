@@ -5,7 +5,8 @@ export const revalidate = 60;
 
 export const metadata = {
   title: 'Catálogo de Productos - Puros Mates',
-  description: 'Explora nuestra amplia variedad de mates, bombillas y accesorios artesanales. Elige la mejor calidad para tu set matero.',
+  description:
+    'Explora nuestra amplia variedad de mates, bombillas y accesorios artesanales. Elige la mejor calidad para tu set matero.',
 };
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
@@ -47,11 +48,17 @@ export default async function ShopPage() {
   const categories = Array.isArray(categoriesData)
     ? categoriesData
     : categoriesData && Array.isArray(categoriesData.content)
-    ? categoriesData.content
-    : [];
+      ? categoriesData.content
+      : [];
 
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-[#254642]">Cargando productos...</div>}>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center text-[#254642]">
+          Cargando productos...
+        </div>
+      }
+    >
       <ShopContent initialProducts={products} initialCategories={categories} />
     </Suspense>
   );

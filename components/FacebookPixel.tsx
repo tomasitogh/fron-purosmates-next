@@ -1,30 +1,30 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
-import Script from "next/script";
+import { useEffect } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import Script from 'next/script';
 
 export default function FacebookPixel() {
-    const pathname = usePathname();
-    const searchParams = useSearchParams();
-    const pixelId = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID;
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const pixelId = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID;
 
-    useEffect(() => {
-        if (!pixelId || typeof window === 'undefined' || !(window as any).fbq) return;
+  useEffect(() => {
+    if (!pixelId || typeof window === 'undefined' || !(window as any).fbq) return;
 
-        // Track pageview on route change
-        (window as any).fbq('track', 'PageView');
-    }, [pathname, searchParams, pixelId]);
+    // Track pageview on route change
+    (window as any).fbq('track', 'PageView');
+  }, [pathname, searchParams, pixelId]);
 
-    if (!pixelId) return null;
+  if (!pixelId) return null;
 
-    return (
-        <>
-            <Script
-                id="fb-pixel"
-                strategy="lazyOnload"
-                dangerouslySetInnerHTML={{
-                    __html: `
+  return (
+    <>
+      <Script
+        id="fb-pixel"
+        strategy="lazyOnload"
+        dangerouslySetInnerHTML={{
+          __html: `
                         !function(f,b,e,v,n,t,s)
                         {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
                         n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -36,17 +36,17 @@ export default function FacebookPixel() {
                         fbq('init', '${pixelId}');
                         fbq('track', 'PageView');
                     `,
-                }}
-            />
-            <noscript>
-                <img
-                    height="1"
-                    width="1"
-                    style={{ display: "none" }}
-                    src={`https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1`}
-                    alt=""
-                />
-            </noscript>
-        </>
-    );
+        }}
+      />
+      <noscript>
+        <img
+          height="1"
+          width="1"
+          style={{ display: 'none' }}
+          src={`https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1`}
+          alt=""
+        />
+      </noscript>
+    </>
+  );
 }

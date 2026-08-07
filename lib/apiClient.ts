@@ -16,11 +16,11 @@ export type TokenGetter = (options?: { skipCache?: boolean }) => Promise<string 
  * así que llamarlo seguido es barato.
  */
 export async function requireFreshToken(getToken: TokenGetter): Promise<string> {
-    const token = await getToken();
-    if (!token) {
-        throw new Error('Sesión no válida. Volvé a iniciar sesión.');
-    }
-    return token;
+  const token = await getToken();
+  if (!token) {
+    throw new Error('Sesión no válida. Volvé a iniciar sesión.');
+  }
+  return token;
 }
 
 /**
@@ -31,17 +31,17 @@ export async function requireFreshToken(getToken: TokenGetter): Promise<string> 
  * token (skipCache) y reintenta UNA sola vez antes de fallar.
  */
 export async function withAuthRetry<T>(
-    getToken: TokenGetter,
-    request: (token: string) => Promise<T>
+  getToken: TokenGetter,
+  request: (token: string) => Promise<T>
 ): Promise<T> {
-    const token = await requireFreshToken(getToken);
-    try {
-        return await request(token);
-    } catch (error) {
-        if (axios.isAxiosError(error) && error.response?.status === 401) {
-            const freshToken = await requireFreshToken(getToken); // Clerk renueva si venció
-            return request(freshToken);
-        }
-        throw error;
+  const token = await requireFreshToken(getToken);
+  try {
+    return await request(token);
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      const freshToken = await requireFreshToken(getToken); // Clerk renueva si venció
+      return request(freshToken);
     }
+    throw error;
+  }
 }

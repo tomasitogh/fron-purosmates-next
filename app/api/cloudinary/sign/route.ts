@@ -5,7 +5,7 @@ import crypto from 'crypto';
 export async function POST(req: Request) {
   try {
     const { userId } = await auth();
-    
+
     // Auth check: Only admins should be able to sign upload requests
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
 
     if (!apiSecret || !apiKey) {
       return NextResponse.json(
-        { error: 'Cloudinary configuration missing on server' }, 
+        { error: 'Cloudinary configuration missing on server' },
         { status: 500 }
       );
     }

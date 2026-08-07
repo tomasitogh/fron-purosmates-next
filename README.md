@@ -28,6 +28,7 @@ Este proyecto usa **Auth.js (NextAuth v5)** con Google OAuth.
 **No hay login manual** - Los usuarios se autentican con su cuenta Google.
 
 ### Setup Completo:
+
 - **Quick Start:** `QUICKSTART.md` (5 min)
 - **Frontend:** `AUTH_SETUP.md` (detallado)
 - **Backend:** `BACKEND_CONFIG.md` (Spring Boot)
@@ -47,6 +48,7 @@ Este proyecto usa **Auth.js (NextAuth v5)** con Google OAuth.
 ## 🏗️ Stack Tecnológico
 
 ### Frontend
+
 - **Framework:** Next.js 15 (App Router)
 - **Auth:** Auth.js (NextAuth v5)
 - **State:** Redux Toolkit
@@ -55,6 +57,7 @@ Este proyecto usa **Auth.js (NextAuth v5)** con Google OAuth.
 - **Language:** TypeScript
 
 ### Backend
+
 - **Framework:** Spring Boot 3.1
 - **Security:** Spring Security + OAuth2 Resource Server
 - **Database:** MySQL
@@ -114,26 +117,28 @@ NEXT_PUBLIC_API_BASE_URL="http://localhost:8080"
 
 ## 📚 Documentación
 
-| Archivo | Descripción |
-|---------|-------------|
-| `QUICKSTART.md` | Inicio rápido (3 pasos) |
-| `MIGRATION_COMPLETE.md` | Checklist completo |
-| `AUTH_SETUP.md` | Setup Auth.js frontend |
-| `BACKEND_CONFIG.md` | Setup Spring Boot |
-| `ARCHITECTURE.md` | Diagramas y flujos |
-| `AGENTS.md` | Guía para AI agents |
+| Archivo                 | Descripción             |
+| ----------------------- | ----------------------- |
+| `QUICKSTART.md`         | Inicio rápido (3 pasos) |
+| `MIGRATION_COMPLETE.md` | Checklist completo      |
+| `AUTH_SETUP.md`         | Setup Auth.js frontend  |
+| `BACKEND_CONFIG.md`     | Setup Spring Boot       |
+| `ARCHITECTURE.md`       | Diagramas y flujos      |
+| `AGENTS.md`             | Guía para AI agents     |
 
 ## 🧪 Testing
 
 ### Verificar sesión
+
 ```javascript
 // En DevTools Console
 fetch('/api/auth/session')
-  .then(r => r.json())
-  .then(console.log)
+  .then((r) => r.json())
+  .then(console.log);
 ```
 
 ### Debug endpoint
+
 ```
 GET /api/debug/session
 ⚠️ Eliminar en producción
@@ -151,11 +156,13 @@ GET /api/debug/session
 ## 🚀 Deploy
 
 ### Frontend (Vercel)
+
 ```bash
 vercel --prod
 ```
 
 ### Backend (Railway/Render)
+
 ```bash
 # Configurar NEXTAUTH_SECRET en variables de entorno
 ```
@@ -181,4 +188,3 @@ Este proyecto es privado y de uso académico.
 ---
 
 **Built with ❤️ in Argentina 🇦🇷**
-

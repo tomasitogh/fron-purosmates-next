@@ -4,12 +4,20 @@ import { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAllProductsAdmin, Product, type ProductVariant } from '@/redux/productSlice';
 import { fetchCategories } from '@/redux/categorySlice';
-import { createProduct, updateProduct, deleteProduct, clearAdminMessages, ProductData } from '@/redux/adminSlice';
+import {
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  clearAdminMessages,
+  ProductData,
+} from '@/redux/adminSlice';
 import FilterTabs from '@/components/FilterTabs';
 import ImageUploader from '@/components/ImageUploader';
 import ProductImagePreview from '@/components/ProductImagePreview';
 import VariantsGrid from '@/components/admin/VariantsGrid';
-import VariantImageAssigner, { type VariantImageAssignerImage } from '@/components/admin/VariantImageAssigner';
+import VariantImageAssigner, {
+  type VariantImageAssignerImage,
+} from '@/components/admin/VariantImageAssigner';
 import toast from 'react-hot-toast';
 import { Package } from 'lucide-react';
 import { AppDispatch, RootState } from '@/redux/store';
@@ -18,13 +26,13 @@ import { TokenGetter } from '@/lib/apiClient';
 // E4: helpers de módulo (puros, sin closure deps) para el resumen de variantes
 // en la card de admin.
 function formatVariantsTooltip(variants: ProductVariant[]): string {
-    if (!variants || variants.length === 0) return '';
-    return variants
-        .map(v => {
-            const label = v.name || v.sku;
-            return `${label} (stock: ${v.stock})`;
-        })
-        .join('\n');
+  if (!variants || variants.length === 0) return '';
+  return variants
+    .map((v) => {
+      const label = v.name || v.sku;
+      return `${label} (stock: ${v.stock})`;
+    })
+    .join('\n');
 }
 
 /**
@@ -38,33 +46,33 @@ function formatVariantsTooltip(variants: ProductVariant[]): string {
  *   huérfana — el admin la reasigna con el dropdown de abajo.
  */
 function mergeImagesPreservingVariant(
-    prev: VariantImageAssignerImage[],
-    next: VariantImageAssignerImage[]
+  prev: VariantImageAssignerImage[],
+  next: VariantImageAssignerImage[]
 ): VariantImageAssignerImage[] {
-    const prevByUrl = new Map(prev.map(img => [img.url, img]));
-    return next.map(img => {
-        const before = prevByUrl.get(img.url);
-        if (!before) {
-            return { ...img, variantId: img.variantId ?? null };
-        }
-        return { ...img, variantId: before.variantId };
-    });
+  const prevByUrl = new Map(prev.map((img) => [img.url, img]));
+  return next.map((img) => {
+    const before = prevByUrl.get(img.url);
+    if (!before) {
+      return { ...img, variantId: img.variantId ?? null };
+    }
+    return { ...img, variantId: before.variantId };
+  });
 }
 
 function formatVariantSummary(product: Product): { text: string; tooltip: string } {
-    const totalStock = product.totalStock ?? product.stock;
-    const variants = product.variants ?? [];
-    if (variants.length === 0) {
-        // Fallback para respuestas sin variantes (producto legacy o backend
-        // sin A4). No se muestra tooltip porque no hay SKUs que listar.
-        return { text: `Stock: ${totalStock}`, tooltip: '' };
-    }
-    const activeCount = variants.filter(v => v.active).length;
-    const variantLabel = activeCount === 1 ? 'variante activa' : 'variantes activas';
-    return {
-        text: `Stock total: ${totalStock} (${activeCount} ${variantLabel})`,
-        tooltip: formatVariantsTooltip(variants),
-    };
+  const totalStock = product.totalStock ?? product.stock;
+  const variants = product.variants ?? [];
+  if (variants.length === 0) {
+    // Fallback para respuestas sin variantes (producto legacy o backend
+    // sin A4). No se muestra tooltip porque no hay SKUs que listar.
+    return { text: `Stock: ${totalStock}`, tooltip: '' };
+  }
+  const activeCount = variants.filter((v) => v.active).length;
+  const variantLabel = activeCount === 1 ? 'variante activa' : 'variantes activas';
+  return {
+    text: `Stock total: ${totalStock} (${activeCount} ${variantLabel})`,
+    tooltip: formatVariantsTooltip(variants),
+  };
 }
 
 interface AdminProductsProps {
@@ -73,9 +81,17 @@ interface AdminProductsProps {
 
 export default function AdminProducts({ getToken }: AdminProductsProps) {
   const dispatch = useDispatch<AppDispatch>();
-  const { items: products, loading: productsLoading, error: productsError } = useSelector((state: RootState) => state.products);
+  const {
+    items: products,
+    loading: productsLoading,
+    error: productsError,
+  } = useSelector((state: RootState) => state.products);
   const { items: categories } = useSelector((state: RootState) => state.categories);
-  const { loading: adminLoading, error: adminError, successMessage } = useSelector((state: RootState) => state.admin);
+  const {
+    loading: adminLoading,
+    error: adminError,
+    successMessage,
+  } = useSelector((state: RootState) => state.admin);
 
   const [selectedType, setSelectedType] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -111,13 +127,13 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
 
   // Variants que efectivamente se mandan al backend (filtro por excludedSkus).
   const variantsToSend = useMemo(
-    () => variants.filter(v => !excludedSkus.has(v.sku)),
+    () => variants.filter((v) => !excludedSkus.has(v.sku)),
     [variants, excludedSkus]
   );
 
   // Validación: al menos 1 variant con stock > 0 para que el producto
   // sea vendible. Si no, warning inline.
-  const hasSellableVariant = variantsToSend.some(v => v.stock > 0);
+  const hasSellableVariant = variantsToSend.some((v) => v.stock > 0);
   const showValidationWarning = variantsToSend.length > 0 && !hasSellableVariant;
 
   useEffect(() => {
@@ -130,9 +146,7 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
     if (selectedType.length === 0) {
       return products;
     }
-    return products.filter((product) =>
-      selectedType.includes(product.category?.description || '')
-    );
+    return products.filter((product) => selectedType.includes(product.category?.description || ''));
   }, [selectedType, products]);
 
   useEffect(() => {
@@ -164,8 +178,8 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
       isCustomizable: false,
       customizationCost: '',
     });
-    setVariants([]);              // E7: reset
-    setExcludedSkus(new Set());   // E7: reset
+    setVariants([]); // E7: reset
+    setExcludedSkus(new Set()); // E7: reset
     setSelectedProduct(null);
     setIsEditing(false);
     setIsModalOpen(true);
@@ -198,7 +212,9 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
     setIsEditing(false);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     if ((e.target as HTMLInputElement).type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
@@ -231,7 +247,7 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
       return;
     }
     // Bloquear submit si hay variants sin nombre (estado intermedio).
-    const incompleteVariants = variantsToSend.filter(v => !v.name?.trim());
+    const incompleteVariants = variantsToSend.filter((v) => !v.name?.trim());
     if (incompleteVariants.length > 0) {
       toast.error('Todas las variantes deben tener un nombre. Completá las que faltan o borralas.');
       return;
@@ -251,11 +267,13 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
 
     try {
       if (isEditing && selectedProduct) {
-        await dispatch(updateProduct({
-          productId: selectedProduct.id,
-          productData,
-          getToken
-        })).unwrap();
+        await dispatch(
+          updateProduct({
+            productId: selectedProduct.id,
+            productData,
+            getToken,
+          })
+        ).unwrap();
       } else {
         await dispatch(createProduct({ productData, getToken })).unwrap();
       }
@@ -292,11 +310,13 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
         variants: product.variants ?? [],
       };
 
-      await dispatch(updateProduct({
-        productId: product.id,
-        productData,
-        getToken
-      })).unwrap();
+      await dispatch(
+        updateProduct({
+          productId: product.id,
+          productData,
+          getToken,
+        })
+      ).unwrap();
 
       dispatch(fetchAllProductsAdmin(getToken));
 
@@ -325,7 +345,7 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-[#254642] border-t-transparent rounded-full animate-spin" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#254642] border-t-transparent" />
           <span className="text-sm text-gray-500">Cargando productos...</span>
         </div>
       </div>
@@ -334,30 +354,34 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
 
   return (
     <div>
-      <div className="mb-6 flex flex-col md:flex-row md:items-start justify-between gap-4">
+      <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div className="w-full md:w-auto">
           <FilterTabs
-            categories={categories?.map((c: { description?: string; name?: string }) => c.description || c.name || '') || []}
+            categories={
+              categories?.map(
+                (c: { description?: string; name?: string }) => c.description || c.name || ''
+              ) || []
+            }
             selectedType={selectedType}
             onFilterChange={handleFilterChange}
           />
         </div>
         <button
           onClick={openCreateModal}
-          className="bg-[#254642] text-white px-5 py-2.5 rounded-lg hover:bg-[#1d3530] transition font-medium whitespace-nowrap text-sm"
+          className="rounded-lg bg-[#254642] px-5 py-2.5 text-sm font-medium whitespace-nowrap text-white transition hover:bg-[#1d3530]"
         >
           + Agregar Producto
         </button>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+      <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredProducts.map((product) => (
           <div
             key={product.id}
-            className={`bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition ${product.active === false ? 'opacity-60 border-gray-300' : ''}`}
+            className={`overflow-hidden rounded-xl border border-gray-100 bg-white transition hover:shadow-md ${product.active === false ? 'border-gray-300 opacity-60' : ''}`}
           >
             <div className="relative">
-              <div className="h-auto w-full aspect-square bg-gray-200 flex items-center justify-center overflow-hidden">
+              <div className="flex aspect-square h-auto w-full items-center justify-center overflow-hidden bg-gray-200">
                 {product.images && product.images.length > 0 ? (
                   <ProductImagePreview
                     src={product.images[0].url}
@@ -365,7 +389,7 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                     transform={{
                       scale: product.images[0].scale || 1,
                       x: product.images[0].x || 0,
-                      y: product.images[0].y || 0
+                      y: product.images[0].y || 0,
                     }}
                     fill={true}
                   />
@@ -374,26 +398,22 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                 )}
               </div>
               {product.active === false && (
-                <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                <div className="absolute top-2 right-2 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white shadow-lg">
                   INACTIVO
                 </div>
               )}
               {(product.totalStock ?? product.stock) === 0 && (
-                <div className="absolute top-2 left-2 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                <div className="absolute top-2 left-2 rounded-full bg-orange-500 px-3 py-1 text-xs font-bold text-white shadow-lg">
                   SIN STOCK
                 </div>
               )}
             </div>
 
             <div className="p-4">
-              <h3 className="font-semibold text-lg text-gray-900 mb-2">
-                {product.name}
-              </h3>
-              <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                {product.description}
-              </p>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-green-600 font-bold">
+              <h3 className="mb-2 text-lg font-semibold text-gray-900">{product.name}</h3>
+              <p className="mb-2 line-clamp-2 text-sm text-gray-600">{product.description}</p>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="font-bold text-green-600">
                   ${product.price ? product.price.toLocaleString('es-AR') : '0'}
                 </span>
                 {(() => {
@@ -401,7 +421,7 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                   const { text, tooltip } = formatVariantSummary(product);
                   return (
                     <span
-                      className="text-sm text-gray-600 cursor-help"
+                      className="cursor-help text-sm text-gray-600"
                       title={tooltip || undefined}
                     >
                       {text}
@@ -409,7 +429,7 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                   );
                 })()}
               </div>
-              <div className="text-xs text-gray-500 mb-4">
+              <div className="mb-4 text-xs text-gray-500">
                 Categoría: {product.category?.description || 'Sin categoría'}
               </div>
 
@@ -417,23 +437,24 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                 <div className="flex space-x-2">
                   <button
                     onClick={() => openEditModal(product)}
-                    className="flex-1 bg-gray-100 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200 transition text-sm shadow-sm"
+                    className="flex-1 rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-700 shadow-sm transition hover:bg-gray-200"
                   >
                     Editar
                   </button>
                   <button
                     onClick={() => handleDelete(product.id)}
-                    className="flex-1 bg-red-50 text-red-600 px-3 py-2 rounded-lg hover:bg-red-100 transition text-sm shadow-sm"
+                    className="flex-1 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 shadow-sm transition hover:bg-red-100"
                   >
                     Eliminar
                   </button>
                 </div>
                 <button
                   onClick={() => handleToggleActive(product)}
-                  className={`w-full px-3 py-2 rounded-lg transition text-sm font-medium shadow-sm ${product.active === false
-                    ? 'bg-green-50 text-green-700 hover:bg-green-100'
-                    : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
-                    }`}
+                  className={`w-full rounded-lg px-3 py-2 text-sm font-medium shadow-sm transition ${
+                    product.active === false
+                      ? 'bg-green-50 text-green-700 hover:bg-green-100'
+                      : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
+                  }`}
                 >
                   {product.active === false ? '✓ Activar' : '✕ Inactivar'}
                 </button>
@@ -444,10 +465,10 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
       </div>
 
       {filteredProducts.length === 0 && (
-        <div className="text-center py-16 bg-white rounded-xl border border-gray-100">
-          <Package className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 font-medium">No hay productos</p>
-          <p className="text-gray-400 text-sm mt-1">
+        <div className="rounded-xl border border-gray-100 bg-white py-16 text-center">
+          <Package className="mx-auto mb-3 h-10 w-10 text-gray-300" />
+          <p className="font-medium text-gray-500">No hay productos</p>
+          <p className="mt-1 text-sm text-gray-400">
             {selectedType.length > 0
               ? 'No se encontraron productos en esta categoría'
               : 'Creá tu primer producto con el botón de arriba'}
@@ -458,30 +479,40 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
       {/* Modal para crear/editar producto */}
       {isModalOpen && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
           onClick={(e) => {
             if (e.target === e.currentTarget) closeModal();
           }}
         >
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto relative animate-in fade-in zoom-in-95 duration-200">
+          <div className="animate-in fade-in zoom-in-95 relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white duration-200">
             <button
               onClick={closeModal}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1"
+              className="absolute top-4 right-4 p-1 text-gray-400 transition-colors hover:text-gray-600"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
             </button>
             <div className="p-6">
-              <h2 className="text-2xl font-bold mb-6">
+              <h2 className="mb-6 text-2xl font-bold">
                 {isEditing ? 'Editar Producto' : 'Crear Nuevo Producto'}
               </h2>
 
               <form onSubmit={handleSubmit}>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="mb-1 block text-sm font-medium text-gray-700">
                       Nombre del Producto *
                     </label>
                     <input
@@ -490,12 +521,12 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                       required
                       value={formData.name}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#254642]"
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-[#254642] focus:outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="mb-1 block text-sm font-medium text-gray-700">
                       Descripción
                     </label>
                     <textarea
@@ -503,12 +534,12 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                       value={formData.description}
                       onChange={handleInputChange}
                       rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#254642]"
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-[#254642] focus:outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="mb-2 block text-sm font-medium text-gray-700">
                       Imágenes del Producto *
                     </label>
                     <ImageUploader
@@ -518,7 +549,7 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                         // las imágenes que ya estaban. `ImageUploader` reemplaza
                         // el array completo cuando sube/edita; si copiáramos
                         // tal cual, perderíamos la asignación imagen→variant.
-                        setFormData(prev => ({
+                        setFormData((prev) => ({
                           ...prev,
                           images: mergeImagesPreservingVariant(prev.images, images),
                         }));
@@ -528,25 +559,25 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Precio *
-                    </label>
-                    <input
-                      type="number"
-                      name="price"
-                      required
-                      step="0.01"
-                      min="0"
-                      value={formData.price}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#254642]"
-                    />
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-700">
+                        Precio *
+                      </label>
+                      <input
+                        type="number"
+                        name="price"
+                        required
+                        step="0.01"
+                        min="0"
+                        value={formData.price}
+                        onChange={handleInputChange}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-[#254642] focus:outline-none"
+                      />
+                    </div>
                   </div>
-                </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="mb-1 block text-sm font-medium text-gray-700">
                       Categoría *
                     </label>
                     <select
@@ -554,25 +585,27 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                       required
                       value={formData.categoryId}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#254642]"
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-[#254642] focus:outline-none"
                     >
                       <option value="">Selecciona una categoría</option>
-                      {categories.map((category: { id: number; name?: string; description?: string }) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name || category.description}
-                        </option>
-                      ))}
+                      {categories.map(
+                        (category: { id: number; name?: string; description?: string }) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name || category.description}
+                          </option>
+                        )
+                      )}
                     </select>
                   </div>
 
-                  <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center space-x-3 rounded-lg bg-gray-50 p-4">
                     <input
                       type="checkbox"
                       name="active"
                       id="active"
                       checked={formData.active}
                       onChange={handleInputChange}
-                      className="w-5 h-5 text-[#254642] rounded focus:ring-[#254642]"
+                      className="h-5 w-5 rounded text-[#254642] focus:ring-[#254642]"
                     />
                     <label htmlFor="active" className="text-sm font-medium text-gray-700">
                       Producto activo (visible para usuarios)
@@ -580,7 +613,7 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                   </div>
                 </div>
 
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg space-y-4">
+                <div className="mt-4 space-y-4 rounded-lg bg-blue-50 p-4">
                   <div className="flex items-center space-x-3">
                     <input
                       type="checkbox"
@@ -588,7 +621,7 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                       id="isCustomizable"
                       checked={formData.isCustomizable}
                       onChange={handleInputChange}
-                      className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                      className="h-5 w-5 rounded text-blue-600 focus:ring-blue-500"
                     />
                     <label htmlFor="isCustomizable" className="text-sm font-medium text-gray-700">
                       Producto Personalizable
@@ -597,7 +630,7 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
 
                   {formData.isCustomizable && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="mb-1 block text-sm font-medium text-gray-700">
                         Costo de Personalización
                       </label>
                       <input
@@ -607,7 +640,7 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                         onChange={handleInputChange}
                         min="0"
                         step="0.01"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         placeholder="0.00"
                       />
                     </div>
@@ -618,7 +651,7 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                    Las variants tienen `name` libre, las creás directo abajo. */}
 
                 {/* E7: variantes. El admin tipea nombre + stock por variante. */}
-                <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200">
+                <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4">
                   <VariantsGrid
                     value={variants}
                     onChange={setVariants}
@@ -626,8 +659,9 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                     onExcludedSkusChange={setExcludedSkus}
                   />
                   {showValidationWarning ? (
-                    <p className="mt-3 text-xs text-orange-700 bg-orange-50 border border-orange-200 rounded px-2 py-1.5">
-                      ⚠ Al menos una variante debe tener stock mayor a 0 para que el producto sea vendible.
+                    <p className="mt-3 rounded border border-orange-200 bg-orange-50 px-2 py-1.5 text-xs text-orange-700">
+                      ⚠ Al menos una variante debe tener stock mayor a 0 para que el producto sea
+                      vendible.
                     </p>
                   ) : null}
                 </div>
@@ -635,11 +669,11 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                 {/* E6: asignación de imágenes a variantes. Aparece DESPUÉS de las
                    variants para que el admin ya tenga SKUs para asignar. */}
                 {variants.length > 0 ? (
-                  <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200">
+                  <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4">
                     <VariantImageAssigner
                       images={formData.images}
                       variants={variants}
-                      onChange={(images) => setFormData(prev => ({ ...prev, images }))}
+                      onChange={(images) => setFormData((prev) => ({ ...prev, images }))}
                     />
                   </div>
                 ) : null}
@@ -648,14 +682,14 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                   <button
                     type="submit"
                     disabled={adminLoading}
-                    className="flex-1 bg-[#254642] text-white px-4 py-2 rounded-lg hover:bg-[#254642]/90 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 rounded-lg bg-[#254642] px-4 py-2 text-white shadow-sm transition hover:bg-[#254642]/90 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {adminLoading ? 'Guardando...' : (isEditing ? 'Actualizar' : 'Crear')} Producto
+                    {adminLoading ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'} Producto
                   </button>
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition shadow-sm"
+                    className="flex-1 rounded-lg bg-gray-100 px-4 py-2 text-gray-700 shadow-sm transition hover:bg-gray-200"
                   >
                     Cancelar
                   </button>

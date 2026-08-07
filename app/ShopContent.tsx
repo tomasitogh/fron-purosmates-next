@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
-import { RootState, AppDispatch } from "@/redux/store";
+import { AppDispatch } from '@/redux/store';
 import { addToCart } from '@/redux/cartSlice';
 import toast from 'react-hot-toast';
-import { useUser } from '@clerk/nextjs';
 import AuthModal from '@/components/AuthModal';
 import ProductImagePreview from '@/components/ProductImagePreview';
 import { slugify } from '@/lib/slugify';
@@ -26,11 +25,9 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isSignedIn, isLoaded } = useUser();
-
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000]);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [customizationStates, setCustomizationStates] = useState<Record<number, boolean>>({});
+  const [customizationStates] = useState<Record<number, boolean>>({});
   const [sortBy, setSortBy] = useState<SortOption>('relevance');
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [sidebarCategoryIds, setSidebarCategoryIds] = useState<number[]>([]);
@@ -41,19 +38,44 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
       .map((c: any) => ({ id: c.id, description: c.description, active: c.active }));
   }, [initialCategories]);
 
+  const categoriesParam = useMemo(() => {
+    return (searchParams.get('categories') || '').trim().toLowerCase();
+  }, [searchParams]);
+
   const categoryParam = useMemo(() => {
     return (searchParams.get('category') || '').trim().toLowerCase();
   }, [searchParams]);
 
-  const urlCategoryIds = useMemo(() => {
-    if (!categoryParam) return [];
-    const matched = activeCategories.find((c: any) => {
+  const normalizeText = (text: string) => {
+    return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  };
+
+  const findCategoryBySlug = (slug: string) => {
+    return activeCategories.find((c: any) => {
       const catDesc = c.description?.toLowerCase().trim();
-      const normalizedCat = catDesc?.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      return normalizedCat === categoryParam || catDesc === categoryParam;
+      return normalizeText(catDesc) === slug || catDesc === slug;
     });
-    return matched ? [matched.id] : [];
-  }, [categoryParam, activeCategories]);
+  };
+
+  const urlCategoryIds = useMemo(() => {
+    if (categoriesParam) {
+      const slugs = categoriesParam
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const ids: number[] = [];
+      for (const slug of slugs) {
+        const matched = findCategoryBySlug(slug);
+        if (matched) ids.push(matched.id);
+      }
+      return ids;
+    }
+    if (categoryParam) {
+      const matched = findCategoryBySlug(categoryParam);
+      return matched ? [matched.id] : [];
+    }
+    return [];
+  }, [categoriesParam, categoryParam, activeCategories]);
 
   const selectedCategoryIds = useMemo(() => {
     return urlCategoryIds.length > 0 ? urlCategoryIds : sidebarCategoryIds;
@@ -73,7 +95,7 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
 
   const priceRangeMemo = useMemo(() => {
     if (products.length > 0) {
-      const prices = products.map(p => p.price);
+      const prices = products.map((p) => p.price);
       return [Math.floor(Math.min(...prices)), Math.ceil(Math.max(...prices))] as [number, number];
     }
     return [0, 100000] as [number, number];
@@ -83,22 +105,23 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
     let list = [...products];
 
     if (selectedCategoryIds.length > 0) {
-      list = list.filter(p =>
-        p.category?.id && selectedCategoryIds.includes(p.category.id)
-      );
+      list = list.filter((p) => p.category?.id && selectedCategoryIds.includes(p.category.id));
     }
 
     if (searchText) {
-      list = list.filter(p => p.name.toLowerCase().includes(searchText));
+      list = list.filter((p) => p.name.toLowerCase().includes(searchText));
     }
 
-    list = list.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
+    list = list.filter((p) => p.price >= priceRange[0] && p.price <= priceRange[1]);
 
     const sortFn = (() => {
       switch (sortBy) {
-        case 'price-asc': return (a: Product, b: Product) => a.price - b.price;
-        case 'price-desc': return (a: Product, b: Product) => b.price - a.price;
-        default: return (a: Product, b: Product) => (b.id || 0) - (a.id || 0);
+        case 'price-asc':
+          return (a: Product, b: Product) => a.price - b.price;
+        case 'price-desc':
+          return (a: Product, b: Product) => b.price - a.price;
+        default:
+          return (a: Product, b: Product) => (b.id || 0) - (a.id || 0);
       }
     })();
 
@@ -106,10 +129,10 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
     // D1 normalizer popula `product.stock` desde `totalStock` para backward
     // compat, pero usamos `totalStock ?? stock` para que el código sea
     // forward-compatible si en el futuro se elimina el campo deprecated.
-    const inStock = list.filter(p => (p.totalStock ?? p.stock) > 0);
-    const outOfStock = list.filter(p => {
-        const s = p.totalStock ?? p.stock;
-        return !s || s <= 0;
+    const inStock = list.filter((p) => (p.totalStock ?? p.stock) > 0);
+    const outOfStock = list.filter((p) => {
+      const s = p.totalStock ?? p.stock;
+      return !s || s <= 0;
     });
     inStock.sort(sortFn);
     outOfStock.sort(sortFn);
@@ -119,23 +142,30 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
 
   const selectedProduct = useMemo(() => {
     if (!productSlugFromUrl) return null;
-    return products.find(p => (p.slug || slugify(p.name)) === productSlugFromUrl) || null;
+    return products.find((p) => (p.slug || slugify(p.name)) === productSlugFromUrl) || null;
   }, [productSlugFromUrl, products]);
 
   const handleCategoryFilterChange = (ids: number[]) => {
     setSidebarCategoryIds(ids);
-    const matchedCat = activeCategories.find((c: any) => ids.includes(c.id));
-    if (matchedCat) {
-      const catSlug = matchedCat.description.toLowerCase().trim();
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('category', catSlug);
-      router.replace(`/shop?${params.toString()}`, { scroll: false });
+  };
+
+  const handleApplyFilters = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (sidebarCategoryIds.length > 0) {
+      const catSlugs = sidebarCategoryIds
+        .map((id) =>
+          activeCategories
+            .find((c: any) => c.id === id)
+            ?.description?.toLowerCase()
+            .trim()
+        )
+        .filter(Boolean);
+      params.set('categories', catSlugs.join(','));
     } else {
-      const params = new URLSearchParams(searchParams.toString());
-      params.delete('category');
-      const newUrl = params.toString() ? `/shop?${params.toString()}` : '/shop';
-      router.replace(newUrl, { scroll: false });
+      params.delete('categories');
     }
+    const newUrl = params.toString() ? `/shop?${params.toString()}` : '/shop';
+    router.replace(newUrl, { scroll: false });
   };
 
   const openProductModal = (product: Product) => {
@@ -162,15 +192,17 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
     // única variant (o con placeholder variantId=0 si el backend no devuelve
     // ninguna, lo cual es edge case pre-A4).
     const onlyVariant = product.variants?.[0];
-    const result = await dispatch(addToCart({
-      ...product,
-      hasCustomization: withCustomization,
-      variantId: onlyVariant?.id ?? 0,
-      variantSku: onlyVariant?.sku ?? '',
-      variantName: onlyVariant?.name ?? '',
-      variantStock: onlyVariant?.stock ?? 0,
-      variantImageUrl: onlyVariant?.imageUrl,
-    }));
+    const result = await dispatch(
+      addToCart({
+        ...product,
+        hasCustomization: withCustomization,
+        variantId: onlyVariant?.id ?? 0,
+        variantSku: onlyVariant?.sku ?? '',
+        variantName: onlyVariant?.name ?? '',
+        variantStock: onlyVariant?.stock ?? 0,
+        variantImageUrl: onlyVariant?.imageUrl,
+      })
+    );
     if (addToCart.fulfilled.match(result)) {
       toast.success(`Agregado: ${product.name}${withCustomization ? ' (Personalizado)' : ''}`);
     } else {
@@ -180,18 +212,18 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
 
   return (
     <>
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <div className="w-full px-4 py-8 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-8 lg:flex-row">
           {/* Sidebar - desktop only */}
-          <aside className="hidden lg:block lg:w-72 flex-shrink-0">
+          <aside className="hidden flex-shrink-0 lg:block lg:w-72">
             <div className="sticky top-24">
               <ShopFilters
                 categories={activeCategories}
-                selectedCategories={selectedCategoryIds}
+                selectedCategories={sidebarCategoryIds}
                 onFilterChange={handleCategoryFilterChange}
                 priceRange={priceRangeMemo}
                 onPriceChange={setPriceRange}
-                onApply={() => {}}
+                onApply={handleApplyFilters}
               />
             </div>
           </aside>
@@ -199,23 +231,24 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
           {/* Main Content */}
           <div className="flex-1">
             {/* Header with sort - desktop */}
-            <div className="hidden sm:flex sm:items-center justify-between gap-4 mb-6">
+            <div className="mb-6 hidden justify-between gap-4 sm:flex sm:items-center">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {searchText 
-                    ? `Resultados para "${searchText}"` 
-                    : categoryParam 
-                      ? activeCategories.find((c: any) => selectedCategoryIds.includes(c.id))?.description || 'Productos'
+                  {searchText
+                    ? `Resultados para "${searchText}"`
+                    : categoryParam
+                      ? activeCategories.find((c: any) => selectedCategoryIds.includes(c.id))
+                          ?.description || 'Productos'
                       : 'Todos los Productos'}
                 </h1>
-                <p className="text-gray-600 mt-1">{filteredProducts.length} productos</p>
+                <p className="mt-1 text-gray-600">{filteredProducts.length} productos</p>
               </div>
               <div className="flex items-center gap-2">
                 <label className="text-sm text-gray-600">Ordenar por:</label>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as SortOption)}
-                  className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
                 >
                   <option value="relevance">Relevancia</option>
                   <option value="newest">Recién agregados</option>
@@ -226,10 +259,10 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
             </div>
 
             {/* Mobile filter button - sticky with more spacing */}
-            <div className="sm:hidden sticky top-20 left-0 right-0 z-30 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6">
+            <div className="sticky top-20 right-0 left-0 z-30 -mx-4 px-4 sm:-mx-6 sm:hidden sm:px-6 lg:-mx-8">
               <button
                 onClick={() => setIsMobileFiltersOpen(true)}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-[#254642] text-white font-medium rounded-lg my-3"
+                className="my-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#254642] py-3 font-medium text-white"
               >
                 <Filter size={20} />
                 <span>Filtrar y Ordenar</span>
@@ -237,86 +270,91 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
             </div>
 
             {/* Mobile header */}
-            <div className="sm:hidden mb-4">
+            <div className="mb-4 sm:hidden">
               <h1 className="text-xl font-bold text-gray-900">
-                {searchText 
-                  ? `Resultados para "${searchText}"` 
-                  : categoryParam 
-                    ? activeCategories.find((c: any) => selectedCategoryIds.includes(c.id))?.description || 'Productos'
+                {searchText
+                  ? `Resultados para "${searchText}"`
+                  : categoryParam
+                    ? activeCategories.find((c: any) => selectedCategoryIds.includes(c.id))
+                        ?.description || 'Productos'
                     : 'Todos los Productos'}
               </h1>
-              <p className="text-gray-600 text-sm">{filteredProducts.length} productos</p>
+              <p className="text-sm text-gray-600">{filteredProducts.length} productos</p>
             </div>
 
             {/* Products Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6">
               {filteredProducts.map((product, index) => {
                 // E7: "out of stock" = no hay NINGUNA variant con stock > 0.
                 // Las variants con stock 0 están ocultas en el shop.
                 const variants = product.variants ?? [];
-                const hasStock = variants.some(v => v.stock > 0);
+                const hasStock = variants.some((v) => v.stock > 0);
                 const outOfStock = !hasStock;
                 return (
-                <div
-                  key={product.id}
-                  className={`bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer flex flex-col ${outOfStock ? 'border border-gray-300 opacity-60' : ''}`}
-                  onClick={() => openProductModal(product)}
-                >
-                  <div className="relative w-full aspect-square bg-gray-100">
-                    {outOfStock && (
-                      <div className="absolute top-2 left-2 z-10 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md">
-                        Sin Stock
-                      </div>
-                    )}
-                    {product.images?.[0] ? (
-                      <ProductImagePreview
-                        src={product.images[0].url}
-                        alt={product.name}
-                        transform={{
-                          scale: product.images[0].scale || 1,
-                          x: product.images[0].x || 0,
-                          y: product.images[0].y || 0
-                        }}
-                        fill
-                        priority={index < 4}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400">
-                        Sin Imagen
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3 flex flex-col flex-1">
-                    <h3 className="text-sm font-semibold text-gray-900 truncate">{product.name}</h3>
-                    <p className="text-xs text-gray-500 capitalize">{product.category?.description}</p>
-                    <div className="mt-auto pt-2">
-                      <span className="text-lg font-bold text-[#254642]">
-                        ${product.price.toLocaleString('es-AR')}
-                      </span>
+                  <div
+                    key={product.id}
+                    className={`flex cursor-pointer flex-col overflow-hidden rounded-lg bg-white shadow-sm transition-shadow hover:shadow-md ${outOfStock ? 'border border-gray-300 opacity-60' : ''}`}
+                    onClick={() => openProductModal(product)}
+                  >
+                    <div className="relative aspect-square w-full bg-gray-100">
+                      {outOfStock && (
+                        <div className="absolute top-2 left-2 z-10 rounded-md bg-red-600 px-2 py-1 text-xs font-bold text-white">
+                          Sin Stock
+                        </div>
+                      )}
+                      {product.images?.[0] ? (
+                        <ProductImagePreview
+                          src={product.images[0].url}
+                          alt={product.name}
+                          transform={{
+                            scale: product.images[0].scale || 1,
+                            x: product.images[0].x || 0,
+                            y: product.images[0].y || 0,
+                          }}
+                          fill
+                          priority={index < 4}
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-gray-400">
+                          Sin Imagen
+                        </div>
+                      )}
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddToCart(product, !!customizationStates[product.id]);
-                      }}
-                      disabled={outOfStock}
-                      className={`mt-2 w-full py-2 rounded-lg text-sm font-medium ${outOfStock ? 'bg-gray-400 text-gray-200 cursor-not-allowed' : 'bg-[#254642] text-white'}`}
-                    >
-                      {outOfStock
-                        ? 'Sin Stock'
-                        : variants.length > 1
-                          ? 'Elegir opciones'
-                          : 'Agregar'}
-                    </button>
+                    <div className="flex flex-1 flex-col p-3">
+                      <h3 className="truncate text-sm font-semibold text-gray-900">
+                        {product.name}
+                      </h3>
+                      <p className="text-xs text-gray-500 capitalize">
+                        {product.category?.description}
+                      </p>
+                      <div className="mt-auto pt-2">
+                        <span className="text-lg font-bold text-[#254642]">
+                          ${product.price.toLocaleString('es-AR')}
+                        </span>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToCart(product, !!customizationStates[product.id]);
+                        }}
+                        disabled={outOfStock}
+                        className={`mt-2 w-full rounded-lg py-2 text-sm font-medium ${outOfStock ? 'cursor-not-allowed bg-gray-400 text-gray-200' : 'bg-[#254642] text-white'}`}
+                      >
+                        {outOfStock
+                          ? 'Sin Stock'
+                          : variants.length > 1
+                            ? 'Elegir opciones'
+                            : 'Agregar'}
+                      </button>
+                    </div>
                   </div>
-                </div>
                 );
               })}
             </div>
 
             {filteredProducts.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-500 text-lg">No se encontraron productos</p>
+              <div className="py-12 text-center">
+                <p className="text-lg text-gray-500">No se encontraron productos</p>
               </div>
             )}
           </div>
@@ -327,11 +365,11 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
       {isMobileFiltersOpen && (
         <ShopFilters
           categories={activeCategories}
-          selectedCategories={selectedCategoryIds}
+          selectedCategories={sidebarCategoryIds}
           onFilterChange={handleCategoryFilterChange}
           priceRange={priceRangeMemo}
           onPriceChange={setPriceRange}
-          onApply={() => {}}
+          onApply={handleApplyFilters}
           isMobile
           onCloseMobile={() => setIsMobileFiltersOpen(false)}
           sortBy={sortBy}
@@ -339,9 +377,7 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
         />
       )}
 
-      {selectedProduct && (
-        <ProductModal product={selectedProduct} onClose={closeProductModal} />
-      )}
+      {selectedProduct && <ProductModal product={selectedProduct} onClose={closeProductModal} />}
 
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </>

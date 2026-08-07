@@ -1,4 +1,3 @@
-
 import HeroCarousel from '@/components/HeroCarousel';
 import CategoryGrid from '@/components/CategoryGrid';
 import Testimonials from '@/components/Testimonials';
@@ -8,7 +7,8 @@ export const revalidate = 60;
 
 export const metadata = {
   title: 'Puros Mates - Tienda Online de Mates y Accesorios Premium',
-  description: 'Descubre los mejores mates artesanales, bombillas y accesorios en Puros Mates. Envíos a todo el país. Calidad premium garantizada.',
+  description:
+    'Descubre los mejores mates artesanales, bombillas y accesorios en Puros Mates. Envíos a todo el país. Calidad premium garantizada.',
   openGraph: {
     title: 'Puros Mates - Tienda Online de Mates y Accesorios Premium',
     description: 'Los mejores mates artesanales de Argentina.',
@@ -20,21 +20,26 @@ export default async function HomePage() {
   const [bannersData, homeImagesData, testimonials] = await Promise.all([
     getBanners(),
     getHomeImages(),
-    getTestimonials()
+    getTestimonials(),
   ]);
 
-  const banners = bannersData.length > 0
-    ? bannersData.map((b) => ({ src: b.imageUrl, alt: b.altText || 'Banner Puros Mates', link: b.link }))
-    : [];
+  const banners =
+    bannersData.length > 0
+      ? bannersData.map((b) => ({
+          src: b.imageUrl,
+          alt: b.altText || 'Banner Puros Mates',
+          link: b.link,
+        }))
+      : [];
 
-  const dynamicCategories = homeImagesData.length > 0
-    ? homeImagesData
-    : null;
+  const dynamicCategories = homeImagesData.length > 0 ? homeImagesData : null;
 
   return (
-    <div className="flex flex-col w-full">
+    <div className="flex w-full flex-col">
       {/* Hidden H1 for SEO */}
-      <h1 className="sr-only">Puros Mates - Tienda de Mates Artesanales y Accesorios en Argentina</h1>
+      <h1 className="sr-only">
+        Puros Mates - Tienda de Mates Artesanales y Accesorios en Argentina
+      </h1>
 
       {/* Hero Carousel */}
       <HeroCarousel images={banners} />

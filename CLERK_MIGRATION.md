@@ -7,6 +7,7 @@ Se ha migrado la autenticación de NextAuth a Clerk, manteniendo la misma visual
 ### Cambios de Código
 
 **Modificados (9):**
+
 - `app/layout.tsx` - Agregado ClerkProvider
 - `middleware.ts` - Reemplazado con clerkMiddleware
 - `context/AuthContext.tsx` - Hooks de Clerk (useUser, getToken)
@@ -18,23 +19,27 @@ Se ha migrado la autenticación de NextAuth a Clerk, manteniendo la misma visual
 - `app/admin/page.tsx` - useUser de Clerk
 
 **Eliminados (3):**
+
 - `auth.ts` - Config NextAuth
 - `app/api/auth/[...nextauth]/` - Routes NextAuth
 - `types/next-auth.d.ts` - Types NextAuth
 
 **Dependencias:**
+
 - ✅ Instalada: `@clerk/nextjs@7.2.2`
 - ✅ Removidas: `next-auth`, `@auth/prisma-adapter`
 
 ### Configuración Requerida
 
 1. **Frontend (.env.local):**
+
 ```env
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_SECRET_KEY=sk_test_...
 ```
 
 2. **Backend (application.properties):**
+
 ```env
 JWT_JWK_SET_URI=https://<tu-clerk-domain>.clerk.accounts.cloud/.well-known/jwks.json
 JWT_ISSUER_URI=https://<tu-clerk-domain>.clerk.accounts.cloud
@@ -54,7 +59,7 @@ JWT_ISSUER_URI=https://<tu-clerk-domain>.clerk.accounts.cloud
 ✅ Gestión de roles en BD  
 ✅ Integración backend Spring Boot  
 ✅ Admin panel y órdenes  
-✅ TypeScript compatible  
+✅ TypeScript compatible
 
 ### Soportados
 

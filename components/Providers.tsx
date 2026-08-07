@@ -7,18 +7,18 @@ import { AuthProvider } from '@/context/AuthContext';
 import CartInitializer from '@/components/CartInitializer';
 
 export function Providers({ children }: { children: React.ReactNode }) {
-    return (
-        <Provider store={store}>
-            <CartInitializer />
-            <AuthProvider>
-                <Toaster
-                    position="top-right"
-                    containerStyle={{
-                        top: 80,
-                    }}
-                />
-                {children}
-            </AuthProvider>
-        </Provider>
-    );
+  return (
+    <Provider store={store}>
+      <CartInitializer />
+      <AuthProvider>
+        <Toaster
+          position="top-right"
+          containerStyle={{
+            top: 80,
+          }}
+        />
+        {children}
+      </AuthProvider>
+    </Provider>
+  );
 }

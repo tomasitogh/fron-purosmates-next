@@ -11,7 +11,7 @@ async function getProductBySlug(slug: string) {
     const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
     const res = await fetch(`${API_URL}/products/slug/${slug}`, {
       cache: 'no-store',
-      next: { revalidate: 0 }
+      next: { revalidate: 0 },
     });
 
     if (!res.ok) {

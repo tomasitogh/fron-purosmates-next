@@ -72,12 +72,14 @@ DATABASE_URL=... (si solo era para NextAuth)
 Go to: **Settings → Environment Variables**
 
 **Eliminar:**
+
 - `NEXTAUTH_URL`
 - `NEXTAUTH_SECRET`
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
 
 **Mantener:**
+
 - `NEXT_PUBLIC_API_BASE_URL`
 - `NEXT_PUBLIC_GA_ID`
 - `NEXT_PUBLIC_FACEBOOK_PIXEL_ID`

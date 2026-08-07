@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
@@ -12,48 +12,48 @@ import { setCart, type CartItem } from '@/redux/cartSlice';
  * (abriendo el modal para elegir la variant).
  */
 function isLegacyItem(item: CartItem): boolean {
-    return typeof item.variantId !== 'number' || item.variantStock == null;
+  return typeof item.variantId !== 'number' || item.variantStock == null;
 }
 
 export default function CartInitializer() {
-    const dispatch = useAppDispatch();
-    const cartItems = useAppSelector((state) => state.cart.items);
-    const isLoaded = useRef(false);
+  const dispatch = useAppDispatch();
+  const cartItems = useAppSelector((state) => state.cart.items);
+  const isLoaded = useRef(false);
 
-    // Initial Load
-    useEffect(() => {
-        if (!isLoaded.current) {
-            try {
-                const storedCart = localStorage.getItem("cart_items");
-                if (storedCart) {
-                    const parsedCart = JSON.parse(storedCart);
-                    if (Array.isArray(parsedCart) && parsedCart.length > 0) {
-                        const hasLegacy = parsedCart.some(isLegacyItem);
-                        if (hasLegacy) {
-                            console.warn(
-                                "[CartInitializer] Cart legacy detectado (sin variantId) — descartando. " +
-                                "El usuario deberá volver a agregar los productos."
-                            );
-                            // No dispatch setCart → queda el initialState ([])
-                        } else {
-                            dispatch(setCart(parsedCart as CartItem[]));
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error("Failed to load cart from localStorage", error);
-            } finally {
-                isLoaded.current = true;
+  // Initial Load
+  useEffect(() => {
+    if (!isLoaded.current) {
+      try {
+        const storedCart = localStorage.getItem('cart_items');
+        if (storedCart) {
+          const parsedCart = JSON.parse(storedCart);
+          if (Array.isArray(parsedCart) && parsedCart.length > 0) {
+            const hasLegacy = parsedCart.some(isLegacyItem);
+            if (hasLegacy) {
+              console.warn(
+                '[CartInitializer] Cart legacy detectado (sin variantId) — descartando. ' +
+                  'El usuario deberá volver a agregar los productos.'
+              );
+              // No dispatch setCart → queda el initialState ([])
+            } else {
+              dispatch(setCart(parsedCart as CartItem[]));
             }
+          }
         }
-    }, [dispatch]);
+      } catch (error) {
+        console.error('Failed to load cart from localStorage', error);
+      } finally {
+        isLoaded.current = true;
+      }
+    }
+  }, [dispatch]);
 
-    // Persistence on Change
-    useEffect(() => {
-        if (isLoaded.current) {
-            localStorage.setItem("cart_items", JSON.stringify(cartItems));
-        }
-    }, [cartItems]);
+  // Persistence on Change
+  useEffect(() => {
+    if (isLoaded.current) {
+      localStorage.setItem('cart_items', JSON.stringify(cartItems));
+    }
+  }, [cartItems]);
 
-    return null;
+  return null;
 }

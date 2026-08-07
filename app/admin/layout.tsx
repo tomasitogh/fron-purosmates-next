@@ -1,14 +1,10 @@
 import OneSignalSetup from '@/components/OneSignalSetup';
 
-export default function AdminRouteLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
-    return (
-        <>
-            <OneSignalSetup />
-            {children}
-        </>
-    );
+export default function AdminRouteLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <OneSignalSetup />
+      {children}
+    </>
+  );
 }

@@ -362,11 +362,11 @@ export default function AboutUsPage() {
       answer: (
         <>
           Antes que nada, evaluar si estamos preparando el mate de manera adecuada, cada paso en la
-          preparación tiene un porqué, revisar la pregunta "¿Cómo se prepara un mate?". Si se te
-          tapa la bombilla intentá utilizar una bombilla con una cuchara (parte de abajo) con más
-          poros. Si no te funcionó, intentá cambiar la molienda de la yerba, es decir, si usas
-          molienda uruguaya (mucho polvo y hojas finas) y se te tapa, intenta con molienda argentina
-          (hoja más gruesa, sin tanto polvo).
+          preparación tiene un porqué, revisar la pregunta &ldquo;&iquest;C&oacute;mo se prepara un
+          mate?&rdquo;. Si se te tapa la bombilla intentá utilizar una bombilla con una cuchara
+          (parte de abajo) con más poros. Si no te funcionó, intentá cambiar la molienda de la
+          yerba, es decir, si usas molienda uruguaya (mucho polvo y hojas finas) y se te tapa,
+          intenta con molienda argentina (hoja más gruesa, sin tanto polvo).
         </>
       ),
       schemaAnswer:

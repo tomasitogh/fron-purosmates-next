@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Check, X, ChevronDown, ChevronUp, Filter } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Check, X, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface ShopFiltersProps {
   categories: { id: number; description: string; active: boolean }[];
@@ -28,22 +28,33 @@ export default function ShopFilters({
   sortBy = 'relevance',
   onSortChange,
 }: ShopFiltersProps) {
-  const [minPrice, setMinPrice] = useState(priceRange[0]);
-  const [maxPrice, setMaxPrice] = useState(priceRange[1]);
+  const [pendingCategoryIds, setPendingCategoryIds] = useState<number[]>(selectedCategories);
+  const [pendingPriceRange, setPendingPriceRange] = useState<[number, number]>(priceRange);
   const [isOpen, setIsOpen] = useState(true);
 
-  const activeCategories = categories.filter(c => c.active);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPendingCategoryIds(selectedCategories);
+  }, [selectedCategories]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPendingPriceRange(priceRange);
+  }, [priceRange]);
+
+  const activeCategories = categories.filter((c) => c.active);
 
   const handleCategoryToggle = (id: number) => {
-    if (selectedCategories.includes(id)) {
-      onFilterChange(selectedCategories.filter(c => c !== id));
+    if (pendingCategoryIds.includes(id)) {
+      setPendingCategoryIds(pendingCategoryIds.filter((c) => c !== id));
     } else {
-      onFilterChange([...selectedCategories, id]);
+      setPendingCategoryIds([...pendingCategoryIds, id]);
     }
   };
 
   const handleApplyClick = () => {
-    onPriceChange([minPrice || 0, maxPrice || priceRange[1]]);
+    onPriceChange(pendingPriceRange);
+    onFilterChange(pendingCategoryIds);
     onApply();
     if (isMobile && onCloseMobile) {
       onCloseMobile();
@@ -54,28 +65,30 @@ export default function ShopFilters({
     <div className="space-y-6">
       {/* Categorías */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">Categorías</h3>
+        <h3 className="mb-3 text-lg font-semibold text-gray-900">Categorías</h3>
         <div className="flex flex-col gap-2">
           {activeCategories.map((category) => (
             <button
               key={category.id}
               onClick={() => handleCategoryToggle(category.id)}
-              className={`flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg transition-all border ${selectedCategories.includes(category.id)
+              className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-all ${
+                pendingCategoryIds.includes(category.id)
                   ? 'border-[#254642] bg-[#254642]/5'
                   : 'border-gray-200 hover:border-[#254642]/50'
-                }`}
+              }`}
             >
               <div
-                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${selectedCategories.includes(category.id)
+                className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all ${
+                  pendingCategoryIds.includes(category.id)
                     ? 'border-[#254642] bg-[#254642]'
                     : 'border-gray-300'
-                  }`}
+                }`}
               >
-                {selectedCategories.includes(category.id) && (
+                {pendingCategoryIds.includes(category.id) && (
                   <Check size={12} className="text-white" />
                 )}
               </div>
-              <span className="capitalize text-gray-700">{category.description}</span>
+              <span className="text-gray-700 capitalize">{category.description}</span>
             </button>
           ))}
         </div>
@@ -83,26 +96,30 @@ export default function ShopFilters({
 
       {/* Precio */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">Precio</h3>
+        <h3 className="mb-3 text-lg font-semibold text-gray-900">Precio</h3>
         <div className="flex flex-col gap-3">
           <div className="flex gap-2">
             <div className="flex-1">
-              <label className="text-xs text-gray-500 mb-1 block">Mínimo</label>
+              <label className="mb-1 block text-xs text-gray-500">Mínimo</label>
               <input
                 type="number"
-                value={minPrice}
-                onChange={(e) => setMinPrice(Number(e.target.value))}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm"
+                value={pendingPriceRange[0]}
+                onChange={(e) =>
+                  setPendingPriceRange([Number(e.target.value), pendingPriceRange[1]])
+                }
+                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"
                 placeholder="0"
               />
             </div>
             <div className="flex-1">
-              <label className="text-xs text-gray-500 mb-1 block">Máximo</label>
+              <label className="mb-1 block text-xs text-gray-500">Máximo</label>
               <input
                 type="number"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(Number(e.target.value))}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm"
+                value={pendingPriceRange[1]}
+                onChange={(e) =>
+                  setPendingPriceRange([pendingPriceRange[0], Number(e.target.value)])
+                }
+                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"
                 placeholder={priceRange[1].toString()}
               />
             </div>
@@ -113,12 +130,12 @@ export default function ShopFilters({
       {/* Ordenar (mobile) */}
       {isMobile && (
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Ordenar por</h3>
+          <h3 className="mb-3 text-lg font-semibold text-gray-900">Ordenar por</h3>
           <div className="relative">
             <select
               value={sortBy}
               onChange={(e) => onSortChange?.(e.target.value)}
-              className="w-full px-4 py-4 text-base bg-white border-2 border-gray-200 rounded-xl appearance-none cursor-pointer min-h-[56px]"
+              className="min-h-[56px] w-full cursor-pointer appearance-none rounded-xl border-2 border-gray-200 bg-white px-4 py-4 text-base"
               style={{ WebkitAppearance: 'none', backgroundImage: 'none' }}
             >
               <option value="relevance">Relevancia</option>
@@ -126,7 +143,10 @@ export default function ShopFilters({
               <option value="price-asc">Menor precio</option>
               <option value="price-desc">Mayor precio</option>
             </select>
-            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" size={24} />
+            <ChevronDown
+              className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-gray-500"
+              size={24}
+            />
           </div>
         </div>
       )}
@@ -134,7 +154,7 @@ export default function ShopFilters({
       {/* Aplicar Filtros */}
       <button
         onClick={handleApplyClick}
-        className="w-full bg-[#254642] text-white py-3 rounded-lg font-medium hover:bg-[#254642]/90 transition"
+        className="w-full rounded-lg bg-[#254642] py-3 font-medium text-white transition hover:bg-[#254642]/90"
       >
         Aplicar Filtros
       </button>
@@ -148,9 +168,9 @@ export default function ShopFilters({
         <div className="absolute inset-0 bg-black/50" onClick={onCloseMobile} />
 
         {/* Drawer */}
-        <div className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-white overflow-y-auto">
+        <div className="absolute top-0 right-0 bottom-0 w-full max-w-sm overflow-y-auto bg-white">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b">
+          <div className="flex items-center justify-between border-b p-4">
             <h2 className="text-lg font-bold">Filtrar y Ordenar</h2>
             <button onClick={onCloseMobile} className="p-2">
               <X size={24} />
@@ -158,9 +178,7 @@ export default function ShopFilters({
           </div>
 
           {/* Content */}
-          <div className="p-4">
-            {content}
-          </div>
+          <div className="p-4">{content}</div>
         </div>
       </div>
     );
@@ -170,7 +188,7 @@ export default function ShopFilters({
   return (
     <div className="space-y-6">
       <div
-        className="flex justify-between items-center cursor-pointer"
+        className="flex cursor-pointer items-center justify-between"
         onClick={() => setIsOpen(!isOpen)}
       >
         <h3 className="text-lg font-semibold text-gray-900">Filtros</h3>
