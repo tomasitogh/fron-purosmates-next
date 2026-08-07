@@ -55,10 +55,10 @@ export default function ShopFilters({
   const handleApplyClick = () => {
     onPriceChange(pendingPriceRange);
     onFilterChange(pendingCategoryIds);
-    onApply();
     if (isMobile && onCloseMobile) {
       onCloseMobile();
     }
+    queueMicrotask(onApply);
   };
 
   const content = (
