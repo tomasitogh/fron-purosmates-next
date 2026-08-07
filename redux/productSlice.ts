@@ -48,6 +48,7 @@ export interface Product {
     customizationCost?: number;
     // --- Variantes (D1) ---
     variants: ProductVariant[];
+    slug?: string;
 }
 
 interface ProductState {
@@ -83,6 +84,7 @@ interface RawProductResponse {
     isCustomizable?: boolean;
     customizationCost?: number | string;
     variants?: ProductVariant[];
+    slug?: string;
 }
 
 /**
@@ -95,7 +97,7 @@ interface RawProductResponse {
  *   - Reconstruir el `category: {id, description}` desde los nuevos campos
  *     planos `categoryId` / `categoryName` (B3 cambió el shape).
  */
-function normalizeProduct(raw: RawProductResponse): Product {
+export function normalizeProduct(raw: RawProductResponse): Product {
     const variants: ProductVariant[] = Array.isArray(raw.variants) ? raw.variants : [];
     const computedTotal = variants.reduce((sum, v) => sum + (Number(v?.stock) || 0), 0);
     const totalStock: number = typeof raw.totalStock === 'number' ? raw.totalStock : computedTotal;
@@ -119,6 +121,7 @@ function normalizeProduct(raw: RawProductResponse): Product {
         isCustomizable: Boolean(raw.isCustomizable),
         customizationCost: raw.customizationCost != null ? Number(raw.customizationCost) : undefined,
         variants,
+        slug: raw.slug,
     };
 }
 

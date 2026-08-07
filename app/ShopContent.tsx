@@ -13,6 +13,7 @@ import { slugify } from '@/lib/slugify';
 import ProductModal, { Product } from '@/components/ProductModal';
 import ShopFilters from '@/components/ShopFilters';
 import { Filter } from 'lucide-react';
+import { normalizeProduct } from '@/redux/productSlice';
 
 interface ShopContentProps {
   initialProducts: Product[];
@@ -66,16 +67,20 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
     return searchParams.get('producto') || null;
   }, [searchParams]);
 
+  const products = useMemo(() => {
+    return (initialProducts || []).map(normalizeProduct);
+  }, [initialProducts]);
+
   const priceRangeMemo = useMemo(() => {
-    if (initialProducts.length > 0) {
-      const prices = initialProducts.map(p => p.price);
+    if (products.length > 0) {
+      const prices = products.map(p => p.price);
       return [Math.floor(Math.min(...prices)), Math.ceil(Math.max(...prices))] as [number, number];
     }
     return [0, 100000] as [number, number];
-  }, [initialProducts]);
+  }, [products]);
 
   const filteredProducts = useMemo(() => {
-    let list = [...initialProducts];
+    let list = [...products];
 
     if (selectedCategoryIds.length > 0) {
       list = list.filter(p =>
@@ -110,12 +115,12 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
     outOfStock.sort(sortFn);
 
     return [...inStock, ...outOfStock];
-  }, [initialProducts, selectedCategoryIds, searchText, priceRange, sortBy]);
+  }, [products, selectedCategoryIds, searchText, priceRange, sortBy]);
 
   const selectedProduct = useMemo(() => {
     if (!productSlugFromUrl) return null;
-    return initialProducts.find(p => (p.slug || slugify(p.name)) === productSlugFromUrl) || null;
-  }, [productSlugFromUrl, initialProducts]);
+    return products.find(p => (p.slug || slugify(p.name)) === productSlugFromUrl) || null;
+  }, [productSlugFromUrl, products]);
 
   const handleCategoryFilterChange = (ids: number[]) => {
     setSidebarCategoryIds(ids);
