@@ -2,9 +2,16 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Package, ShoppingBag, Settings, LayoutDashboard, ArrowLeft } from 'lucide-react';
+import {
+  Package,
+  ShoppingBag,
+  Settings,
+  LayoutDashboard,
+  ArrowLeft,
+  Warehouse,
+} from 'lucide-react';
 
-type AdminTab = 'products' | 'orders' | 'settings';
+type AdminTab = 'products' | 'orders' | 'settings' | 'stock';
 
 interface AdminLayoutProps {
   activeTab: AdminTab;
@@ -15,6 +22,7 @@ interface AdminLayoutProps {
 const tabs = [
   { id: 'products' as AdminTab, label: 'Productos', icon: Package },
   { id: 'orders' as AdminTab, label: 'Pedidos', icon: ShoppingBag },
+  { id: 'stock' as AdminTab, label: 'Stock', icon: Warehouse },
   { id: 'settings' as AdminTab, label: 'Ajustes', icon: Settings },
 ];
 

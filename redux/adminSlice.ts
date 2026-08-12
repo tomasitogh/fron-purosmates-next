@@ -10,6 +10,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 const ORDERS_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL
   ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/orders`
   : 'http://localhost:8080/api/v1/orders';
+const STOCK_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+  ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/products/stock/bulk`
+  : 'http://localhost:8080/products/stock/bulk';
 
 // Types
 export interface OrderItem {
@@ -87,6 +90,16 @@ interface AdminState {
   loading: boolean;
   error: string | null;
   successMessage: string | null;
+}
+
+export interface StockUpdateItem {
+  sku: string;
+  quantity: number;
+}
+
+export interface StockUpdateResponse {
+  updated: number;
+  notFoundSkus: string[];
 }
 
 export const fetchAllOrders = createAsyncThunk(
@@ -210,6 +223,22 @@ export const deleteProduct = createAsyncThunk(
   }
 );
 
+// Thunk para actualización masiva de stock
+export const bulkUpdateStock = createAsyncThunk(
+  'admin/bulkUpdateStock',
+  async ({ updates, getToken }: { updates: StockUpdateItem[]; getToken: TokenGetter }) => {
+    const { data } = await withAuthRetry(getToken, (token) =>
+      axios.patch<StockUpdateResponse>(STOCK_API_URL, updates, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      })
+    );
+    return data;
+  }
+);
+
 const adminSlice = createSlice({
   name: 'admin',
   initialState: {
@@ -313,6 +342,24 @@ const adminSlice = createSlice({
       .addCase(deleteOrder.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Error al eliminar pedido';
+      })
+      // Bulk Update Stock
+      .addCase(bulkUpdateStock.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.successMessage = null;
+      })
+      .addCase(bulkUpdateStock.fulfilled, (state, action) => {
+        state.loading = false;
+        const { updated, notFoundSkus } = action.payload;
+        if (notFoundSkus.length > 0) {
+          state.error = `SKUs no encontrados: ${notFoundSkus.join(', ')}`;
+        }
+        state.successMessage = `Stock actualizado para ${updated} variante(s)`;
+      })
+      .addCase(bulkUpdateStock.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Error al actualizar stock';
       });
   },
 });
