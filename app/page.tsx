@@ -6,13 +6,31 @@ import { getBanners, getHomeImages, getTestimonials } from '@/lib/data/home';
 export const revalidate = 60;
 
 export const metadata = {
-  title: 'Puros Mates - Tienda Online de Mates y Accesorios Premium',
+  title: 'Puros Mates - Comprar Mates Artesanales Online | Envíos a Todo el País',
   description:
-    'Descubre los mejores mates artesanales, bombillas y accesorios en Puros Mates. Envíos a todo el país. Calidad premium garantizada.',
+    'Tienda online de mates artesanales argentinos. Mates de calabaza, madera, alpaca y más. Bombillas y accesorios. Envíos a todo el país. Envío gratis en Canning.',
+  keywords: [
+    'comprar mates',
+    'mates artesanales',
+    'mates argentinos',
+    'tienda de mates',
+    'mates online',
+    'bombillas',
+    'accesorios para mate',
+    'mate de calabaza',
+    'mate de madera',
+    'envío mates argentina',
+  ],
   openGraph: {
-    title: 'Puros Mates - Tienda Online de Mates y Accesorios Premium',
-    description: 'Los mejores mates artesanales de Argentina.',
+    title: 'Puros Mates - Comprar Mates Artesanales Online',
+    description: 'Los mejores mates artesanales de Argentina. Envíos a todo el país.',
     images: ['/opengraph-image'],
+    type: 'website',
+    locale: 'es_AR',
+    siteName: 'Puros Mates',
+  },
+  alternates: {
+    canonical: 'https://www.purosmates.com.ar',
   },
 };
 
@@ -27,7 +45,7 @@ export default async function HomePage() {
     bannersData.length > 0
       ? bannersData.map((b) => ({
           src: b.imageUrl,
-          alt: b.altText || 'Banner Puros Mates',
+          alt: b.altText || 'Banner Puros Mates - Mates artesanales',
           link: b.link,
         }))
       : [];
@@ -36,15 +54,29 @@ export default async function HomePage() {
 
   return (
     <div className="flex w-full flex-col">
-      {/* Hidden H1 for SEO */}
-      <h1 className="sr-only">
+      {/* H1 visible for SEO */}
+      <h1 className="sr-only text-2xl font-bold md:text-3xl">
         Puros Mates - Tienda de Mates Artesanales y Accesorios en Argentina
       </h1>
 
       {/* Hero Carousel */}
       <HeroCarousel images={banners} />
+
+      {/* Intro Section - Hidden text for SEO crawlers */}
+      <section className="bg-white px-4 py-8 text-center sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl">
+          <p className="text-lg text-gray-600">
+            En <strong>Puros Mates</strong> encontrarás los mejores mates artesanales de Argentina.
+            Trabajamos con artesanos locales para ofrecerte mates de calabaza, madera de algarrobo,
+            acero inoxidable y alpaca. También contamos con bombillas de various materiales y
+            accesorios para completar tu set matero. Envíos a todo el país por Correo Argentino.
+          </p>
+        </div>
+      </section>
+
       {/* Category Grid */}
       <CategoryGrid categories={dynamicCategories} />
+
       {/* Testimonials */}
       <div className="bg-gray-50">
         <Testimonials data={testimonials} />

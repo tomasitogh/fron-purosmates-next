@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   addToCart,
@@ -246,10 +247,11 @@ export default function Carrito() {
                   onClick={() => setSelectedProduct(item)}
                 >
                   {thumbUrl ? (
-                    <img
+                    <Image
                       src={thumbUrl}
                       alt={item.name}
-                      className="h-full w-full object-cover"
+                      fill
+                      className="object-cover"
                       style={
                         thumbTransform
                           ? {

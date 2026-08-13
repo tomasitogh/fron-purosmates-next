@@ -1,29 +1,36 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 interface ProductPageClientProps {
   params: Promise<{ slug: string }>;
+  productName?: string;
 }
 
-export default function ProductPageClient({ params }: ProductPageClientProps) {
+export default function ProductPageClient({ params, productName }: ProductPageClientProps) {
   const router = useRouter();
 
   useEffect(() => {
-    params.then((resolvedParams) => {
-      // Redirigir al home con el query param usando replace para no agregar historial
-      router.replace(`/?producto=${resolvedParams.slug}`);
-    });
-  }, [params, router]);
+    // Sync URL state if needed, but do NOT redirect away
+    // This component can be used to hydrate interactive elements
+  }, [params]);
 
-  // Mostrar un loader mientras redirige
+  const handleGoToShop = () => {
+    router.push(`/shop?producto=${productName?.toLowerCase().replace(/\s+/g, '-') || ''}`);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="text-center">
-        <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-[#254642]"></div>
-        <p className="mt-4 text-gray-600">Cargando producto...</p>
-      </div>
+    <div className="flex flex-col gap-3">
+      <button
+        onClick={handleGoToShop}
+        className="w-full rounded-lg bg-[#254642] py-3 font-semibold text-white shadow-lg transition hover:bg-[#254642]/90 active:scale-[0.98]"
+      >
+        Ver opciones y agregar al carrito
+      </button>
+      <p className="text-center text-sm text-gray-500">
+        Envíos a todo el país por Correo Argentino
+      </p>
     </div>
   );
 }

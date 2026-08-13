@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useUser, useAuth as useClerkAuth } from '@clerk/nextjs';
 import toast from 'react-hot-toast';
@@ -308,7 +309,7 @@ export default function SettingsEditor() {
                 key={b.id}
                 className="relative aspect-video overflow-hidden rounded-lg bg-gray-100"
               >
-                <img src={b.imageUrl} alt={b.altText} className="h-full w-full object-cover" />
+                <Image src={b.imageUrl} alt={b.altText ?? ''} fill className="object-cover" />
                 {!b.active && <div className="absolute inset-0 bg-black/50" />}
                 <div className="absolute right-0 bottom-0 left-0 flex justify-end gap-1 bg-gradient-to-t from-black/70 p-1">
                   <button
@@ -356,7 +357,7 @@ export default function SettingsEditor() {
                 key={img.id}
                 className="group relative aspect-square overflow-hidden rounded-lg bg-gray-100"
               >
-                <img src={img.imageUrl} alt={img.title} className="h-full w-full object-cover" />
+                <Image src={img.imageUrl} alt={img.title ?? ''} fill className="object-cover" />
                 <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition group-hover:opacity-100">
                   <button
                     onClick={() => openModal(img, 'homeImages')}
@@ -463,13 +464,9 @@ export default function SettingsEditor() {
                 {(activeSection === 'banners' || activeSection === 'homeImages') && (
                   <div>
                     <label className="mb-1 block text-xs font-bold text-gray-500">Imagen</label>
-                    <div className="mb-2 aspect-video overflow-hidden rounded-lg bg-gray-100">
+                    <div className="relative mb-2 aspect-video overflow-hidden rounded-lg bg-gray-100">
                       {uploadedImages[0]?.url ? (
-                        <img
-                          src={uploadedImages[0].url}
-                          alt=""
-                          className="h-full w-full object-contain"
-                        />
+                        <Image src={uploadedImages[0].url} alt="" fill className="object-contain" />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
                           Sin imagen

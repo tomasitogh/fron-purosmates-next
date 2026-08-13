@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Upload, X } from 'lucide-react';
@@ -58,7 +59,7 @@ export default function SingleImageUploader({
       <div className="relative mb-2 aspect-video overflow-hidden rounded-lg bg-gray-100">
         {imageUrl ? (
           <>
-            <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+            <Image src={imageUrl} alt="" fill className="object-cover" />
             {uploading && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-white border-t-transparent" />

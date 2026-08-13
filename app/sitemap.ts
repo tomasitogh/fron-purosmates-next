@@ -1,6 +1,5 @@
 import { MetadataRoute } from 'next';
 
-// Force dynamic generation
 export const dynamic = 'force-dynamic';
 
 const baseUrl =
@@ -15,7 +14,7 @@ async function getProducts() {
   try {
     const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
     const res = await fetch(`${API_URL}/products`, {
-      next: { revalidate: 3600 }, // Revalidate every hour
+      next: { revalidate: 3600 },
     });
 
     if (!res.ok) {
@@ -25,7 +24,6 @@ async function getProducts() {
 
     const data = await res.json();
 
-    // Handle both array and paginated response
     if (Array.isArray(data)) {
       return data;
     } else if (data && typeof data === 'object' && Array.isArray(data.content)) {
@@ -40,24 +38,65 @@ async function getProducts() {
   }
 }
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const products = await getProducts();
+async function getCategories() {
+  try {
+    const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+    const res = await fetch(`${API_URL}/categories`, {
+      next: { revalidate: 3600 },
+    });
 
-  // Static routes
-  const routes = ['', '/carrito'].map((route) => ({
-    url: `${baseUrl}${route}`,
+    if (!res.ok) return [];
+
+    const data = await res.json();
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === 'object' && Array.isArray(data.content)) return data.content;
+    return [];
+  } catch (error) {
+    console.error('Error fetching categories for sitemap:', error);
+    return [];
+  }
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const [products, categories] = await Promise.all([getProducts(), getCategories()]);
+
+  // Static routes with priorities
+  const staticRoutes: MetadataRoute.Sitemap = [
+    {
+      url: baseUrl,
+      lastModified: new Date().toISOString(),
+      changeFrequency: 'daily',
+      priority: 1,
+    },
+    {
+      url: `${baseUrl}/shop`,
+      lastModified: new Date().toISOString(),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/nosotros`,
+      lastModified: new Date().toISOString(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+  ];
+
+  // Category routes (clean URLs)
+  const categoryRoutes: MetadataRoute.Sitemap = categories.map((cat: any) => ({
+    url: `${baseUrl}/shop?category=${cat.description?.toLowerCase() || cat.id}`,
     lastModified: new Date().toISOString(),
-    changeFrequency: 'daily' as const,
-    priority: 1,
+    changeFrequency: 'weekly' as const,
+    priority: 0.8,
   }));
 
   // Product routes
-  const productRoutes = products.map((product: any) => ({
+  const productRoutes: MetadataRoute.Sitemap = products.map((product: any) => ({
     url: `${baseUrl}/producto/${product.slug || product.id}`,
     lastModified: new Date().toISOString(),
     changeFrequency: 'weekly' as const,
     priority: 0.8,
   }));
 
-  return [...routes, ...productRoutes];
+  return [...staticRoutes, ...categoryRoutes, ...productRoutes];
 }

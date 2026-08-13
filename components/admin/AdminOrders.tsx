@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -471,12 +472,13 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
                     className="flex items-center justify-between rounded-lg bg-gray-50 p-3"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded bg-gray-200 text-xs font-medium text-gray-500">
+                      <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded bg-gray-200 text-xs font-medium text-gray-500">
                         {thumbUrl ? (
-                          <img
+                          <Image
                             src={thumbUrl}
-                            alt={item.product?.name}
-                            className="h-full w-full rounded object-cover"
+                            alt={item.product?.name ?? ''}
+                            fill
+                            className="rounded object-cover"
                           />
                         ) : (
                           'N/A'

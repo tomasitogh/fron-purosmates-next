@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState, useRef, useEffect } from 'react';
 import { useGesture } from '@use-gesture/react';
 import { X, Check, ZoomIn, ZoomOut } from 'lucide-react';
@@ -117,6 +118,7 @@ export default function ProductImageEditor({
             {}
             <div
               style={{
+                position: 'relative',
                 width: '100%',
                 height: '100%',
                 transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
@@ -124,11 +126,12 @@ export default function ProductImageEditor({
                 willChange: 'transform',
               }}
             >
-              <img
+              <Image
                 src={imageUrl}
                 alt="Edición"
+                fill
                 draggable={false}
-                className="pointer-events-none h-full w-full object-cover select-none"
+                className="pointer-events-none object-cover select-none"
               />
             </div>
 

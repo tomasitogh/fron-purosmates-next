@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useState, useRef } from 'react';
 import { Trash2, MessageSquare, Bell, Image as ImageIcon, Filter, LayoutGrid } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -403,10 +404,11 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
                       className="w-10 rounded border border-gray-300 bg-white/90 px-1 py-0.5 text-center text-xs"
                     />
                   </div>
-                  <img
+                  <Image
                     src={banner.imageUrl}
-                    alt={banner.altText}
-                    className="h-full w-full object-cover"
+                    alt={banner.altText ?? ''}
+                    fill
+                    className="object-cover"
                   />
                   {!banner.active && <div className="absolute inset-0 bg-black/50" />}
                   <div className="absolute right-0 bottom-0 left-0 flex items-end justify-between bg-gradient-to-t from-black/70 to-transparent p-2">
@@ -454,7 +456,7 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
                   key={img.id}
                   className="relative aspect-square overflow-hidden rounded-lg bg-gray-100"
                 >
-                  <img src={img.imageUrl} alt={img.title} className="h-full w-full object-cover" />
+                  <Image src={img.imageUrl} alt={img.title ?? ''} fill className="object-cover" />
                   <div className="absolute right-0 bottom-0 left-0 flex justify-end gap-1 bg-black/50 p-1">
                     <button
                       onClick={() => openModal('homeImage', img)}
