@@ -63,7 +63,7 @@ export default async function HomePage() {
       <HeroCarousel images={banners} />
 
       {/* Intro Section - Hidden text for SEO crawlers */}
-      <section className="bg-white px-4 py-8 text-center sm:px-6 lg:px-8">
+      <section className="sr-only">
         <div className="mx-auto max-w-4xl">
           <p className="text-lg text-gray-600">
             En <strong>Puros Mates</strong> encontrarás los mejores mates artesanales de Argentina.
