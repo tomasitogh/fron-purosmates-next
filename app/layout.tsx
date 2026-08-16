@@ -55,6 +55,9 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  verification: {
+    google: 'qa4kC0iMItlBvFoeZ_ra0ZwV01jBM6nCCKpV02eXqWE',
+  },
   openGraph: {
     title: 'Puros Mates - Comprar Mates Artesanales Online',
     description: 'Los mejores mates artesanales de Argentina. Envíos a todo el país.',
