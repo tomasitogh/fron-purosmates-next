@@ -9,6 +9,14 @@ const nextConfig: NextConfig = {
   typescript: {
     tsconfigPath: './tsconfig.json',
   },
+  // La Server Action de vectorización recibe la imagen en el body del FormData.
+  // El default de Next es 1 MB y las fotos/fondos de escudos lo superan → 413.
+  // 10mb = nuestro límite de validación (8 MB) + margen de overhead multipart.
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '10mb',
+    },
+  },
   // potrace (jimp), sharp (binario nativo) y heic-convert (WASM) corren solo en
   // Node: no empaquetarlos, requerirlos nativos en el servidor
   serverExternalPackages: ['potrace', 'sharp', 'heic-convert'],
