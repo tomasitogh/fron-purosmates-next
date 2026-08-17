@@ -2,8 +2,11 @@ import HeroCarousel from '@/components/HeroCarousel';
 import CategoryGrid from '@/components/CategoryGrid';
 import Testimonials from '@/components/Testimonials';
 import { getBanners, getHomeImages, getTestimonials } from '@/lib/data/home';
+import { getBaseUrl } from '@/lib/site';
 
 export const revalidate = 60;
+
+const baseUrl = getBaseUrl();
 
 export const metadata = {
   title: 'Puros Mates - Comprar Mates Artesanales Online | Envíos a Todo el País',
@@ -30,9 +33,58 @@ export const metadata = {
     siteName: 'Puros Mates',
   },
   alternates: {
-    canonical: 'https://www.purosmates.com.ar',
+    canonical: baseUrl,
   },
 };
+
+function StoreJsonLd() {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Store',
+    name: 'Puros Mates',
+    url: baseUrl,
+    logo: `${baseUrl}/logo-purosmates.png`,
+    image: `${baseUrl}/logo-purosmates.png`,
+    telephone: '+5491130548207',
+    priceRange: '$$',
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: 'Canning',
+      addressRegion: 'Buenos Aires',
+      addressCountry: 'AR',
+    },
+    sameAs: ['https://www.instagram.com/puros.mates/', 'https://wa.me/5491130548207'],
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
+  );
+}
+
+function BreadcrumbJsonLd() {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Inicio',
+        item: baseUrl,
+      },
+    ],
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
+  );
+}
 
 export default async function HomePage() {
   const [bannersData, homeImagesData, testimonials] = await Promise.all([
@@ -54,6 +106,9 @@ export default async function HomePage() {
 
   return (
     <div className="flex w-full flex-col">
+      <StoreJsonLd />
+      <BreadcrumbJsonLd />
+
       {/* H1 visible for SEO */}
       <h1 className="sr-only text-2xl font-bold md:text-3xl">
         Puros Mates - Tienda de Mates Artesanales y Accesorios en Argentina

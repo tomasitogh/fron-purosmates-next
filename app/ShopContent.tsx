@@ -276,14 +276,14 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
 
             {/* Mobile header */}
             <div className="mb-4 sm:hidden">
-              <h1 className="text-xl font-bold text-gray-900">
+              <p className="text-xl font-bold text-gray-900">
                 {searchText
                   ? `Resultados para "${searchText}"`
                   : categoryParam
                     ? activeCategories.find((c: any) => selectedCategoryIds.includes(c.id))
                         ?.description || 'Productos'
                     : 'Todos los Productos'}
-              </h1>
+              </p>
               <p className="text-sm text-gray-600">{filteredProducts.length} productos</p>
             </div>
 

@@ -1,8 +1,9 @@
 import { Metadata } from 'next';
 import Image from 'next/image';
 import NosotrosFAQ from '@/components/NosotrosFAQ';
+import { getBaseUrl } from '@/lib/site';
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://www.purosmates.com.ar';
+const baseUrl = getBaseUrl();
 
 export const metadata: Metadata = {
   title: 'Sobre Nosotros - Puros Mates | Mates Artesanales Argentinos',
@@ -129,8 +130,31 @@ const faqs = [
 ];
 
 export default function AboutUsPage() {
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Inicio',
+        item: baseUrl,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Sobre Nosotros',
+        item: `${baseUrl}/nosotros`,
+      },
+    ],
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

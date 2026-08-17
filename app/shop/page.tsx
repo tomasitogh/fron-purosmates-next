@@ -1,8 +1,11 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import ShopContent from '@/app/ShopContent';
+import { getBaseUrl } from '@/lib/site';
 
 export const revalidate = 60;
+
+const baseUrl = getBaseUrl();
 
 export const metadata: Metadata = {
   // The layout template renders: "Catálogo de Productos | Puros Mates"
@@ -50,6 +53,34 @@ async function getCategories() {
   }
 }
 
+function BreadcrumbJsonLd() {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Inicio',
+        item: baseUrl,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Tienda',
+        item: `${baseUrl}/shop`,
+      },
+    ],
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
+  );
+}
+
 export default async function ShopPage() {
   const [products, categoriesData] = await Promise.all([getProducts(), getCategories()]);
   const categories = Array.isArray(categoriesData)
@@ -59,14 +90,17 @@ export default async function ShopPage() {
       : [];
 
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-screen items-center justify-center text-[#254642]">
-          Cargando productos...
-        </div>
-      }
-    >
-      <ShopContent initialProducts={products} initialCategories={categories} />
-    </Suspense>
+    <>
+      <BreadcrumbJsonLd />
+      <Suspense
+        fallback={
+          <div className="flex min-h-screen items-center justify-center text-[#254642]">
+            Cargando productos...
+          </div>
+        }
+      >
+        <ShopContent initialProducts={products} initialCategories={categories} />
+      </Suspense>
+    </>
   );
 }

@@ -4,6 +4,7 @@ import { Home, ShoppingBag } from 'lucide-react';
 export default function NotFound() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#F5F2E9] p-4 text-center">
+      <meta name="robots" content="noindex, nofollow" />
       <div className="w-full max-w-md rounded-2xl border border-[#254642]/10 bg-white p-8 shadow-xl">
         <div className="relative mb-6 flex justify-center">
           <span className="absolute scale-150 text-8xl opacity-20 blur-sm">🌿</span>

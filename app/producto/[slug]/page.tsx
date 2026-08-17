@@ -17,8 +17,7 @@ const baseUrl = getBaseUrl();
 const getProductBySlug = cache(async (slug: string) => {
   try {
     const res = await fetch(`${API_URL}/products/slug/${slug}`, {
-      cache: 'no-store',
-      next: { revalidate: 0 },
+      next: { revalidate: 60 },
     });
     if (!res.ok) return null;
     return res.json();
@@ -27,6 +26,31 @@ const getProductBySlug = cache(async (slug: string) => {
     return null;
   }
 });
+
+export const revalidate = 60;
+
+export async function generateStaticParams() {
+  try {
+    const res = await fetch(`${API_URL}/products`, {
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return [];
+
+    const data = await res.json();
+    const products = Array.isArray(data)
+      ? data
+      : data && Array.isArray(data.content)
+        ? data.content
+        : [];
+
+    return products
+      .filter((product: any) => product?.slug)
+      .map((product: any) => ({ slug: product.slug }));
+  } catch (error) {
+    console.error('Error fetching products for generateStaticParams:', error);
+    return [];
+  }
+}
 
 function cleanDescription(text: string, maxLength = 160): string {
   const stripped = text

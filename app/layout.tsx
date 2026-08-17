@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Suspense } from 'react';
 import './globals.css';
 import { GoogleAnalytics } from '@next/third-parties/google';
@@ -12,6 +12,12 @@ import FloatingWhatsApp from '@/components/FloatingWhatsApp';
 import { getBaseUrl } from '@/lib/site';
 
 const baseUrl = getBaseUrl();
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#254642',
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
@@ -74,7 +80,6 @@ export const metadata: Metadata = {
   other: {
     'application-name': 'Puros Mates',
     'msapplication-TileColor': '#254642',
-    'theme-color': '#254642',
   },
 };
 
