@@ -131,11 +131,6 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
     [variants, excludedSkus]
   );
 
-  // Validación: al menos 1 variant con stock > 0 para que el producto
-  // sea vendible. Si no, warning inline.
-  const hasSellableVariant = variantsToSend.some((v) => v.stock > 0);
-  const showValidationWarning = variantsToSend.length > 0 && !hasSellableVariant;
-
   useEffect(() => {
     dispatch(fetchAllProductsAdmin(getToken));
     dispatch(fetchCategories());
@@ -237,13 +232,9 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
       return;
     }
 
-    // E7: validación — al menos 1 variant con nombre y stock > 0.
+    // E7: validación — al menos 1 variante con nombre (el stock puede ser 0).
     if (variantsToSend.length === 0) {
       toast.error('Agregá al menos una variante con nombre');
-      return;
-    }
-    if (!hasSellableVariant) {
-      toast.error('Al menos una variante debe tener stock mayor a 0');
       return;
     }
     // Bloquear submit si hay variants sin nombre (estado intermedio).
@@ -658,12 +649,6 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                     excludedSkus={excludedSkus}
                     onExcludedSkusChange={setExcludedSkus}
                   />
-                  {showValidationWarning ? (
-                    <p className="mt-3 rounded border border-orange-200 bg-orange-50 px-2 py-1.5 text-xs text-orange-700">
-                      ⚠ Al menos una variante debe tener stock mayor a 0 para que el producto sea
-                      vendible.
-                    </p>
-                  ) : null}
                 </div>
 
                 {/* E6: asignación de imágenes a variantes. Aparece DESPUÉS de las
