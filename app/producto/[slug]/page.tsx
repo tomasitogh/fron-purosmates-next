@@ -2,16 +2,19 @@ import { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
 import ProductPageClient from './ProductPageClient';
+import { getBaseUrl } from '@/lib/site';
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://www.purosmates.com.ar';
+const baseUrl = getBaseUrl();
 
-async function getProductBySlug(slug: string) {
+// React cache() dedupes the fetch between generateMetadata and the page render
+const getProductBySlug = cache(async (slug: string) => {
   try {
     const res = await fetch(`${API_URL}/products/slug/${slug}`, {
       cache: 'no-store',
@@ -23,6 +26,15 @@ async function getProductBySlug(slug: string) {
     console.error('Error fetching product:', error);
     return null;
   }
+});
+
+function cleanDescription(text: string, maxLength = 160): string {
+  const stripped = text
+    .replace(/<[^>]*>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (stripped.length <= maxLength) return stripped;
+  return `${stripped.slice(0, maxLength).replace(/\s+\S*$/, '')}…`;
 }
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
@@ -30,19 +42,27 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   const product = await getProductBySlug(resolvedParams.slug);
 
   if (!product) {
-    return { title: 'Producto no encontrado | Puros Mates' };
+    // The layout template appends "| Puros Mates" automatically
+    return { title: 'Producto no encontrado' };
   }
 
   const imageUrl = product.images?.[0]?.url || '/logo-purosmates.png';
-  const description =
-    product.description?.slice(0, 160) || `${product.name} - Compra en Puros Mates`;
+  const description = cleanDescription(
+    product.description || `${product.name} - Comprá en Puros Mates con envíos a todo el país.`
+  );
 
   return {
-    title: `${product.name} | Puros Mates`,
+    // Template in layout.tsx renders: "{name} | Puros Mates"
+    title: product.name,
     description,
+    alternates: {
+      // Relative URL: resolved against metadataBase (single source of truth)
+      canonical: `/producto/${resolvedParams.slug}`,
+    },
     openGraph: {
-      title: `${product.name} | Puros Mates`,
+      title: product.name,
       description,
+      url: `/producto/${resolvedParams.slug}`,
       images: [{ url: imageUrl, width: 1200, height: 630, alt: product.name }],
       type: 'website',
       locale: 'es_AR',
@@ -50,43 +70,46 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${product.name} | Puros Mates`,
+      title: product.name,
       description,
       images: [imageUrl],
-    },
-    alternates: {
-      canonical: `${baseUrl}/producto/${resolvedParams.slug}`,
     },
   };
 }
 
 function ProductJsonLd({ product, slug }: { product: any; slug: string }) {
+  const images: string[] = (product.images ?? [])
+    .map((img: any) => (img.url?.startsWith('http') ? img.url : `${baseUrl}${img.url}`))
+    .filter(Boolean);
+
+  const stock = product.totalStock ?? product.stock ?? 0;
+  const description = cleanDescription(product.description || `${product.name} - Puros Mates`, 300);
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
-    description: product.description || `${product.name} - Puros Mates`,
-    image: product.images?.map((img: any) => img.url) || [],
+    description,
+    image: images.length > 0 ? images : [`${baseUrl}/logo-purosmates.png`],
+    sku: product.id != null ? String(product.id) : undefined,
     url: `${baseUrl}/producto/${slug}`,
     brand: {
       '@type': 'Brand',
-      name: 'Puros Mates',
+      name: product.brand || 'Puros Mates',
     },
+    category: product.category?.description || 'Mates',
     offers: {
       '@type': 'Offer',
       url: `${baseUrl}/producto/${slug}`,
       priceCurrency: 'ARS',
-      price: product.price,
-      availability:
-        (product.totalStock ?? product.stock) > 0
-          ? 'https://schema.org/InStock'
-          : 'https://schema.org/OutOfStock',
+      price: product.price != null ? String(product.price) : undefined,
+      itemCondition: 'https://schema.org/NewCondition',
+      availability: stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
       seller: {
         '@type': 'Organization',
         name: 'Puros Mates',
       },
     },
-    category: product.category?.description || 'Mates',
   };
 
   return (
@@ -141,6 +164,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   const slug = resolvedParams.slug;
   const mainImage = product.images?.[0];
+  const mainImageAlt = `${product.name}${product.category?.description ? ` - ${product.category.description}` : ''} | Puros Mates`;
 
   return (
     <>
@@ -183,7 +207,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             {mainImage ? (
               <Image
                 src={mainImage.url}
-                alt={product.name}
+                alt={mainImageAlt}
                 fill
                 className="object-contain"
                 sizes="(max-width: 1024px) 100vw, 50vw"

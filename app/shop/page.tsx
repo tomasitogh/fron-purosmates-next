@@ -1,12 +1,19 @@
 import { Suspense } from 'react';
+import type { Metadata } from 'next';
 import ShopContent from '@/app/ShopContent';
 
 export const revalidate = 60;
 
-export const metadata = {
-  title: 'Catálogo de Productos - Puros Mates',
+export const metadata: Metadata = {
+  // The layout template renders: "Catálogo de Productos | Puros Mates"
+  title: 'Catálogo de Productos',
   description:
     'Explora nuestra amplia variedad de mates, bombillas y accesorios artesanales. Elige la mejor calidad para tu set matero.',
+  alternates: {
+    // Category filtering is client-side: /shop?category=... serves the exact
+    // same HTML as /shop, so every query variant must canonicalize to /shop
+    canonical: '/shop',
+  },
 };
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
