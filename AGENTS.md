@@ -114,3 +114,21 @@ Remote image patterns are whitelisted in [next.config.ts](file:///Users/tomasgon
 
 - **Incremental Static Regeneration (ISR)**: The homepage and shop use ISR (`revalidate = 60`) to avoid hammering the backend database.
 - **On-Demand Revalidation**: Admin actions trigger immediate cache invalidation via [lib/actions/revalidate.actions.ts](file:///Users/tomasgonzalezh/Projects/purosmates/front-purosmates/lib/actions/revalidate.actions.ts) (`revalidateStorefront(paths)`) to ensure admin modifications appear instantly.
+
+---
+
+## 🎨 Product Customizer (`/customize`)
+
+Laser-engraving designer for the mate's "virola" (metal ring). Lives entirely in Next.js (no backend dependency yet).
+
+**Core principle**: the design exists as 3 representations. The **JSON state is the source of truth** → the Konva canvas renders it for interaction → the final SVG is **generated from the JSON** ([lib/customize/svg-generator.ts](file:///Users/tomasgonzalezh/Projects/purosmates/front-purosmates/lib/customize/svg-generator.ts)), NEVER traced from the canvas.
+
+- **Route**: [app/customize/page.tsx](file:///Users/tomasgonzalezh/Projects/purosmates/front-purosmates/app/customize/page.tsx) (Server Component with metadata) → [components/customize/CustomizerLoader.tsx](file:///Users/tomasgonzalezh/Projects/purosmates/front-purosmates/components/customize/CustomizerLoader.tsx) (`dynamic(..., { ssr: false })`, mandatory because `react-konva` needs `window`/`canvas`; `ssr: false` is only allowed inside Client Components).
+- **State model**: `DesignElement[]` in [components/customize/types.ts](file:///Users/tomasgonzalezh/Projects/purosmates/front-purosmates/components/customize/types.ts) (`text` = curved text via `angle`, `shape`, `path` = vectorized image). Owned by [CustomizerShell.tsx](file:///Users/tomasgonzalezh/Projects/purosmates/front-purosmates/components/customize/CustomizerShell.tsx), autosaved to `localStorage` (`virola-design` key, 800ms debounce, lazy `useState` initializer reads it back).
+- **Design space**: all geometry uses a 400x400 unit space centered at (0, 0) — shared by canvas and SVG export. Ring radii, the 10 Google Fonts, and `ringTextPathData()` live in [components/customize/constants.ts](file:///Users/tomasgonzalezh/Projects/purosmates/front-purosmates/components/customize/constants.ts).
+- **Canvas**: [VirolaCanvas.tsx](file:///Users/tomasgonzalezh/Projects/purosmates/front-purosmates/components/customize/VirolaCanvas.tsx). Ring clipping via `clipFunc` (outer arc clockwise + inner arc counter-clockwise = hole). Text uses `<TextPath>`; dragging text converts drop position to polar angle. Shapes/paths use Konva `Transformer` (touch-enabled). Fonts must be preloaded via `document.fonts.load` before text renders.
+- **Image vectorization**: Server Action in [app/customize/actions.ts](file:///Users/tomasgonzalezh/Projects/purosmates/front-purosmates/app/customize/actions.ts) (`vectorizeImage`). Accepts PNG/JPG/WebP/AVIF/HEIC — format is sniffed by magic bytes (iOS sends HEIC with unreliable MIME). HEIC is decoded with `heic-convert` (WASM), the rest with `sharp`; then sharp normalizes (EXIF rotation, 1024px max, greyscale, `normalize()`) and `potrace` traces it. Returns only the path's `d` attribute + source dimensions. `potrace`, `sharp` and `heic-convert` are declared in `serverExternalPackages` in [next.config.ts](file:///Users/tomasgonzalezh/Projects/purosmates/front-purosmates/next.config.ts).
+  > [!IMPORTANT]
+  > potrace paths REQUIRE `fill-rule="evenodd"` (it emits it in its own SVG output). Both the Konva `<Path>` in the canvas and the `<path>` in the exported SVG must set it explicitly — with the default `nonzero` all inner holes (letters, details) fill in and the design becomes a solid black blob.
+- **Known limitation**: exported SVG keeps text as `<textPath>` with `font-family` (laser PC needs the font installed). Converting text to outlines is a future improvement.
+- **Pending phases**: wire "Confirmar personalizado" to the Spring Boot order API (currently a `console.log` stub), and admin-side SVG download.

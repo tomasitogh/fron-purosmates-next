@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
   typescript: {
     tsconfigPath: './tsconfig.json',
   },
+  // potrace (jimp), sharp (binario nativo) y heic-convert (WASM) corren solo en
+  // Node: no empaquetarlos, requerirlos nativos en el servidor
+  serverExternalPackages: ['potrace', 'sharp', 'heic-convert'],
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
