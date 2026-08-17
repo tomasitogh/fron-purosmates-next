@@ -14,6 +14,20 @@ const STOCK_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL
   ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/products/stock/bulk`
   : 'http://localhost:8080/products/stock/bulk';
 
+// El backend devuelve { error, message } en los errores (GlobalExceptionHandler).
+// Re-throw con el mensaje legible para que el toast del admin no muestre un
+// genérico "Request failed with status code 409".
+function throwReadableError(e: unknown): never {
+  if (axios.isAxiosError(e) && e.response?.data) {
+    const body = e.response.data as { message?: string; error?: string };
+    const msg = body?.message || body?.error;
+    if (typeof msg === 'string' && msg.trim()) {
+      throw new Error(msg);
+    }
+  }
+  throw e;
+}
+
 // Types
 export interface OrderItem {
   id: number;
@@ -168,16 +182,20 @@ export const deleteOrder = createAsyncThunk(
 export const createProduct = createAsyncThunk(
   'admin/createProduct',
   async ({ productData, getToken }: { productData: ProductData; getToken: TokenGetter }) => {
-    const { data } = await withAuthRetry(getToken, (token) =>
-      axios.post(API_URL, productData, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      })
-    );
-    revalidateStorefront(['/shop']).catch((e) => console.error('Error revalidating /shop:', e));
-    return data;
+    try {
+      const { data } = await withAuthRetry(getToken, (token) =>
+        axios.post(API_URL, productData, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        })
+      );
+      revalidateStorefront(['/shop']).catch((e) => console.error('Error revalidating /shop:', e));
+      return data;
+    } catch (e) {
+      throwReadableError(e);
+    }
   }
 );
 
@@ -193,16 +211,20 @@ export const updateProduct = createAsyncThunk(
     productData: ProductData;
     getToken: TokenGetter;
   }) => {
-    const { data } = await withAuthRetry(getToken, (token) =>
-      axios.put(`${API_URL}/${productId}`, productData, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      })
-    );
-    revalidateStorefront(['/shop']).catch((e) => console.error('Error revalidating /shop:', e));
-    return data;
+    try {
+      const { data } = await withAuthRetry(getToken, (token) =>
+        axios.put(`${API_URL}/${productId}`, productData, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        })
+      );
+      revalidateStorefront(['/shop']).catch((e) => console.error('Error revalidating /shop:', e));
+      return data;
+    } catch (e) {
+      throwReadableError(e);
+    }
   }
 );
 

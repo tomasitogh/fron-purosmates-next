@@ -243,6 +243,22 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
       toast.error('Todas las variantes deben tener un nombre. Completá las que faltan o borralas.');
       return;
     }
+    // Bloquear nombres repetidos: el backend deriva el SKU a partir del
+    // nombre y tiene UNIQUE (product_id, sku). Dos variantes con el mismo
+    // nombre (o uno que solo difiera en mayúsculas/acentos) resolvían al
+    // mismo SKU y el guardado fallaba con un 409 críptico.
+    const seenVariantNames = new Map<string, string>();
+    for (const v of variantsToSend) {
+      const key = (v.name || '').trim().toLocaleLowerCase('es-AR');
+      if (!key) continue;
+      if (seenVariantNames.has(key)) {
+        toast.error(
+          `Ya existe una variante con el nombre «${v.name}». Cada variante debe tener un nombre distinto.`
+        );
+        return;
+      }
+      seenVariantNames.set(key, v.name);
+    }
 
     const productData: ProductData = {
       name: formData.name,
