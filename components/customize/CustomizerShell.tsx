@@ -161,20 +161,27 @@ export default function CustomizerShell() {
     setSelectedId(null);
   };
 
-  const handleDownloadSvg = () => {
+  const handleDownloadSvg = async () => {
     if (elements.length === 0) {
       toast.error('Agregá al menos un elemento al diseño.');
       return;
     }
-    const svg = generateSvgFromDesign({ version: 1, elements });
-    const blob = new Blob([svg], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'grabado-virola.svg';
-    link.click();
-    URL.revokeObjectURL(url);
-    toast.success('SVG descargado. Abrilo en el navegador para validarlo.');
+    const toastId = toast.loading('Embeber tipografías y armando el SVG…');
+    try {
+      const svg = await generateSvgFromDesign({ version: 1, elements });
+      const blob = new Blob([svg], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'grabado-virola.svg';
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success('SVG descargado. Abrilo en el navegador para validarlo.');
+    } catch {
+      toast.error('No se pudo generar el SVG.');
+    } finally {
+      toast.dismiss(toastId);
+    }
   };
 
   // Stub: en una fase posterior este JSON se envía a la API de Spring Boot
