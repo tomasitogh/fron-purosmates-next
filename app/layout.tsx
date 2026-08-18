@@ -73,7 +73,6 @@ export const metadata: Metadata = {
     description: 'Comprá mates artesanales online. Envíos a todo el país.',
   },
   icons: {
-    icon: '/logo-purosmates.ico',
     apple: '/logo-purosmates.png',
   },
   manifest: '/manifest.json',
