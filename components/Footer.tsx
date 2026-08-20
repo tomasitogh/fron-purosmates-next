@@ -105,6 +105,14 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link
+                  href="/rincon-matero"
+                  className="font-semibold text-[#D4AF37] transition hover:opacity-70"
+                >
+                  El Rincón Matero (Juegos & Tips) 🧉
+                </Link>
+              </li>
+              <li>
                 <Link href="/nosotros#faq" className="transition hover:opacity-70">
                   Preguntas Frecuentes
                 </Link>
@@ -191,6 +199,14 @@ export default function Footer() {
               <li>
                 <Link href="/nosotros" className="transition hover:opacity-70">
                   Sobre Nosotros
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/rincon-matero"
+                  className="font-semibold text-[#D4AF37] transition hover:opacity-70"
+                >
+                  El Rincón Matero (Juegos & Tips) 🧉
                 </Link>
               </li>
               <li>
