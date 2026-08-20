@@ -2,7 +2,15 @@
 
 import Image from 'next/image';
 import { useEffect, useState, useRef } from 'react';
-import { Trash2, MessageSquare, Bell, Image as ImageIcon, Filter, LayoutGrid } from 'lucide-react';
+import {
+  Trash2,
+  MessageSquare,
+  Bell,
+  Image as ImageIcon,
+  Filter,
+  LayoutGrid,
+  Briefcase,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   getAllBanners,
@@ -12,9 +20,14 @@ import {
   createTestimonial,
   updateTestimonial,
   deleteTestimonial,
+  getCorporateProjects,
+  createCorporateProject,
+  updateCorporateProject,
+  deleteCorporateProject,
   Banner,
   HomeImage,
   Testimonial,
+  CorporateProject,
 } from '@/lib/actions/home.actions';
 import { revalidateStorefront } from '@/lib/actions/revalidate.actions';
 import { TokenGetter, requireFreshToken } from '@/lib/apiClient';
@@ -36,6 +49,7 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
   const [homeImages, setHomeImages] = useState<HomeImage[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [projects, setProjects] = useState<CorporateProject[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -74,6 +88,7 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
         setHomeImages(homeData);
         setTestimonials(testimonialsData);
         setCategories(catsData);
+        setProjects(await getCorporateProjects());
       } catch (err) {
         console.error('Error loading data:', err);
       } finally {
@@ -348,6 +363,58 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
     setTestimonials(newTestimonials);
   };
 
+  const saveCorporateProjects = async () => {
+    setSaving(true);
+    try {
+      const token = await requireFreshToken(getToken);
+      const existing = await getCorporateProjects();
+      const localIds = projects.filter((p) => p.id).map((p) => p.id!);
+      for (const old of existing) {
+        if (!localIds.includes(old.id!)) {
+          await deleteCorporateProject(old.id!, token);
+        }
+      }
+      for (const p of projects) {
+        if (p.id) {
+          await updateCorporateProject(
+            p.id,
+            { title: p.title, description: p.description, imageUrl: p.imageUrl },
+            token
+          );
+        } else {
+          await createCorporateProject(
+            { title: p.title, description: p.description, imageUrl: p.imageUrl },
+            token
+          );
+        }
+      }
+      const updated = await getCorporateProjects();
+      setProjects(updated);
+      toast.success('Proyectos guardados');
+    } catch (err) {
+      console.error('Error saving projects:', err);
+      toast.error('Error al guardar proyectos');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleProjectChange = (idx: number, field: keyof CorporateProject, value: string) => {
+    const newProjects = [...projects];
+    newProjects[idx] = { ...newProjects[idx], [field]: value };
+    setProjects(newProjects);
+  };
+
+  const addCorporateProject = () => {
+    setProjects([...projects, { title: '', description: '', imageUrl: '' }]);
+  };
+
+  const removeCorporateProject = (idx: number) => {
+    const newProjects = [...projects];
+    newProjects.splice(idx, 1);
+    setProjects(newProjects);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -592,7 +659,76 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
           </div>
         </section>
 
-        {/* 5. NOTIFICACIONES PUSH */}
+        {/* 5. TRABAJOS REALIZADOS */}
+        <section className="overflow-hidden rounded-xl border border-gray-100 bg-white">
+          <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/50 px-6 py-4">
+            <div className="flex items-center gap-2">
+              <Briefcase className="h-5 w-5 text-[#254642]" />
+              <h2 className="text-lg font-bold text-gray-900">Trabajos Realizados</h2>
+            </div>
+            <button
+              onClick={addCorporateProject}
+              className="text-sm font-medium text-[#254642] hover:underline"
+            >
+              + Agregar
+            </button>
+          </div>
+          <div className="space-y-4 p-6">
+            {projects.map((p, idx) => (
+              <div key={idx} className="relative rounded-lg border border-gray-100 bg-gray-50 p-4">
+                <button
+                  onClick={() => removeCorporateProject(idx)}
+                  className="absolute top-2 right-2 text-red-400 hover:text-red-600"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+                <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div>
+                    <label className="text-xs font-bold text-gray-500">Foto</label>
+                    <SingleImageUploader
+                      imageUrl={p.imageUrl}
+                      onChange={(url) => handleProjectChange(idx, 'imageUrl', url)}
+                      getToken={getToken}
+                    />
+                  </div>
+                  <div className="space-y-4 md:col-span-2">
+                    <div>
+                      <label className="text-xs font-bold text-gray-500">Título</label>
+                      <input
+                        type="text"
+                        value={p.title}
+                        onChange={(e) => handleProjectChange(idx, 'title', e.target.value)}
+                        className="w-full rounded-lg border px-3 py-2 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-gray-500">Descripción</label>
+                      <textarea
+                        value={p.description}
+                        rows={3}
+                        onChange={(e) => handleProjectChange(idx, 'description', e.target.value)}
+                        className="w-full resize-none rounded-lg border px-3 py-2 text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {projects.length === 0 && <p className="text-sm text-gray-400">No hay proyectos</p>}
+
+            {projects.length > 0 && (
+              <button
+                onClick={saveCorporateProjects}
+                disabled={saving}
+                className="mt-2 rounded-lg bg-[#254642] px-4 py-2 text-sm font-medium text-white hover:bg-[#1d3530]"
+              >
+                {saving ? 'Guardando...' : 'Guardar Proyectos'}
+              </button>
+            )}
+          </div>
+        </section>
+
+        {/* 6. NOTIFICACIONES PUSH */}
         <section className="overflow-hidden rounded-xl border border-gray-100 bg-white">
           <div className="border-b border-gray-100 bg-gray-50/50 px-6 py-4">
             <div className="flex items-center gap-2">
