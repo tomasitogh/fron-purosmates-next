@@ -34,6 +34,15 @@ interface VirolaCanvasProps {
 
 const MAX_CANVAS_PX = 520;
 
+/** Radio mínimo (unidades de diseño) para confiar en el ángulo del puntero:
+ *  evita saltos si el dedo se desliza hacia el centro (hueco) de la virola. */
+const MIN_POINTER_RADIUS = 60;
+
+/** Normaliza un ángulo en grados al rango [0, 360) */
+function norm360(deg: number): number {
+  return ((deg % 360) + 360) % 360;
+}
+
 /** Recorte al anillo: círculo exterior horario + interior ANTI-horario (hueco) */
 function clipToRing(ctx: Konva.Context) {
   ctx.arc(0, 0, OUTER_RADIUS, 0, Math.PI * 2, false);
@@ -70,8 +79,9 @@ function shapeNode(el: ShapeElement, common: Record<string, unknown>): React.Rea
  *   raíz centrado y escalado.
  * - La guía (Ring + bordes) no escucha eventos: los toques la atraviesan.
  * - Todo el diseño vive en un Group con clipFunc que lo recorta al anillo.
- * - El texto NO se arrastra libremente: al soltarlo, su posición se convierte
- *   a ángulo polar sobre el anillo y vuelve a su lugar (siempre "pegado" a la curva).
+ * - El texto vive SIEMPRE pegado a la curva: arrastrarlo lo hace deslizar por
+ *   el anillo siguiendo al puntero (conversión a coordenadas polares), tanto
+ *   durante el drag como al soltar. Su posición (x, y) jamás cambia: rota.
  */
 export default function VirolaCanvas({
   elements,
@@ -83,6 +93,11 @@ export default function VirolaCanvas({
   const transformerRef = useRef<Konva.Transformer>(null);
   const [stageSize, setStageSize] = useState(0);
   const [fontsReady, setFontsReady] = useState(false);
+  // Offset angular (grados) entre el puntero y el inicio del texto al MOMENTO de
+  // agarrarlo. Mantiene fijo el punto de agarre: el glifo bajo el dedo no salta.
+  const textGrabOffsetRef = useRef(0);
+
+  const scale = stageSize / DESIGN_SIZE;
 
   // Tamaño responsivo: cuadrado = ancho del contenedor (tope 520px)
   useEffect(() => {
@@ -130,19 +145,59 @@ export default function VirolaCanvas({
     if (e.target === e.target.getStage()) onSelect(null);
   };
 
-  const handleDragEnd = (el: DesignElement, e: KonvaEventObject<DragEvent>) => {
+  /**
+   * Ángulo polar del puntero en el espacio de diseño (0° = arriba, horario).
+   * `getPointerPosition()` devuelve píxeles del Stage: se convierten al espacio
+   * de diseño restando el centro y dividiendo por la escala del Group raíz.
+   * Devuelve null si no hay puntero o está demasiado cerca del centro.
+   */
+  const pointerAngleDeg = (stage: Konva.Stage | null): number | null => {
+    const pointer = stage?.getPointerPosition();
+    if (!pointer || stageSize === 0) return null;
+    const x = (pointer.x - stageSize / 2) / scale;
+    const y = (pointer.y - stageSize / 2) / scale;
+    if (Math.hypot(x, y) < MIN_POINTER_RADIUS) return null;
+    return norm360((Math.atan2(y, x) * 180) / Math.PI + 90);
+  };
+
+  const handleTextDragStart = (
+    el: Extract<DesignElement, { type: 'text' }>,
+    e: KonvaEventObject<DragEvent>
+  ) => {
     const node = e.target;
+    onSelect(el.id);
+    node.position({ x: 0, y: 0 }); // el texto nunca se traslada: solo rota
+    const pointerAngle = pointerAngleDeg(node.getStage());
+    textGrabOffsetRef.current =
+      pointerAngle == null ? 0 : norm360(pointerAngle - (el.angle + el.rotation));
+  };
 
-    if (el.type === 'text') {
-      // Convierte la posición donde se soltó a ángulo polar (0 = arriba, horario)
-      const { x, y } = node.position();
-      const angle = (Math.atan2(y, x) * 180) / Math.PI + 90;
-      onUpdateElement(el.id, { angle: (angle + 360) % 360 });
-      node.position({ x: 0, y: 0 }); // el texto siempre vuelve a la curva
-      return;
-    }
+  const handleTextDragMove = (
+    el: Extract<DesignElement, { type: 'text' }>,
+    e: KonvaEventObject<DragEvent>
+  ) => {
+    const node = e.target;
+    node.position({ x: 0, y: 0 }); // pegado a la circunferencia durante TODO el drag
+    const pointerAngle = pointerAngleDeg(node.getStage());
+    if (pointerAngle == null) return;
 
-    onUpdateElement(el.id, { x: node.x(), y: node.y() });
+    const nextRotation = norm360(pointerAngle - textGrabOffsetRef.current);
+    if (nextRotation === norm360(el.angle + el.rotation)) return;
+
+    // Feedback instantáneo (Konva dibuja antes de que React commite)…
+    node.rotation(nextRotation);
+    // …y el JSON sigue siendo la fuente de verdad (el slider de la toolbar
+    // se actualiza en vivo con el mismo valor).
+    onUpdateElement(el.id, { angle: norm360(nextRotation - el.rotation) });
+  };
+
+  const handleTextDragEnd = (_el: DesignElement, e: KonvaEventObject<DragEvent>) => {
+    e.target.position({ x: 0, y: 0 });
+  };
+
+  const handleDragEnd = (el: DesignElement, e: KonvaEventObject<DragEvent>) => {
+    if (el.type === 'text') return; // el texto usa los handlers polares de arriba
+    onUpdateElement(el.id, { x: e.target.x(), y: e.target.y() });
   };
 
   const handleTransformEnd = (
@@ -157,8 +212,6 @@ export default function VirolaCanvas({
       scale: el.scale * node.scaleX(), // keepRatio: scaleX === scaleY
     });
   };
-
-  const scale = stageSize / DESIGN_SIZE;
 
   return (
     <div ref={containerRef} className="relative w-full" style={{ touchAction: 'none' }}>
@@ -229,6 +282,9 @@ export default function VirolaCanvas({
                         fontSize={el.fontSize}
                         fill={ENGRAVE_COLOR}
                         rotation={el.angle + el.rotation}
+                        onDragStart={(e) => handleTextDragStart(el, e)}
+                        onDragMove={(e) => handleTextDragMove(el, e)}
+                        onDragEnd={(e) => handleTextDragEnd(el, e)}
                       />
                     );
                   }
