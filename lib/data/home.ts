@@ -1,4 +1,4 @@
-import type { Banner, HomeImage, Testimonial } from '@/lib/actions/home.actions';
+import type { Banner, CorporateProject, HomeImage, Testimonial } from '@/lib/actions/home.actions';
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
@@ -50,6 +50,19 @@ export async function getTestimonials(): Promise<Testimonial[]> {
     return await res.json();
   } catch (error) {
     console.error('Error fetching testimonials:', error);
+    return [];
+  }
+}
+
+export async function getCorporateProjects(): Promise<CorporateProject[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/v1/corporate-projects`, {
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (error) {
+    console.error('Error fetching corporate projects:', error);
     return [];
   }
 }

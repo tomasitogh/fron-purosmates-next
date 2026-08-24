@@ -25,9 +25,10 @@ export default function FloatingWhatsApp() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Contáctanos por WhatsApp"
-      className="fixed right-6 bottom-6 z-50 flex items-center justify-center rounded-full bg-[#25D366] p-4 text-white shadow-xl transition-all hover:-translate-y-1 hover:shadow-2xl"
+      className="fixed right-4 bottom-20 z-40 flex items-center justify-center rounded-full bg-[#25D366] p-3.5 text-white shadow-xl transition-all hover:scale-105 hover:shadow-2xl active:scale-95 sm:right-6 lg:right-8 lg:bottom-6 lg:p-4"
     >
-      <WhatsAppIcon size={32} />
+      <WhatsAppIcon size={28} className="lg:hidden" />
+      <WhatsAppIcon size={32} className="hidden lg:block" />
     </a>
   );
 }

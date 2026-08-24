@@ -306,3 +306,67 @@ export async function deleteTestimonial(id: number, token: string) {
     throw error;
   }
 }
+
+export interface CorporateProject {
+  id?: number;
+  title: string;
+  description: string;
+  imageUrl: string;
+  displayOrder?: number;
+}
+
+export async function getCorporateProjects(): Promise<CorporateProject[]> {
+  try {
+    const { data } = await axios.get(`${API_URL}/api/v1/corporate-projects`);
+    return data;
+  } catch (error) {
+    console.error('Error fetching corporate projects:', error);
+    return [];
+  }
+}
+
+export async function createCorporateProject(
+  data: { title: string; description: string; imageUrl: string },
+  token: string
+) {
+  try {
+    const response = await axios.post(`${API_URL}/api/v1/corporate-projects`, data, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    revalidatePath('/regalos-empresariales');
+    return response.data;
+  } catch (error) {
+    console.error('Error creating corporate project:', error);
+    throw error;
+  }
+}
+
+export async function updateCorporateProject(
+  id: number,
+  data: { title?: string; description?: string; imageUrl?: string },
+  token: string
+) {
+  try {
+    const response = await axios.put(`${API_URL}/api/v1/corporate-projects/${id}`, data, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    revalidatePath('/regalos-empresariales');
+    return response.data;
+  } catch (error) {
+    console.error('Error updating corporate project:', error);
+    throw error;
+  }
+}
+
+export async function deleteCorporateProject(id: number, token: string) {
+  try {
+    await axios.delete(`${API_URL}/api/v1/corporate-projects/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    revalidatePath('/regalos-empresariales');
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting corporate project:', error);
+    throw error;
+  }
+}

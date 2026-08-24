@@ -49,9 +49,11 @@ function elementToSvg(el: DesignElement): string {
     case 'text':
       // El texto sigue la circunferencia guía; el <g> lo rota a su posición angular.
       // rotation adicional del usuario se suma al ángulo.
+      // dominant-baseline="central" es VITAL para que el texto se centre verticalmente
+      // sobre el radio medio del anillo (TEXT_RADIUS), igual a como lo dibuja Konva TextPath.
       return (
         `<g transform="rotate(${el.angle + el.rotation})">` +
-        `<text font-family="'${escapeXml(el.fontFamily)}', sans-serif" font-size="${el.fontSize}" fill="${ENGRAVE_COLOR}">` +
+        `<text font-family="'${escapeXml(el.fontFamily)}', sans-serif" font-size="${el.fontSize}" fill="${ENGRAVE_COLOR}" dominant-baseline="central">` +
         `<textPath href="#virola-text-circle" xlink:href="#virola-text-circle">${escapeXml(el.text)}</textPath>` +
         `</text></g>`
       );

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import HeroCarousel from '@/components/HeroCarousel';
 import CategoryGrid from '@/components/CategoryGrid';
+import VirolaCustomizerBanner from '@/components/VirolaCustomizerBanner';
 import FeaturedProducts, { cloudinaryUrl } from '@/components/FeaturedProducts';
 import Testimonials from '@/components/Testimonials';
 import { getBanners, getFeaturedProducts, getHomeImages, getTestimonials } from '@/lib/data/home';
@@ -218,6 +219,9 @@ export default async function HomePage() {
 
       {/* Category Grid */}
       <CategoryGrid categories={dynamicCategories} />
+
+      {/* Banner Personalizador de Virolas */}
+      <VirolaCustomizerBanner />
 
       {/* Productos destacados */}
       <FeaturedProducts products={featuredProducts} />

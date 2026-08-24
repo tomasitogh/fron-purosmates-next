@@ -17,7 +17,7 @@ export async function revalidateStorefront(paths: string[]) {
     throw new Error('No autorizado');
   }
 
-  const allowed = ['/', '/shop'];
+  const allowed = ['/', '/shop', '/regalos-empresariales'];
   for (const path of paths) {
     if (allowed.includes(path)) {
       revalidatePath(path);

@@ -78,8 +78,8 @@ export default function CustomizeToolbar({
     selectedElement && selectedElement.type !== 'text' ? selectedElement : null;
 
   return (
-    <aside className="sticky bottom-0 z-10 w-full border-t border-stone-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:static md:w-80 md:rounded-2xl md:border md:pb-0">
-      <div className="max-h-[45vh] overflow-y-auto p-4 md:max-h-none">
+    <aside className="w-full rounded-2xl border border-stone-200 bg-white p-4 shadow-sm md:w-80">
+      <div className="space-y-4">
         {/* ---- Modo EDITAR elemento seleccionado ---- */}
         {selectedElement ? (
           <div className="space-y-4">
@@ -225,18 +225,6 @@ export default function CustomizeToolbar({
             </div>
 
             <div className="flex items-center gap-2 overflow-x-auto pb-1">
-              {SHAPE_BUTTONS.map(({ kind, label, Icon }) => (
-                <button
-                  key={kind}
-                  type="button"
-                  onClick={() => onAddShape(kind)}
-                  className={iconBtn}
-                  title={label}
-                >
-                  <Icon size={20} />
-                  <span className="text-[10px]">{label}</span>
-                </button>
-              ))}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -262,6 +250,18 @@ export default function CustomizeToolbar({
                   e.target.value = '';
                 }}
               />
+              {SHAPE_BUTTONS.map(({ kind, label, Icon }) => (
+                <button
+                  key={kind}
+                  type="button"
+                  onClick={() => onAddShape(kind)}
+                  className={iconBtn}
+                  title={label}
+                >
+                  <Icon size={20} />
+                  <span className="text-[10px]">{label}</span>
+                </button>
+              ))}
             </div>
           </div>
         )}
