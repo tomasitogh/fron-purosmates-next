@@ -112,7 +112,7 @@ export default function CorporateGiftsGallery({ items }: { items: GalleryItem[] 
           <button
             type="button"
             onClick={() => handleManualNav(prev)}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-[#254642]/20 bg-white text-[#254642] transition-colors hover:bg-[#254642] hover:text-white"
+            className="flex items-center justify-center rounded-full border border-[#254642]/20 bg-white text-[#254642] transition-colors hover:bg-[#254642] hover:text-white"
             aria-label="Anterior"
           >
             <ChevronLeft className="h-5 w-5" />
@@ -135,7 +135,7 @@ export default function CorporateGiftsGallery({ items }: { items: GalleryItem[] 
           <button
             type="button"
             onClick={() => handleManualNav(next)}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-[#254642]/20 bg-white text-[#254642] transition-colors hover:bg-[#254642] hover:text-white"
+            className="flex items-center justify-center rounded-full border border-[#254642]/20 bg-white text-[#254642] transition-colors hover:bg-[#254642] hover:text-white"
             aria-label="Siguiente"
           >
             <ChevronRight className="h-5 w-5" />

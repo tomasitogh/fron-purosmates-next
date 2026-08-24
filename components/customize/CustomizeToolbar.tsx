@@ -78,8 +78,8 @@ export default function CustomizeToolbar({
     selectedElement && selectedElement.type !== 'text' ? selectedElement : null;
 
   return (
-    <aside className="sticky bottom-14 z-20 w-full border-t border-stone-200 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-lg backdrop-blur md:static md:w-80 md:rounded-2xl md:border md:pb-0 md:shadow-none lg:bottom-0">
-      <div className="max-h-[38vh] overflow-y-auto p-4 md:max-h-none">
+    <aside className="w-full rounded-2xl border border-stone-200 bg-white p-4 shadow-sm md:w-80">
+      <div className="space-y-4">
         {/* ---- Modo EDITAR elemento seleccionado ---- */}
         {selectedElement ? (
           <div className="space-y-4">

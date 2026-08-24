@@ -10,6 +10,12 @@
 }
 
 @layer base {
+  html {
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   #root {
     width: 100%;
   }
@@ -35,6 +41,9 @@
     padding: 0;
     min-width: 320px;
     min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   h1 {

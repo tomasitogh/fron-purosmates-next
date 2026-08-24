@@ -48,12 +48,14 @@ export default function Navbar() {
     setMounted(true);
   }, []);
 
-  // Actualizar el valor de búsqueda si cambia la URL
+  // Actualizar el valor de búsqueda si cambia la URL y asegurar cierre de menús
   useEffect(() => {
     setQ(searchParams.get('q') || '');
-  }, [searchParams]);
+    setIsMenuOpen(false);
+    setIsSearchOpenMobile(false);
+  }, [pathname, searchParams]);
 
-  // Cerrar menú con la tecla ESC o al navegar
+  // Cerrar menú con la tecla ESC
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
