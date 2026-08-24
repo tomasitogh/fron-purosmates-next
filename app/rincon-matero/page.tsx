@@ -13,7 +13,7 @@ import { BookOpen, Gamepad2, HelpCircle, Sparkles, Wand2 } from 'lucide-react';
 const baseUrl = getBaseUrl();
 
 export const metadata: Metadata = {
-  title: 'El Rincón Matero: Guía, Ritual y Cultura del Mate | Puros Mates',
+  title: 'El : Guía, Ritual y Cultura del Mate | Puros Mates',
   description:
     'Guía definitiva de curado según el material, preguntas frecuentes sobre la yerba mate, las 10 reglas de la ronda y herramientas interactivas de calibración y juegos.',
   keywords: [
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     'calculadora de temperatura mate',
   ],
   openGraph: {
-    title: 'El Rincón Matero: Guía, Ritual y Cultura del Mate | Puros Mates',
+    title: 'El : Guía, Ritual y Cultura del Mate | Puros Mates',
     description:
       'Guía definitiva de curado, preguntas frecuentes sobre el mate, reglas de la ronda y simulador de temperatura.',
     type: 'article',
@@ -55,7 +55,7 @@ export default function RinconMateroPage() {
       {
         '@type': 'ListItem',
         position: 2,
-        name: 'El Rincón Matero',
+        name: 'Rincón Matero',
         item: `${baseUrl}/rincon-matero`,
       },
     ],
@@ -112,7 +112,7 @@ export default function RinconMateroPage() {
   const articleJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
-    headline: 'El Rincón Matero: Guía, Ritual y Cultura del Mate',
+    headline: 'Rincón Matero: Guía, Ritual y Cultura del Mate',
     description:
       'Guía técnica para curar mates según su material, resolución de mitos cotidianos y reglas tradicionales de la ronda de mate.',
     author: {
@@ -163,7 +163,7 @@ export default function RinconMateroPage() {
             </span>
 
             <h1 className="mb-6 text-4xl leading-tight font-black tracking-tight text-[#F5F5DC] sm:text-5xl lg:text-6xl">
-              El Rincón Matero: Guía, Ritual y Cultura del Mate
+              Rincón Matero: Guía, Ritual y Cultura del Mate
             </h1>
 
             <p className="mx-auto mb-10 max-w-3xl text-base leading-relaxed text-white/85 sm:text-xl">

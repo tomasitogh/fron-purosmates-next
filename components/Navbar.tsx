@@ -94,54 +94,97 @@ export default function Navbar() {
   return (
     <>
       <header className="sticky top-0 z-50 bg-[#254642] shadow-md">
-        <nav className="w-full">
+        <nav className="w-full" aria-label="Navegación principal">
           {/* Barra principal superior */}
-          <div className="flex h-16 w-full items-center justify-between px-3 sm:px-4 md:px-8 lg:px-12">
-            {/* 1. IZQUIERDA: Botón de Menú de 3 barritas */}
-            <div className="flex flex-1 items-center justify-start">
+          <div className="flex h-16 w-full items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8">
+            {/* 1. IZQUIERDA: Botón hamburguesa (SOLO MOBILE lg:hidden) + LOGO */}
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={toggleMenu}
-                className="flex items-center justify-center rounded-xl p-2 text-[#F5F5DC] transition hover:bg-white/10 focus:ring-2 focus:ring-[#D4AF37] focus:outline-none"
+                className="flex items-center justify-center rounded-xl p-2 text-[#F5F5DC] transition hover:bg-white/10 focus:ring-2 focus:ring-[#D4AF37] focus:outline-none lg:hidden"
                 aria-label="Abrir menú de navegación"
                 aria-expanded={isMenuOpen}
               >
                 <Menu className="h-6 w-6" />
               </button>
+
+              <Link
+                href="/"
+                onClick={closeMenu}
+                className="flex shrink-0 items-center gap-2 transition hover:opacity-90"
+              >
+                <Image
+                  src="/logo-purosmates.png"
+                  alt="Logo Puros Mates"
+                  width={38}
+                  height={38}
+                  className="rounded-full object-contain"
+                  priority
+                />
+                <span className="text-base font-bold tracking-wider text-[#F5F5DC] sm:text-lg lg:text-xl">
+                  PUROS MATES
+                </span>
+              </Link>
             </div>
 
-            {/* 2. CENTRO: Logo y Nombre Puros Mates */}
-            <Link
-              href="/"
-              onClick={closeMenu}
-              className="flex shrink-0 items-center justify-center gap-2 transition hover:opacity-90"
-            >
-              <Image
-                src="/logo-purosmates.png"
-                alt="Logo Puros Mates"
-                width={40}
-                height={40}
-                className="rounded-full object-contain"
-                priority
-              />
-              <span className="text-lg font-bold tracking-wider text-[#F5F5DC] sm:text-xl">
-                PUROS MATES
-              </span>
-            </Link>
+            {/* 2. CENTRO: Enlaces principales en Desktop */}
+            <div className="hidden items-center gap-1.5 lg:flex xl:gap-3">
+              <Link
+                href="/shop"
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold tracking-wide uppercase transition xl:px-4 xl:text-sm ${
+                  pathname === '/shop'
+                    ? 'bg-white/15 text-[#D4AF37]'
+                    : 'text-[#F5F5DC] hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                Tienda
+              </Link>
+              <Link
+                href="/regalos-empresariales"
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold tracking-wide uppercase transition xl:px-4 xl:text-sm ${
+                  pathname === '/regalos-empresariales'
+                    ? 'bg-white/15 text-[#D4AF37]'
+                    : 'text-[#F5F5DC] hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                Regalos Empresariales
+              </Link>
+              <Link
+                href="/rincon-matero"
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold tracking-wide uppercase transition xl:px-4 xl:text-sm ${
+                  pathname === '/rincon-matero'
+                    ? 'bg-white/15 text-[#D4AF37]'
+                    : 'text-[#F5F5DC] hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                Rincón Matero
+              </Link>
+              <Link
+                href="/nosotros"
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold tracking-wide uppercase transition xl:px-4 xl:text-sm ${
+                  pathname === '/nosotros'
+                    ? 'bg-white/15 text-[#D4AF37]'
+                    : 'text-[#F5F5DC] hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                About Us
+              </Link>
+            </div>
 
-            {/* 3. DERECHA: Barra de Búsqueda y Carrito */}
-            <div className="flex flex-1 items-center justify-end gap-1 sm:gap-2 lg:gap-3">
+            {/* 3. DERECHA: Buscador, Cuenta y Carrito */}
+            <div className="flex items-center justify-end gap-1.5 sm:gap-2">
               {/* Buscador para pantallas medianas/grandes */}
               <form
                 onSubmit={onSearchSubmit}
-                className="hidden w-52 items-center overflow-hidden rounded-xl border border-white/30 bg-white/10 transition-all focus-within:border-[#D4AF37] focus-within:ring-2 focus-within:ring-[#D4AF37]/30 md:flex md:w-64 lg:w-80"
+                className="hidden w-36 items-center overflow-hidden rounded-xl border border-white/30 bg-white/10 transition-all focus-within:border-[#D4AF37] focus-within:ring-2 focus-within:ring-[#D4AF37]/30 md:flex md:w-48 lg:w-44 xl:w-56"
               >
                 <input
                   type="search"
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="Buscar productos..."
-                  className="w-full bg-transparent px-3 py-1.5 text-sm text-white placeholder-white/60 outline-none [&::-webkit-search-cancel-button]:appearance-none"
+                  className="w-full bg-transparent px-3 py-1.5 text-xs text-white placeholder-white/60 outline-none md:text-sm [&::-webkit-search-cancel-button]:appearance-none"
                 />
                 {q && (
                   <button
@@ -172,28 +215,61 @@ export default function Navbar() {
                 <Search className="h-5 w-5" />
               </button>
 
-              {/* Carrito de compras */}
+              {/* Botón de cuenta/perfil en Desktop */}
+              <div className="hidden lg:flex lg:items-center">
+                {isAuthenticated ? (
+                  <UserButton>
+                    {isAdmin() && (
+                      <UserButton.MenuItems>
+                        <UserButton.Action
+                          label="Administrador"
+                          labelIcon={<span>🔧</span>}
+                          onClick={() => router.push('/admin')}
+                        />
+                      </UserButton.MenuItems>
+                    )}
+                  </UserButton>
+                ) : (
+                  <button
+                    onClick={openAuthModal}
+                    className="flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs font-medium text-[#F5F5DC] transition hover:border-[#D4AF37] hover:bg-white/20 focus:outline-none"
+                    aria-label="Ingresar"
+                  >
+                    <User className="h-4 w-4 text-[#D4AF37]" />
+                    <span>Ingresar</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Carrito de compras (Arriba a la derecha - ícono nítido y circular) */}
               <button
                 type="button"
                 onClick={handleCartClick}
-                className="group relative flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-2.5 py-1.5 text-[#F5F5DC] transition-all duration-200 hover:border-[#D4AF37] hover:bg-white/20 hover:shadow-md focus:ring-2 focus:ring-[#D4AF37] focus:outline-none sm:gap-2 sm:px-3"
+                className="group relative flex items-center justify-center rounded-full border border-[#D4AF37]/50 bg-white/10 text-[#D4AF37] shadow-sm transition-all duration-200 hover:scale-105 hover:border-[#D4AF37] hover:bg-[#D4AF37]/20 focus:ring-2 focus:ring-[#D4AF37] focus:outline-none active:scale-95"
                 aria-label="Ir al carrito de compras"
                 title="Ver carrito de compras"
               >
-                <div className="relative flex items-center justify-center">
-                  <ShoppingCart className="h-5 w-5 text-[#D4AF37] transition-transform duration-200 group-hover:scale-110" />
-                  {mounted && totalQty > 0 && (
-                    <span className="absolute -top-2 -right-2.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#D4AF37] px-1 text-[10px] font-bold text-[#254642] shadow sm:hidden">
-                      {totalQty > 99 ? '99+' : totalQty}
-                    </span>
-                  )}
-                </div>
-                <span className="hidden text-xs font-semibold tracking-wide text-[#F5F5DC] sm:inline-block">
-                  Carrito
-                </span>
-                <span className="hidden h-5 min-w-[20px] items-center justify-center rounded-full bg-[#D4AF37] px-1.5 text-[11px] font-bold text-[#254642] shadow-xs sm:inline-flex">
-                  {mounted ? totalQty : 0}
-                </span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#D4AF37"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="transition-transform duration-200 group-hover:scale-110"
+                >
+                  <circle cx="8" cy="21" r="1.5" />
+                  <circle cx="19" cy="21" r="1.5" />
+                  <path d="M2 2h3l2.6 12.2a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.6-7.2H6" />
+                </svg>
+                {mounted && totalQty > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#D4AF37] px-1 text-[11px] font-extrabold text-[#254642] shadow-md ring-2 ring-[#254642]">
+                    {totalQty > 99 ? '99+' : totalQty}
+                  </span>
+                )}
               </button>
             </div>
           </div>
@@ -234,10 +310,10 @@ export default function Navbar() {
         </nav>
       </header>
 
-      {/* MENÚ LATERAL DESPLEGABLE (Drawer) */}
+      {/* MENÚ LATERAL DESPLEGABLE (Drawer) - Solo para Mobile / Tablet */}
       {/* Fondo oscurecido al abrir menú */}
       <div
-        className={`fixed inset-0 z-50 bg-black/60 backdrop-blur-xs transition-opacity duration-300 ${
+        className={`fixed inset-0 z-50 bg-black/60 backdrop-blur-xs transition-opacity duration-300 lg:hidden ${
           isMenuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
         }`}
         onClick={closeMenu}
@@ -246,7 +322,7 @@ export default function Navbar() {
 
       {/* Panel lateral que se desliza desde la izquierda */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 flex w-80 max-w-[85vw] flex-col border-r border-white/10 bg-[#254642] shadow-2xl transition-transform duration-300 ease-out ${
+        className={`fixed top-0 bottom-0 left-0 z-50 flex w-80 max-w-[85vw] flex-col border-r border-white/10 bg-[#254642] shadow-2xl transition-transform duration-300 ease-out lg:hidden ${
           isMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -308,33 +384,29 @@ export default function Navbar() {
                 <Link
                   href="/shop"
                   onClick={closeMenu}
-                  className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[#F5F5DC] transition hover:bg-white/10 hover:text-white"
+                  className="flex items-center rounded-lg px-3 py-2 text-sm text-[#F5F5DC] transition hover:bg-white/10 hover:text-white"
                 >
-                  <Sparkles className="h-4 w-4 text-[#D4AF37]" />
                   <span>Ver todos los productos</span>
                 </Link>
                 <Link
                   href="/shop?category=mate"
                   onClick={closeMenu}
-                  className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[#F5F5DC] transition hover:bg-white/10 hover:text-white"
+                  className="flex items-center rounded-lg px-3 py-2 text-sm text-[#F5F5DC] transition hover:bg-white/10 hover:text-white"
                 >
-                  <span className="text-base">🧉</span>
                   <span>Mates</span>
                 </Link>
                 <Link
                   href="/shop?category=bombilla"
                   onClick={closeMenu}
-                  className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[#F5F5DC] transition hover:bg-white/10 hover:text-white"
+                  className="flex items-center rounded-lg px-3 py-2 text-sm text-[#F5F5DC] transition hover:bg-white/10 hover:text-white"
                 >
-                  <span className="text-base">🥢</span>
                   <span>Bombillas</span>
                 </Link>
                 <Link
                   href="/shop?category=accesorios"
                   onClick={closeMenu}
-                  className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[#F5F5DC] transition hover:bg-white/10 hover:text-white"
+                  className="flex items-center rounded-lg px-3 py-2 text-sm text-[#F5F5DC] transition hover:bg-white/10 hover:text-white"
                 >
-                  <span className="text-base">✨</span>
                   <span>Accesorios</span>
                 </Link>
               </div>
@@ -358,14 +430,14 @@ export default function Navbar() {
             )}
           </Link>
 
-          {/* Opción 4: Sobre Nosotros */}
+          {/* Opción 4: About Us */}
           <Link
             href="/nosotros"
             onClick={closeMenu}
             className="flex items-center gap-3 rounded-xl px-4 py-3 font-medium text-[#F5F5DC] transition hover:bg-white/10 hover:text-white"
           >
             <Info className="h-5 w-5 text-[#D4AF37]" />
-            <span>Sobre Nosotros</span>
+            <span>About Us</span>
           </Link>
 
           {/* Opción 5: Regalos Empresariales */}
@@ -378,7 +450,7 @@ export default function Navbar() {
             <span>Regalos Empresariales</span>
           </Link>
 
-          {/* Opción 6: El Rincón Matero (Ritual & Juegos) */}
+          {/* Opción 6: Rincón Matero */}
           <Link
             href="/rincon-matero"
             onClick={closeMenu}
@@ -386,7 +458,7 @@ export default function Navbar() {
           >
             <div className="flex items-center gap-3">
               <Sparkles className="h-5 w-5 text-[#D4AF37]" />
-              <span>El Rincón Matero</span>
+              <span>Rincón Matero</span>
             </div>
             <span className="rounded-full bg-[#D4AF37] px-2 py-0.5 text-[10px] font-bold text-[#254642] uppercase">
               Juegos
@@ -409,8 +481,11 @@ export default function Navbar() {
         </div>
       </aside>
 
-      {/* Barra inferior */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/20 bg-[#254642] shadow-lg">
+      {/* Barra inferior rápida - EXCLUSIVA PARA MÓVILES (Oculta en Desktop con lg:hidden) */}
+      <nav
+        aria-label="Navegación móvil inferior"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-white/20 bg-[#254642] shadow-lg lg:hidden"
+      >
         <div className="mx-auto flex h-14 max-w-xl items-center justify-around px-2">
           <BottomNavItem
             href="/"

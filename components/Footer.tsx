@@ -73,18 +73,23 @@ export default function Footer() {
             <h3 className="mb-4 text-lg font-bold text-[#3D5F54]">Productos</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/shop?category=mates" className="transition hover:opacity-70">
+                <Link href="/shop?category=mate" className="transition hover:opacity-70">
                   Mates Artesanales
                 </Link>
               </li>
               <li>
-                <Link href="/shop?category=bombillas" className="transition hover:opacity-70">
+                <Link href="/shop?category=bombilla" className="transition hover:opacity-70">
                   Bombillas
                 </Link>
               </li>
               <li>
                 <Link href="/shop?category=accesorios" className="transition hover:opacity-70">
                   Accesorios para Mate
+                </Link>
+              </li>
+              <li>
+                <Link href="/regalos-empresariales" className="transition hover:opacity-70">
+                  Regalos Empresariales
                 </Link>
               </li>
               <li>
@@ -101,7 +106,7 @@ export default function Footer() {
             <ul className="space-y-2 text-sm">
               <li>
                 <Link href="/nosotros" className="transition hover:opacity-70">
-                  Sobre Nosotros
+                  About Us
                 </Link>
               </li>
               <li>
@@ -109,7 +114,7 @@ export default function Footer() {
                   href="/rincon-matero"
                   className="font-semibold text-[#D4AF37] transition hover:opacity-70"
                 >
-                  El Rincón Matero (Juegos & Tips) 🧉
+                  Rincón Matero (Juegos & Tips)
                 </Link>
               </li>
               <li>
@@ -180,8 +185,13 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/shop?category=accesorio" className="transition hover:opacity-70">
+                <Link href="/shop?category=accesorios" className="transition hover:opacity-70">
                   Accesorios para Mate
+                </Link>
+              </li>
+              <li>
+                <Link href="/regalos-empresariales" className="transition hover:opacity-70">
+                  Regalos Empresariales
                 </Link>
               </li>
               <li>
@@ -198,7 +208,7 @@ export default function Footer() {
             <ul className="space-y-2 text-base">
               <li>
                 <Link href="/nosotros" className="transition hover:opacity-70">
-                  Sobre Nosotros
+                  About Us
                 </Link>
               </li>
               <li>
@@ -206,7 +216,7 @@ export default function Footer() {
                   href="/rincon-matero"
                   className="font-semibold text-[#D4AF37] transition hover:opacity-70"
                 >
-                  El Rincón Matero (Juegos & Tips) 🧉
+                  Rincón Matero (Juegos & Tips)
                 </Link>
               </li>
               <li>

@@ -159,7 +159,7 @@ export default function RootLayout({
 
             <main className="flex min-h-screen flex-col">{children}</main>
             <Footer />
-            <div className="h-14" aria-hidden="true" />
+            <div className="h-14 lg:hidden" aria-hidden="true" />
             <FloatingWhatsApp />
             <Suspense fallback={null}>
               <FacebookPixel />
