@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Suspense } from 'react';
 import './globals.css';
-import { GoogleAnalytics } from '@next/third-parties/google';
+import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
 import { ClerkProvider } from '@clerk/nextjs';
 
 import { Providers } from '@/components/Providers';
@@ -170,6 +170,7 @@ export default function RootLayout({
             </Suspense>
           </Providers>
           <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID || ''} />
+          <GoogleTagManager gtmId="GTM-MLZ6GKF2" />
           <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer />
         </body>
       </html>
