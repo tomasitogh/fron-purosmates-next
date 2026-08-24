@@ -300,27 +300,59 @@ export default async function CorporateGiftsPage() {
             Simple, transparente y con seguimiento constante paso a paso.
           </p>
           <div className="relative">
-            {/* Line connector */}
-            <div className="absolute top-0 left-4 hidden h-full w-0.5 bg-[#D4AF37]/30 sm:left-1/2 sm:block" />
-            <div className="space-y-12">
+            {/* Línea conectora vertical (visible tanto en mobile como en desktop) */}
+            <div className="absolute top-6 bottom-6 left-6 w-0.5 bg-gradient-to-b from-[#D4AF37] via-[#254642]/30 to-[#D4AF37] sm:left-1/2 sm:-translate-x-1/2" />
+
+            <div className="space-y-6 sm:space-y-12">
               {steps.map((step, index) => {
                 const Icon = step.icon;
                 const isEven = index % 2 === 0;
+                const stepNumber = index + 1;
+
                 return (
-                  <div
-                    key={step.title}
-                    className={`relative flex flex-col items-center gap-4 sm:flex-row ${isEven ? 'sm:flex-row' : 'sm:flex-row-reverse'}`}
-                  >
+                  <div key={step.title} className="relative">
+                    {/* Versión Mobile: línea a la izquierda con tarjetas limpias */}
+                    <div className="flex items-start gap-4 sm:hidden">
+                      <div className="relative z-10 flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full border-2 border-[#D4AF37] bg-[#254642] text-white shadow-md">
+                        <Icon className="h-5 w-5 text-[#D4AF37]" />
+                      </div>
+                      <div className="flex-1 rounded-xl border border-gray-200/70 bg-white p-4 shadow-sm">
+                        <span className="mb-1 inline-block text-[11px] font-bold tracking-wider text-[#D4AF37] uppercase">
+                          Paso 0{stepNumber}
+                        </span>
+                        <h3 className="mb-1 text-base font-bold text-[#254642]">{step.title}</h3>
+                        <p className="text-sm leading-relaxed text-gray-600">{step.description}</p>
+                      </div>
+                    </div>
+
+                    {/* Versión Desktop: alternado izquierda/derecha */}
                     <div
-                      className={`flex w-full flex-col items-center text-center sm:w-1/2 ${isEven ? 'sm:pr-12 sm:text-right' : 'sm:pl-12 sm:text-left'}`}
+                      className={`hidden sm:flex sm:items-center ${
+                        isEven ? 'sm:flex-row' : 'sm:flex-row-reverse'
+                      }`}
                     >
-                      <h3 className="mb-2 text-xl font-bold text-[#254642]">{step.title}</h3>
-                      <p className="text-gray-600">{step.description}</p>
+                      <div
+                        className={`w-1/2 ${
+                          isEven ? 'sm:pr-12 sm:text-right' : 'sm:pl-12 sm:text-left'
+                        }`}
+                      >
+                        <div className="inline-block rounded-xl border border-gray-200/70 bg-white p-6 shadow-sm transition-all hover:shadow-md">
+                          <span className="mb-1 inline-block text-xs font-bold tracking-wider text-[#D4AF37] uppercase">
+                            Paso 0{stepNumber}
+                          </span>
+                          <h3 className="mb-2 text-xl font-bold text-[#254642]">{step.title}</h3>
+                          <p className="text-sm leading-relaxed text-gray-600">
+                            {step.description}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="relative z-10 flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full border-4 border-[#D4AF37] bg-[#254642] text-white shadow-lg">
+                        <Icon className="h-6 w-6 text-[#D4AF37]" />
+                      </div>
+
+                      <div className="hidden w-1/2 sm:block" />
                     </div>
-                    <div className="relative z-10 flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full border-4 border-[#D4AF37] bg-[#254642] text-white shadow-md">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div className="hidden w-1/2 sm:block" />
                   </div>
                 );
               })}

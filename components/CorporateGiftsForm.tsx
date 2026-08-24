@@ -11,6 +11,7 @@ interface FormData {
   telefono: string;
   cantidad: string;
   tipoRegalo: string;
+  tipoMate: string;
   fechaEntrega: string;
   comentarios: string;
 }
@@ -23,6 +24,7 @@ export default function CorporateGiftsForm() {
     telefono: '',
     cantidad: '',
     tipoRegalo: '',
+    tipoMate: '',
     fechaEntrega: '',
     comentarios: '',
   });
@@ -194,10 +196,30 @@ export default function CorporateGiftsForm() {
             className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30 focus:outline-none"
           >
             <option value="">Seleccionar...</option>
-            <option value="mate-bombilla">Mate + Bombilla</option>
-            <option value="mate-yerbero">Mate + Yerbero</option>
-            <option value="mate-solo">Mate solo</option>
-            <option value="otro">Otro</option>
+            <option value="Mate">Mate</option>
+            <option value="Mate + Bombilla">Mate + Bombilla</option>
+            <option value="Mate + Yerbero">Mate + Yerbero</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+
+        {/* Tipo de mate */}
+        <div>
+          <label htmlFor="tipoMate" className="mb-1 block text-sm font-medium text-gray-700">
+            Tipo de Mate
+          </label>
+          <select
+            id="tipoMate"
+            name="tipoMate"
+            value={form.tipoMate}
+            onChange={handleChange}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30 focus:outline-none"
+          >
+            <option value="">Seleccionar...</option>
+            <option value="Criollo">Criollo</option>
+            <option value="Camionero">Camionero</option>
+            <option value="Torpedo">Torpedo</option>
+            <option value="Imperial">Imperial</option>
           </select>
         </div>
 
