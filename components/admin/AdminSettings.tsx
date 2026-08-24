@@ -473,7 +473,7 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
                   </div>
                   <Image
                     src={banner.imageUrl}
-                    alt={banner.altText ?? ''}
+                    alt={banner.altText || ''}
                     fill
                     className="object-cover"
                   />
