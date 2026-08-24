@@ -96,43 +96,43 @@ export default function Navbar() {
       <header className="sticky top-0 z-50 bg-[#254642] shadow-md">
         <nav className="w-full" aria-label="Navegación principal">
           {/* Barra principal superior */}
-          <div className="flex h-16 w-full items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8">
+          <div className="flex h-16 w-full items-center justify-between px-2 sm:px-4 md:px-6 lg:px-8">
             {/* 1. IZQUIERDA: Botón hamburguesa (SOLO MOBILE lg:hidden) + LOGO */}
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
               <button
                 type="button"
                 onClick={toggleMenu}
-                className="flex items-center justify-center rounded-xl p-2 text-[#F5F5DC] transition hover:bg-white/10 focus:ring-2 focus:ring-[#D4AF37] focus:outline-none lg:hidden"
+                className="flex shrink-0 items-center justify-center rounded-xl p-1.5 text-[#F5F5DC] transition hover:bg-white/10 focus:ring-2 focus:ring-[#D4AF37] focus:outline-none sm:p-2 lg:hidden"
                 aria-label="Abrir menú de navegación"
                 aria-expanded={isMenuOpen}
               >
-                <Menu className="h-6 w-6" />
+                <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
 
               <Link
                 href="/"
                 onClick={closeMenu}
-                className="flex shrink-0 items-center gap-2 transition hover:opacity-90"
+                className="flex shrink-0 items-center gap-1.5 transition hover:opacity-90 sm:gap-2"
               >
                 <Image
                   src="/logo-purosmates.png"
                   alt="Logo Puros Mates"
-                  width={38}
-                  height={38}
-                  className="rounded-full object-contain"
+                  width={34}
+                  height={34}
+                  className="shrink-0 rounded-full object-contain sm:h-[38px] sm:w-[38px]"
                   priority
                 />
-                <span className="text-base font-bold tracking-wider text-[#F5F5DC] sm:text-lg lg:text-xl">
+                <span className="text-sm font-bold tracking-wider whitespace-nowrap text-[#F5F5DC] sm:text-base lg:text-lg xl:text-xl">
                   PUROS MATES
                 </span>
               </Link>
             </div>
 
             {/* 2. CENTRO: Enlaces principales en Desktop */}
-            <div className="hidden items-center gap-1.5 lg:flex xl:gap-3">
+            <div className="hidden items-center gap-1 lg:flex xl:gap-3">
               <Link
                 href="/shop"
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold tracking-wide uppercase transition xl:px-4 xl:text-sm ${
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold tracking-wide uppercase transition xl:px-4 xl:text-sm ${
                   pathname === '/shop'
                     ? 'bg-white/15 text-[#D4AF37]'
                     : 'text-[#F5F5DC] hover:bg-white/10 hover:text-white'
@@ -142,7 +142,7 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/regalos-empresariales"
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold tracking-wide uppercase transition xl:px-4 xl:text-sm ${
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold tracking-wide uppercase transition xl:px-4 xl:text-sm ${
                   pathname === '/regalos-empresariales'
                     ? 'bg-white/15 text-[#D4AF37]'
                     : 'text-[#F5F5DC] hover:bg-white/10 hover:text-white'
@@ -152,7 +152,7 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/rincon-matero"
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold tracking-wide uppercase transition xl:px-4 xl:text-sm ${
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold tracking-wide uppercase transition xl:px-4 xl:text-sm ${
                   pathname === '/rincon-matero'
                     ? 'bg-white/15 text-[#D4AF37]'
                     : 'text-[#F5F5DC] hover:bg-white/10 hover:text-white'
@@ -162,7 +162,7 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/nosotros"
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold tracking-wide uppercase transition xl:px-4 xl:text-sm ${
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold tracking-wide uppercase transition xl:px-4 xl:text-sm ${
                   pathname === '/nosotros'
                     ? 'bg-white/15 text-[#D4AF37]'
                     : 'text-[#F5F5DC] hover:bg-white/10 hover:text-white'
@@ -173,18 +173,18 @@ export default function Navbar() {
             </div>
 
             {/* 3. DERECHA: Buscador, Cuenta y Carrito */}
-            <div className="flex items-center justify-end gap-1.5 sm:gap-2">
+            <div className="flex shrink-0 items-center justify-end gap-1.5 sm:gap-2">
               {/* Buscador para pantallas medianas/grandes */}
               <form
                 onSubmit={onSearchSubmit}
-                className="hidden w-36 items-center overflow-hidden rounded-xl border border-white/30 bg-white/10 transition-all focus-within:border-[#D4AF37] focus-within:ring-2 focus-within:ring-[#D4AF37]/30 md:flex md:w-48 lg:w-44 xl:w-56"
+                className="hidden items-center overflow-hidden rounded-xl border border-white/30 bg-white/10 transition-all focus-within:border-[#D4AF37] focus-within:ring-2 focus-within:ring-[#D4AF37]/30 md:flex md:w-32 lg:w-36 xl:w-52"
               >
                 <input
                   type="search"
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
-                  placeholder="Buscar productos..."
-                  className="w-full bg-transparent px-3 py-1.5 text-xs text-white placeholder-white/60 outline-none md:text-sm [&::-webkit-search-cancel-button]:appearance-none"
+                  placeholder="Buscar..."
+                  className="w-full bg-transparent px-2.5 py-1.5 text-xs text-white placeholder-white/60 outline-none md:text-xs xl:text-sm [&::-webkit-search-cancel-button]:appearance-none"
                 />
                 {q && (
                   <button
@@ -198,7 +198,7 @@ export default function Navbar() {
                 )}
                 <button
                   type="submit"
-                  className="p-2 text-white/70 transition-colors hover:text-white"
+                  className="rounded-xl border-none p-1.5 text-white/70 transition-colors hover:text-white sm:p-2"
                   aria-label="Buscar"
                 >
                   <Search className="h-4 w-4" />
@@ -234,9 +234,10 @@ export default function Navbar() {
                     onClick={openAuthModal}
                     className="flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs font-medium text-[#F5F5DC] transition hover:border-[#D4AF37] hover:bg-white/20 focus:outline-none"
                     aria-label="Ingresar"
+                    title="Ingresar a tu cuenta"
                   >
                     <User className="h-4 w-4 text-[#D4AF37]" />
-                    <span>Ingresar</span>
+                    <span className="hidden xl:inline">Ingresar</span>
                   </button>
                 )}
               </div>
@@ -486,7 +487,7 @@ export default function Navbar() {
         aria-label="Navegación móvil inferior"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-white/20 bg-[#254642] shadow-lg lg:hidden"
       >
-        <div className="mx-auto flex h-14 max-w-xl items-center justify-around px-2">
+        <div className="mx-auto flex h-14 max-w-xl items-center justify-around px-1">
           <BottomNavItem
             href="/"
             label="Inicio"
@@ -513,7 +514,7 @@ export default function Navbar() {
             active={pathname.startsWith('/favoritos')}
           />
           {isAuthenticated ? (
-            <div className="flex h-14 w-14 flex-col items-center justify-center">
+            <div className="flex h-14 min-w-[50px] flex-1 flex-col items-center justify-center sm:w-14 sm:flex-initial">
               <UserButton>
                 {isAdmin() && (
                   <UserButton.MenuItems>
@@ -530,7 +531,7 @@ export default function Navbar() {
           ) : (
             <button
               onClick={openAuthModal}
-              className="flex h-14 w-14 flex-col items-center justify-center rounded-lg text-[#F5F5DC] transition hover:bg-white/10 focus:outline-none"
+              className="flex h-14 min-w-[50px] flex-1 flex-col items-center justify-center rounded-lg text-[#F5F5DC] transition hover:bg-white/10 focus:outline-none sm:w-14 sm:flex-initial"
               aria-label="Ingresar"
             >
               <User className="h-5 w-5" />
@@ -562,7 +563,7 @@ function BottomNavItem({
   return (
     <Link
       href={href}
-      className={`relative flex h-14 w-14 flex-col items-center justify-center rounded-lg transition hover:bg-white/10 ${
+      className={`relative flex h-14 min-w-[50px] flex-1 flex-col items-center justify-center rounded-lg transition hover:bg-white/10 sm:w-14 sm:flex-initial ${
         active ? 'text-[#D4AF37]' : 'text-[#F5F5DC]'
       }`}
     >
