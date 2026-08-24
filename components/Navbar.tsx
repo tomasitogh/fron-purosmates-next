@@ -533,7 +533,7 @@ export default function Navbar() {
           ) : (
             <button
               onClick={openAuthModal}
-              className="flex h-14 min-w-[50px] flex-1 flex-col items-center justify-center rounded-lg text-[#F5F5DC] transition hover:bg-white/10 focus:outline-none sm:w-14 sm:flex-initial"
+              className="flex h-14 min-w-[50px] flex-1 flex-col items-center justify-center rounded-lg p-0 text-[#F5F5DC] transition hover:bg-white/10 focus:outline-none sm:w-14 sm:flex-initial"
               aria-label="Ingresar"
             >
               <User className="h-5 w-5" />
