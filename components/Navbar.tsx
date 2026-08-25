@@ -104,7 +104,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={toggleMenu}
-                className="flex shrink-0 items-center justify-center rounded-xl p-1.5 text-[#F5F5DC] transition hover:bg-white/10 focus:ring-2 focus:ring-[#D4AF37] focus:outline-none sm:p-2 lg:hidden"
+                className="flex shrink-0 items-center justify-center rounded-xl bg-transparent p-1.5 text-[#F5F5DC] transition hover:bg-white/10 focus:ring-2 focus:ring-[#D4AF37] focus:outline-none sm:p-2 lg:hidden"
                 aria-label="Abrir menú de navegación"
                 aria-expanded={isMenuOpen}
               >
@@ -211,7 +211,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={() => setIsSearchOpenMobile(!isSearchOpenMobile)}
-                className="flex items-center justify-center rounded-xl p-2 text-[#F5F5DC] transition hover:bg-white/10 focus:outline-none md:hidden"
+                className="flex items-center justify-center rounded-xl bg-transparent p-2 text-[#F5F5DC] transition hover:bg-white/10 focus:outline-none md:hidden"
                 aria-label="Buscar"
               >
                 <Search className="h-5 w-5" />
@@ -344,7 +344,7 @@ export default function Navbar() {
           <button
             type="button"
             onClick={closeMenu}
-            className="rounded-lg p-1.5 text-[#F5F5DC] transition hover:bg-white/10 hover:text-white"
+            className="rounded-lg bg-transparent p-1.5 text-[#F5F5DC] transition hover:bg-white/10 hover:text-white"
             aria-label="Cerrar menú"
           >
             <X className="h-6 w-6" />
@@ -368,7 +368,7 @@ export default function Navbar() {
             <button
               type="button"
               onClick={() => setIsProductsExpanded(!isProductsExpanded)}
-              className="flex w-full items-center justify-between px-4 py-3 text-left font-medium text-[#F5F5DC] transition hover:bg-white/10"
+              className="flex w-full items-center justify-between bg-transparent px-4 py-3 text-left font-medium text-[#F5F5DC] transition hover:bg-white/10"
             >
               <div className="flex items-center gap-3">
                 <ShoppingBag className="h-5 w-5 text-[#D4AF37]" />
@@ -533,7 +533,7 @@ export default function Navbar() {
           ) : (
             <button
               onClick={openAuthModal}
-              className="flex h-14 min-w-[50px] flex-1 flex-col items-center justify-center rounded-lg p-0 text-[#F5F5DC] transition hover:bg-white/10 focus:outline-none sm:w-14 sm:flex-initial"
+              className="flex h-14 min-w-[50px] flex-1 flex-col items-center justify-center rounded-lg bg-transparent p-0 text-[#F5F5DC] transition hover:bg-white/10 focus:outline-none sm:w-14 sm:flex-initial"
               aria-label="Ingresar"
             >
               <User className="h-5 w-5" />

@@ -61,6 +61,7 @@
     cursor: pointer;
     transition: border-color 0.25s;
     touch-action: manipulation;
+    background-color: transparent;
   }
 
   button:hover {
@@ -83,7 +84,7 @@
     }
 
     button {
-      background-color: #f9f9f9;
+      background-color: transparent;
     }
   }
 }
