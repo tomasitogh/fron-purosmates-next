@@ -431,7 +431,7 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
       <div className="mx-auto max-w-4xl space-y-8">
         {/* 1. BANNERS DEL CARRUSEL */}
         <section className="overflow-hidden rounded-xl border border-gray-100 bg-white">
-          <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/50 px-6 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-y-2 border-b border-gray-100 bg-gray-50/50 px-4 py-3 sm:px-6 sm:py-4">
             <div className="flex items-center gap-2">
               <ImageIcon className="h-5 w-5 text-[#254642]" />
               <h2 className="text-lg font-bold text-gray-900">Banners del Carrusel</h2>
@@ -454,7 +454,7 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
               </button>
             </div>
           </div>
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {banners.map((banner, index) => (
                 <div
@@ -504,7 +504,7 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
 
         {/* 2. FOTOS DEL HOME */}
         <section className="overflow-hidden rounded-xl border border-gray-100 bg-white">
-          <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/50 px-6 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-y-2 border-b border-gray-100 bg-gray-50/50 px-4 py-3 sm:px-6 sm:py-4">
             <div className="flex items-center gap-2">
               <LayoutGrid className="h-5 w-5 text-[#254642]" />
               <h2 className="text-lg font-bold text-gray-900">Fotos del Home</h2>
@@ -516,7 +516,7 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
               + Agregar
             </button>
           </div>
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
               {homeImages.map((img) => (
                 <div
@@ -549,13 +549,13 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
 
         {/* 3. FILTROS DE TIENDA */}
         <section className="overflow-hidden rounded-xl border border-gray-100 bg-white">
-          <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/50 px-6 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-y-2 border-b border-gray-100 bg-gray-50/50 px-4 py-3 sm:px-6 sm:py-4">
             <div className="flex items-center gap-2">
               <Filter className="h-5 w-5 text-[#254642]" />
               <h2 className="text-lg font-bold text-gray-900">Filtros de Tienda</h2>
             </div>
           </div>
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <div className="space-y-3">
               {categories.map((cat) => (
                 <div
@@ -582,7 +582,7 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
 
         {/* 4. TESTIMONIOS */}
         <section className="overflow-hidden rounded-xl border border-gray-100 bg-white">
-          <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/50 px-6 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-y-2 border-b border-gray-100 bg-gray-50/50 px-4 py-3 sm:px-6 sm:py-4">
             <div className="flex items-center gap-2">
               <MessageSquare className="h-5 w-5 text-[#254642]" />
               <h2 className="text-lg font-bold text-gray-900">Testimonios</h2>
@@ -661,7 +661,7 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
 
         {/* 5. TRABAJOS REALIZADOS */}
         <section className="overflow-hidden rounded-xl border border-gray-100 bg-white">
-          <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/50 px-6 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-y-2 border-b border-gray-100 bg-gray-50/50 px-4 py-3 sm:px-6 sm:py-4">
             <div className="flex items-center gap-2">
               <Briefcase className="h-5 w-5 text-[#254642]" />
               <h2 className="text-lg font-bold text-gray-900">Trabajos Realizados</h2>
@@ -736,7 +736,7 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
               <h2 className="text-lg font-bold text-gray-900">Notificaciones Push</h2>
             </div>
           </div>
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
               <div>
                 <h3 className="font-medium text-gray-800">Alertas de nuevas ventas</h3>
@@ -758,7 +758,7 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
       {/* MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="mx-4 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-4 sm:p-6">
             <h3 className="mb-4 text-lg font-bold">
               {modalType === 'banner'
                 ? 'Banner'

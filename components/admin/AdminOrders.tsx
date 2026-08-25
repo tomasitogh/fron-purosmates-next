@@ -137,14 +137,14 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
   return (
     <div className="space-y-6">
       {/* Dropdown de filtros */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <label className="text-sm font-medium whitespace-nowrap text-gray-600">
           Filtrar por estado:
         </label>
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-[#254642] focus:ring-2 focus:ring-[#254642] focus:outline-none md:w-auto"
+          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-[#254642] focus:ring-2 focus:ring-[#254642] focus:outline-none sm:w-auto sm:max-w-xs"
         >
           {ORDER_STATUSES.map((status) => (
             <option key={status} value={status}>
@@ -353,7 +353,7 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
             if (e.target === e.currentTarget) setViewingOrderItems(null);
           }}
         >
-          <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+          <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-4 shadow-xl sm:p-6">
             <button
               onClick={() => setViewingOrderItems(null)}
               className="absolute top-4 right-4 text-gray-400 transition-colors hover:text-gray-600"
@@ -469,7 +469,7 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
                 return (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between rounded-lg bg-gray-50 p-3"
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-gray-50 p-3"
                   >
                     <div className="flex items-center gap-3">
                       <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded bg-gray-200 text-xs font-medium text-gray-500">

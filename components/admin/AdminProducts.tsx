@@ -511,8 +511,8 @@ export default function AdminProducts({ getToken }: AdminProductsProps) {
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
             </button>
-            <div className="p-6">
-              <h2 className="mb-6 text-2xl font-bold">
+            <div className="p-4 sm:p-6">
+              <h2 className="mb-4 text-xl font-bold sm:mb-6 sm:text-2xl">
                 {isEditing ? 'Editar Producto' : 'Crear Nuevo Producto'}
               </h2>
 
