@@ -174,7 +174,6 @@ export default function RootLayout({
               <FacebookPixel />
             </Suspense>
           </Providers>
-          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID || ''} />
           <GoogleTagManager gtmId="GTM-MLZ6GKF2" />
           <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer />
         </body>
