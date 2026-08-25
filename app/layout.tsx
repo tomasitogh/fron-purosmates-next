@@ -17,6 +17,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   themeColor: '#254642',
+  interactiveWidget: 'resizes-content',
 };
 
 export const metadata: Metadata = {
@@ -164,7 +165,10 @@ export default function RootLayout({
 
             <main className="flex min-h-screen flex-col">{children}</main>
             <Footer />
-            <div className="h-14 lg:hidden" aria-hidden="true" />
+            <div
+              className="h-[calc(3.5rem+env(safe-area-inset-bottom,0px))] lg:hidden"
+              aria-hidden="true"
+            />
             <FloatingWhatsApp />
             <Suspense fallback={null}>
               <FacebookPixel />

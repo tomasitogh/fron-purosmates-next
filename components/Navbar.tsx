@@ -95,7 +95,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-[#254642] shadow-md">
+      <header className="sticky top-0 z-50 w-full [transform:translateZ(0)] bg-[#254642] shadow-md">
         <nav className="w-full" aria-label="Navegación principal">
           {/* Barra principal superior */}
           <div className="flex h-16 w-full items-center justify-between px-2 sm:px-4 md:px-6 lg:px-8">
@@ -487,7 +487,7 @@ export default function Navbar() {
       {/* Barra inferior rápida - EXCLUSIVA PARA MÓVILES (Oculta en Desktop con lg:hidden) */}
       <nav
         aria-label="Navegación móvil inferior"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-white/20 bg-[#254642] shadow-lg lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 [transform:translateZ(0)] border-t border-white/20 bg-[#254642] pb-[env(safe-area-inset-bottom,0px)] shadow-lg lg:hidden"
       >
         <div className="mx-auto flex h-14 max-w-xl items-center justify-around px-1">
           <BottomNavItem
