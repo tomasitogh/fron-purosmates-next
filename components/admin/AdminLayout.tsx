@@ -9,9 +9,10 @@ import {
   LayoutDashboard,
   ArrowLeft,
   Warehouse,
+  Briefcase,
 } from 'lucide-react';
 
-type AdminTab = 'products' | 'orders' | 'settings' | 'stock';
+type AdminTab = 'products' | 'orders' | 'settings' | 'stock' | 'mayorista';
 
 interface AdminLayoutProps {
   activeTab: AdminTab;
@@ -23,6 +24,7 @@ const tabs = [
   { id: 'products' as AdminTab, label: 'Productos', icon: Package },
   { id: 'orders' as AdminTab, label: 'Pedidos', icon: ShoppingBag },
   { id: 'stock' as AdminTab, label: 'Stock', icon: Warehouse },
+  { id: 'mayorista' as AdminTab, label: 'Mayorista', icon: Briefcase },
   { id: 'settings' as AdminTab, label: 'Ajustes', icon: Settings },
 ];
 

@@ -13,6 +13,9 @@ const ORDERS_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 const STOCK_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL
   ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/products/stock/bulk`
   : 'http://localhost:8080/products/stock/bulk';
+const INQUIRIES_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+  ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/corporate-gifts/inquiries`
+  : 'http://localhost:8080/api/v1/corporate-gifts/inquiries';
 
 // El backend devuelve { error, message } en los errores (GlobalExceptionHandler).
 // Re-throw con el mensaje legible para que el toast del admin no muestre un
@@ -101,6 +104,7 @@ export interface ProductData {
 
 interface AdminState {
   orders: Order[];
+  inquiries: CorporateGiftInquiry[];
   loading: boolean;
   error: string | null;
   successMessage: string | null;
@@ -109,6 +113,25 @@ interface AdminState {
 export interface StockUpdateItem {
   sku: string;
   quantity: number;
+}
+
+// Consulta B2B de /regalos-empresariales (entidad CorporateGiftInquiry del backend)
+export type InquiryStatus = 'NUEVO' | 'CONTACTADO' | 'CERRADO' | 'DESCARTADO';
+
+export interface CorporateGiftInquiry {
+  id: number;
+  nombre: string;
+  empresa?: string;
+  email: string;
+  telefono: string;
+  cantidad?: string;
+  tipoRegalo?: string;
+  tipoMate?: string;
+  presupuesto?: string;
+  fechaEntrega?: string;
+  comentarios?: string;
+  status: InquiryStatus;
+  createdAt: string;
 }
 
 export interface StockUpdateResponse {
@@ -261,10 +284,68 @@ export const bulkUpdateStock = createAsyncThunk(
   }
 );
 
+// ---------- Consultas Mayoristas (B2B) ----------
+
+export const fetchInquiries = createAsyncThunk(
+  'admin/fetchInquiries',
+  async (getToken: TokenGetter) => {
+    const { data } = await withAuthRetry(getToken, (token) =>
+      axios.get<CorporateGiftInquiry[]>(INQUIRIES_API_URL, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+    );
+    return data;
+  }
+);
+
+export const updateInquiryStatus = createAsyncThunk(
+  'admin/updateInquiryStatus',
+  async ({
+    inquiryId,
+    status,
+    getToken,
+  }: {
+    inquiryId: number;
+    status: InquiryStatus;
+    getToken: TokenGetter;
+  }) => {
+    const { data } = await withAuthRetry(getToken, (token) =>
+      axios.patch<CorporateGiftInquiry>(
+        `${INQUIRIES_API_URL}/${inquiryId}/status`,
+        { status },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+    );
+    return data;
+  }
+);
+
+export const deleteInquiry = createAsyncThunk(
+  'admin/deleteInquiry',
+  async ({ inquiryId, getToken }: { inquiryId: number; getToken: TokenGetter }) => {
+    await withAuthRetry(getToken, (token) =>
+      axios.delete(`${INQUIRIES_API_URL}/${inquiryId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+    );
+    return inquiryId;
+  }
+);
+
 const adminSlice = createSlice({
   name: 'admin',
   initialState: {
     orders: [],
+    inquiries: [],
     loading: false,
     error: null,
     successMessage: null,
@@ -382,6 +463,52 @@ const adminSlice = createSlice({
       .addCase(bulkUpdateStock.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Error al actualizar stock';
+      })
+      // Fetch Inquiries
+      .addCase(fetchInquiries.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchInquiries.fulfilled, (state, action) => {
+        state.loading = false;
+        state.inquiries = action.payload;
+      })
+      .addCase(fetchInquiries.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Error al cargar consultas';
+      })
+      // Update Inquiry Status
+      .addCase(updateInquiryStatus.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.successMessage = null;
+      })
+      .addCase(updateInquiryStatus.fulfilled, (state, action) => {
+        state.loading = false;
+        state.successMessage = 'Estado actualizado exitosamente';
+        const index = state.inquiries.findIndex((i) => i.id === action.payload.id);
+        if (index !== -1) {
+          state.inquiries[index] = action.payload;
+        }
+      })
+      .addCase(updateInquiryStatus.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Error al actualizar el estado';
+      })
+      // Delete Inquiry
+      .addCase(deleteInquiry.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.successMessage = null;
+      })
+      .addCase(deleteInquiry.fulfilled, (state, action) => {
+        state.loading = false;
+        state.successMessage = 'Consulta eliminada exitosamente';
+        state.inquiries = state.inquiries.filter((inquiry) => inquiry.id !== action.payload);
+      })
+      .addCase(deleteInquiry.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Error al eliminar la consulta';
       });
   },
 });
