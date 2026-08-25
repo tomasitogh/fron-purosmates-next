@@ -6,6 +6,7 @@ import { addToCart } from '@/redux/cartSlice';
 import type { ProductVariant } from '@/redux/productSlice';
 import toast from 'react-hot-toast';
 import ProductImagePreview from './ProductImagePreview';
+import FavoriteButton from './FavoriteButton';
 import { AppDispatch } from '@/redux/store';
 
 // --- F1: tipos extendidos ---
@@ -304,12 +305,21 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
 
             {/* Right Column: Details Section */}
             <div className="flex h-full flex-col lg:pt-4">
-              <div className="mb-6">
-                <h2 className="mb-2 text-3xl font-bold text-gray-900">{product.name}</h2>
-                <p className="flex items-center gap-2 font-medium tracking-wide text-[#254642]">
-                  <span className="h-2 w-2 rounded-full bg-[#254642]"></span>
-                  {product.category?.description || 'Producto'}
-                </p>
+              <div className="mb-6 flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="mb-2 text-3xl font-bold text-gray-900">{product.name}</h2>
+                  <p className="flex items-center gap-2 font-medium tracking-wide text-[#254642]">
+                    <span className="h-2 w-2 rounded-full bg-[#254642]"></span>
+                    {product.category?.description || 'Producto'}
+                  </p>
+                </div>
+                <div className="relative mt-1 shrink-0">
+                  <FavoriteButton
+                    productId={product.id}
+                    className="relative top-0 right-0"
+                    size={24}
+                  />
+                </div>
               </div>
 
               <div className="flex-grow">

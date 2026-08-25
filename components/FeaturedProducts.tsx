@@ -1,6 +1,14 @@
+'use client';
+
+import { useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '@/redux/store';
+import { fetchFavorites } from '@/redux/favoritesSlice';
+import { useAuth } from '@/context/AuthContext';
 import { FeaturedProduct } from '@/lib/data/home';
+import FavoriteButton from '@/components/FavoriteButton';
 
 interface FeaturedProductsProps {
   products: FeaturedProduct[];
@@ -13,6 +21,15 @@ export function cloudinaryUrl(src: string, width: number) {
 }
 
 export default function FeaturedProducts({ products }: FeaturedProductsProps) {
+  const dispatch = useDispatch<AppDispatch>();
+  const { isAuthenticated, getToken } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchFavorites(getToken));
+    }
+  }, [isAuthenticated, dispatch, getToken]);
+
   if (!Array.isArray(products) || products.length === 0) return null;
 
   return (
@@ -62,9 +79,10 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
               <Link
                 key={product.id}
                 href={`/producto/${product.slug || product.id}`}
-                className="group w-52 shrink-0 snap-start overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-shadow hover:shadow-md sm:w-64"
+                className="group relative w-52 shrink-0 snap-start overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-shadow hover:shadow-md sm:w-64"
               >
                 <div className="relative aspect-square w-full overflow-hidden bg-gray-100">
+                  <FavoriteButton productId={product.id} />
                   {product.image ? (
                     <div
                       className="absolute inset-0"
