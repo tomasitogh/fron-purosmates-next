@@ -8,16 +8,11 @@ import { AppDispatch } from '@/redux/store';
 import { fetchFavorites } from '@/redux/favoritesSlice';
 import { useAuth } from '@/context/AuthContext';
 import { FeaturedProduct } from '@/lib/data/home';
+import { cloudinaryUrl } from '@/lib/cloudinary';
 import FavoriteButton from '@/components/FavoriteButton';
 
 interface FeaturedProductsProps {
   products: FeaturedProduct[];
-}
-
-export function cloudinaryUrl(src: string, width: number) {
-  if (!src.includes('res.cloudinary.com')) return src;
-  const params = ['f_auto', 'q_auto', `w_${width}`].join(',');
-  return src.replace('/upload/', `/upload/${params}/`);
 }
 
 export default function FeaturedProducts({ products }: FeaturedProductsProps) {
