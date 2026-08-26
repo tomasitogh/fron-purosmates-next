@@ -209,7 +209,7 @@ export default function VirolaCanvas({
       x: node.x(),
       y: node.y(),
       rotation: node.rotation(),
-      scale: el.scale * node.scaleX(), // keepRatio: scaleX === scaleY
+      scale: node.scaleX(),
     });
   };
 
