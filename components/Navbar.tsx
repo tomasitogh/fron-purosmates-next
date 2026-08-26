@@ -31,7 +31,7 @@ export default function Navbar() {
   const searchParams = useSearchParams();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isProductsExpanded, setIsProductsExpanded] = useState(true);
+  const [isProductsExpanded, setIsProductsExpanded] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [q, setQ] = useState(searchParams.get('q') || '');
   const [isSearchOpenMobile, setIsSearchOpenMobile] = useState(false);
