@@ -21,8 +21,20 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 // import PaymentMethodModal from "@/components/PaymentMethodModal"; // [DESHABILITADO] MP — no se usa hasta reactivar
 import { AppDispatch } from '@/redux/store';
-import { Minus, Plus, Trash2, Copy } from 'lucide-react';
+import {
+  Minus,
+  Plus,
+  Trash2,
+  Copy,
+  Upload,
+  FileText,
+  CheckCircle,
+  ExternalLink,
+  Sparkles,
+} from 'lucide-react';
 import ProductModal, { Product } from '@/components/ProductModal';
+import { generateSvgFromDesign } from '@/lib/customize/svg-generator';
+import { DESIGN_STORAGE_KEY } from '@/components/customize/constants';
 
 export default function Carrito() {
   const dispatch = useDispatch<AppDispatch>();
@@ -34,7 +46,14 @@ export default function Carrito() {
   const router = useRouter();
   const { isAuthenticated, getToken } = useAuth();
   const [showCheckout, setShowCheckout] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer'>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'mp'>('cash');
+  const [comprobanteFile, setComprobanteFile] = useState<File | null>(null);
+  const [comprobantePreview, setComprobantePreview] = useState<string | null>(null);
+  const [mateNotes, setMateNotes] = useState('');
+  const [svgContent, setSvgContent] = useState<string | null>(null);
+  const [svgFileName, setSvgFileName] = useState<string | null>(null);
+  const [loadingSavedDesign, setLoadingSavedDesign] = useState(false);
+
   const [guestData, setGuestData] = useState({
     firstname: '',
     lastname: '',
@@ -50,7 +69,6 @@ export default function Carrito() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
     if (isAuthenticated) {
       (async () => {
@@ -85,12 +103,80 @@ export default function Carrito() {
     }
   }, [isAuthenticated, getToken]);
 
+  useEffect(() => {
+    if (!svgContent && items.some((item) => item.hasCustomization)) {
+      try {
+        const raw = localStorage.getItem(DESIGN_STORAGE_KEY);
+        if (raw) {
+          const design = JSON.parse(raw);
+          if (design.elements && design.elements.length > 0) {
+            generateSvgFromDesign(design)
+              .then((svg) => {
+                setSvgContent(svg);
+                setSvgFileName('Diseño del Personalizador');
+              })
+              .catch(() => {});
+          }
+        }
+      } catch {
+        // Storage o parse error silencioso
+      }
+    }
+  }, [items, svgContent]);
+
   const handleConfirmCart = () => {
     setShowCheckout(true);
     // Scroll to checkout section
     setTimeout(() => {
       document.getElementById('checkout-section')?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
+  };
+
+  const handleLoadFromCustomizer = async () => {
+    try {
+      setLoadingSavedDesign(true);
+      const raw = localStorage.getItem(DESIGN_STORAGE_KEY);
+      if (!raw) {
+        toast.error('No se encontró ningún diseño en el personalizador. Creá uno en /customize.');
+        return;
+      }
+      const design = JSON.parse(raw);
+      if (!design.elements || design.elements.length === 0) {
+        toast.error('Tu diseño del personalizador no tiene elementos agregados.');
+        return;
+      }
+      const svg = await generateSvgFromDesign(design);
+      setSvgContent(svg);
+      setSvgFileName('Diseño del Personalizador');
+      toast.success('¡Diseño del personalizador cargado con éxito!');
+    } catch (err) {
+      console.error('Error al generar SVG desde storage', err);
+      toast.error('Ocurrió un error al cargar el diseño.');
+    } finally {
+      setLoadingSavedDesign(false);
+    }
+  };
+
+  const handleUploadSvgFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.svg') && file.type !== 'image/svg+xml') {
+      toast.error('Por favor, subí un archivo en formato .svg');
+      return;
+    }
+    try {
+      const text = await file.text();
+      if (text.includes('<svg')) {
+        setSvgContent(text);
+        setSvgFileName(file.name);
+        toast.success('Diseño SVG cargado correctamente');
+      } else {
+        toast.error('El archivo no parece ser un SVG válido');
+      }
+    } catch (err) {
+      console.error('Error al leer archivo SVG', err);
+      toast.error('No se pudo leer el archivo SVG');
+    }
   };
 
   const handleFinalizePurchase = async () => {
@@ -112,7 +198,38 @@ export default function Carrito() {
       }
     }
 
+    // Validación de comprobante si eligió Mercado Pago
+    if (paymentMethod === 'mp' && !comprobanteFile) {
+      toast.error('Por favor, subí el comprobante de pago de Mercado Pago para continuar.');
+      return;
+    }
+
+    // Validación de grabado si hay productos personalizados
+    const hasCustomizationItem = items.some((item) => item.hasCustomization);
+    if (hasCustomizationItem && !svgContent) {
+      toast.error('Por favor, subí o cargá el diseño SVG de tu grabado para continuar.');
+      return;
+    }
+
     try {
+      // Unificamos las notas del mate, indicaciones de envío y referencias de archivos
+      const indicationsList: string[] = [];
+      if (mateNotes.trim()) {
+        indicationsList.push(`Aclaraciones mate: ${mateNotes.trim()}`);
+      }
+      if (guestData.extraIndications.trim()) {
+        indicationsList.push(`Envío: ${guestData.extraIndications.trim()}`);
+      }
+      if (hasCustomizationItem && svgFileName) {
+        indicationsList.push(`Grabado SVG: ${svgFileName}`);
+      }
+      if (paymentMethod === 'mp' && comprobanteFile) {
+        indicationsList.push(
+          `Comprobante MP: ${comprobanteFile.name} (${(comprobanteFile.size / 1024).toFixed(1)} KB)`
+        );
+      }
+      const combinedIndications = indicationsList.join(' | ');
+
       const orderData = {
         items,
         getToken: isAuthenticated ? getToken : undefined,
@@ -124,66 +241,40 @@ export default function Carrito() {
           locality: guestData.locality,
           address: guestData.address,
           floorApartment: guestData.floorApartment,
-          extraIndications: guestData.extraIndications,
+          extraIndications: combinedIndications,
           ...(!isAuthenticated
             ? {
                 guestEmail: guestData.email,
               }
             : {}),
         },
-        paymentMethod, // We will pass this to backend if updated, allows discount logic
+        paymentMethod,
       };
-
-      // Note: Currently backend might not handle paymentMethod for discount automatically
-      // without further changes, but we will send the order.
-      // Actually, we should handle the redirect/logic here based on payment method.
 
       const resultAction = await dispatch(createOrder(orderData));
 
       if (createOrder.fulfilled.match(resultAction)) {
         const order = resultAction.payload;
 
-        // [DESHABILITADO] MercadoPago — no se usa hasta reactivar MP
-        // if (paymentMethod === 'mp') {
-        //     const loadingToast = toast.loading('Generando pago...');
-        //     try {
-        //         const prefResult = await dispatch(createPreference({ orderId: order.id, getToken: isAuthenticated ? getToken : undefined }));
-        //         toast.dismiss(loadingToast);
-        //         if (createPreference.fulfilled.match(prefResult)) {
-        //             window.location.href = prefResult.payload;
-        //         } else {
-        //             console.error('Error createPreference:', prefResult.payload || prefResult.error);
-        //             if (typeof prefResult.payload === 'string') {
-        //                 toast.error(`Error: ${prefResult.payload}`);
-        //             } else {
-        //                 toast.error('Error al generar pago con Mercado Pago. Intente nuevamente.');
-        //             }
-        //         }
-        //     } catch (error) {
-        //         toast.dismiss(loadingToast);
-        //         console.error('Error createPreference catch:', error);
-        //         toast.error('Ocurrió un error inesperado al generar el pago.');
-        //     }
-        // } else
-        if (paymentMethod === 'transfer') {
-          // Show Success and Instructions?
-          // User said: "abajo aparece un mensaje chiquito... podes transferir..."
-          // The instructions are already visible in the form.
-          // Just confirm order.
+        if (paymentMethod === 'mp') {
+          toast.success('Pedido realizado con éxito. ¡Gracias!');
+          router.push(`/compra-exitosa?orderId=${order.id}`);
+        } else if (paymentMethod === 'transfer') {
           toast.success('Pedido realizado con éxito. ¡Gracias!');
           router.push(`/compra-exitosa?orderId=${order.id}`);
         } else {
           // Cash
-          // WhatsApp redirect?
           const phoneNumber = '5491130548207';
-          const message = `Hola, realicé el pedido #${order.id} (Efectivo).`;
+          const message = `Hola, realicé el pedido #${order.id} (Efectivo).${
+            mateNotes ? ` Aclaración: ${mateNotes}` : ''
+          }`;
           const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
           window.open(whatsappUrl, '_blank');
           toast.success('Pedido realizado. Redirigiendo a WhatsApp...');
           router.push(`/compra-exitosa?orderId=${order.id}`);
         }
 
-        dispatch({ type: 'cart/clearCart' }); // Manually clear or handle via slice
+        dispatch({ type: 'cart/clearCart' });
       } else {
         toast.error('Error al crear la orden');
       }
@@ -456,24 +547,147 @@ export default function Carrito() {
                 </div>
               </label>
 
-              {/* [DESHABILITADO] MercadoPago — no se muestra hasta reactivar
-                            <label className="flex items-start space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-gray-50 transition">
-                                <input
-                                    type="radio"
-                                    name="paymentMethod"
-                                    value="mp"
-                                    checked={paymentMethod === 'mp'}
-                                    onChange={() => setPaymentMethod('mp')}
-                                    className="mt-1 w-4 h-4 text-[#D4AF37] focus:ring-[#D4AF37]"
-                                />
-                                <div>
-                                    <span className="font-medium text-gray-800">Mercado Pago</span>
-                                    <p className="text-sm text-gray-500 mt-1">
-                                        El vendedor se comunicará con vos para coordinar el envío.
-                                    </p>
+              {/* Mercado Pago */}
+              <label className="flex cursor-pointer items-start space-x-3 rounded-lg border p-3 transition hover:bg-gray-50">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="mp"
+                  checked={paymentMethod === 'mp'}
+                  onChange={() => setPaymentMethod('mp')}
+                  className="mt-1 h-4 w-4 text-[#D4AF37] focus:ring-[#D4AF37]"
+                />
+                <div className="w-full">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-gray-800">Mercado Pago</span>
+                    <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                      Comprobante obligatorio
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Aboná desde tu cuenta de Mercado Pago o con tarjetas mediante nuestro alias y
+                    subí tu comprobante.
+                  </p>
+
+                  {paymentMethod === 'mp' && (
+                    <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50/50 p-4">
+                      <p className="mb-2 text-sm font-medium text-gray-700">
+                        El alias para abonar por Mercado Pago es:
+                      </p>
+                      <div className="mb-3 flex items-center gap-2">
+                        <code className="rounded border border-gray-200 bg-white px-2.5 py-1.5 font-mono text-sm font-bold text-gray-900">
+                          puros.mates2026
+                        </code>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            navigator.clipboard.writeText('puros.mates2026');
+                            toast.success('Alias copiado');
+                          }}
+                          className="rounded-md border bg-white p-1.5 text-gray-600 transition hover:bg-gray-50 hover:text-gray-900"
+                          title="Copiar alias"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      {/* Caja para subir comprobante */}
+                      <div className="mt-4">
+                        <label className="mb-1.5 block text-sm font-semibold text-gray-800">
+                          Subir comprobante de pago{' '}
+                          <span className="text-red-500">* (Obligatorio)</span>
+                        </label>
+                        <p className="mb-3 text-xs text-gray-500">
+                          Podés adjuntar una captura de pantalla, foto o archivo PDF (máx. 10 MB).
+                        </p>
+
+                        {!comprobanteFile ? (
+                          <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-white p-5 text-center transition hover:border-[#D4AF37] hover:bg-amber-50/20">
+                            <Upload className="mb-2 h-7 w-7 text-gray-400" />
+                            <span className="text-sm font-medium text-gray-700">
+                              Hacé clic acá para seleccionar tu comprobante
+                            </span>
+                            <span className="mt-1 text-xs text-gray-400">
+                              Formatos permitidos: PNG, JPG, JPEG, WEBP o PDF
+                            </span>
+                            <input
+                              type="file"
+                              accept="image/*,application/pdf"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                if (file.size > 10 * 1024 * 1024) {
+                                  toast.error(
+                                    'El archivo supera los 10 MB. Por favor subí uno más liviano.'
+                                  );
+                                  return;
+                                }
+                                setComprobanteFile(file);
+                                if (file.type.startsWith('image/')) {
+                                  setComprobantePreview(URL.createObjectURL(file));
+                                } else {
+                                  setComprobantePreview(null);
+                                }
+                                toast.success('Comprobante adjuntado');
+                              }}
+                            />
+                          </label>
+                        ) : (
+                          <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-3 shadow-xs">
+                            <div className="flex items-center gap-3 overflow-hidden">
+                              {comprobantePreview ? (
+                                <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-md border border-gray-200 bg-gray-50">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={comprobantePreview}
+                                    alt="Comprobante"
+                                    className="h-full w-full object-cover"
+                                  />
                                 </div>
-                            </label>
-                            */}
+                              ) : (
+                                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-md border border-red-200 bg-red-50 text-red-600">
+                                  <FileText className="h-7 w-7" />
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-medium text-gray-800">
+                                  {comprobanteFile.name}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {(comprobanteFile.size / 1024).toFixed(1)} KB •{' '}
+                                  {comprobanteFile.type.includes('pdf')
+                                    ? 'Documento PDF'
+                                    : 'Imagen'}
+                                </p>
+                                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-green-600">
+                                  <CheckCircle className="h-3 w-3" /> Adjunto con éxito
+                                </span>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                if (comprobantePreview) {
+                                  URL.revokeObjectURL(comprobantePreview);
+                                }
+                                setComprobanteFile(null);
+                                setComprobantePreview(null);
+                              }}
+                              className="rounded-md p-2 text-gray-400 transition hover:bg-gray-100 hover:text-red-600"
+                              title="Quitar comprobante"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </label>
 
               {/* Transferencia */}
               <label className="flex cursor-pointer items-start space-x-3 rounded-lg border p-3 transition hover:bg-gray-50">
@@ -691,6 +905,127 @@ export default function Carrito() {
                 </>
               )}
             </div>
+          </div>
+
+          {/* Sección Grabado Láser (si hay mates personalizados en el carrito) */}
+          {items.some((item) => item.hasCustomization) && (
+            <div className="mb-8 rounded-xl border-2 border-[#D4AF37]/50 bg-amber-50/40 p-5 shadow-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200/70 pb-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-[#D4AF37]" />
+                    <h3 className="text-lg font-bold text-gray-900">
+                      Diseño de Grabado Láser <span className="text-red-500">* (Obligatorio)</span>
+                    </h3>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-600">
+                    Tu carrito incluye mate con grabado personalizado. Adjuntá o cargá tu diseño SVG
+                    para la virola.
+                  </p>
+                </div>
+
+                <a
+                  href="/customize"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-[#254642] underline hover:text-[#1a3330]"
+                >
+                  Abrir Personalizador de Virolas <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </div>
+
+              <div className="mt-4 space-y-4">
+                {!svgContent ? (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {/* Cargar desde el personalizador */}
+                    <button
+                      type="button"
+                      disabled={loadingSavedDesign}
+                      onClick={handleLoadFromCustomizer}
+                      className="flex flex-col items-center justify-center rounded-lg border border-amber-300 bg-white p-4 text-center transition hover:border-[#D4AF37] hover:bg-amber-50/60"
+                    >
+                      <Sparkles className="mb-2 h-6 w-6 text-[#D4AF37]" />
+                      <span className="text-sm font-bold text-gray-800">
+                        {loadingSavedDesign
+                          ? 'Cargando diseño...'
+                          : 'Cargar diseño del Personalizador'}
+                      </span>
+                      <span className="mt-1 text-xs text-gray-500">
+                        Si ya diseñaste tu virola en /customize
+                      </span>
+                    </button>
+
+                    {/* Subir archivo SVG */}
+                    <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-gray-300 bg-white p-4 text-center transition hover:border-[#D4AF37] hover:bg-amber-50/60">
+                      <Upload className="mb-2 h-6 w-6 text-gray-500" />
+                      <span className="text-sm font-bold text-gray-800">Subir archivo SVG</span>
+                      <span className="mt-1 text-xs text-gray-500">
+                        Si descargaste el archivo grabado-virola.svg
+                      </span>
+                      <input
+                        type="file"
+                        accept=".svg,image/svg+xml"
+                        className="hidden"
+                        onChange={handleUploadSvgFile}
+                      />
+                    </label>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-white p-3">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <div>
+                          <p className="text-sm font-bold text-gray-800">
+                            {svgFileName || 'Diseño de grabado cargado'}
+                          </p>
+                          <p className="text-xs text-green-700">Diseño listo para grabado láser</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSvgContent(null);
+                          setSvgFileName(null);
+                        }}
+                        className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+                      >
+                        Cambiar diseño
+                      </button>
+                    </div>
+
+                    {/* Visor interactivo del SVG sobre fondo neutral */}
+                    <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-stone-100 p-6">
+                      <p className="mb-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
+                        Vista previa de la virola con tu grabado:
+                      </p>
+                      <div
+                        className="flex h-56 w-56 items-center justify-center overflow-hidden rounded-full border-4 border-stone-300 bg-white shadow-inner [&>svg]:h-full [&>svg]:w-full"
+                        dangerouslySetInnerHTML={{ __html: svgContent }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Subtítulo: Aclaraciones sobre el mate o grabado */}
+          <div className="mb-8 border-b pb-8">
+            <h3 className="mb-2 border-b pb-2 text-lg font-semibold text-gray-800">
+              Aclaraciones sobre tu mate o grabado (Opcional)
+            </h3>
+            <p className="mb-3 text-xs text-gray-500">
+              Cada calabaza es un fruto natural único. Dejanos acá si preferís una calabaza más
+              grande, más chica, o algún detalle especial sobre el mate o grabado.
+            </p>
+            <textarea
+              rows={3}
+              value={mateNotes}
+              onChange={(e) => setMateNotes(e.target.value)}
+              placeholder="Ej: Prefiero una calabaza de tamaño mediano/chico, o algún detalle específico sobre el mate o el grabado..."
+              className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-[#D4AF37] focus:ring-[#D4AF37] focus:outline-none"
+            />
           </div>
 
           {/* Total y Comprar */}
