@@ -163,6 +163,7 @@ export default function RootLayout({
               <Navbar />
             </Suspense>
 
+            <div className="h-16" aria-hidden="true" />
             <main className="flex min-h-screen flex-col">{children}</main>
             <Footer />
             <div

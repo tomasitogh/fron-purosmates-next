@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Circle, Group, Layer, Line, Path, Ring, Stage, TextPath, Transformer } from 'react-konva';
 import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
@@ -97,6 +97,11 @@ export default function VirolaCanvas({
   // agarrarlo. Mantiene fijo el punto de agarre: el glifo bajo el dedo no salta.
   const textGrabOffsetRef = useRef(0);
 
+  // Centrado del texto curvo: mide el ancho de cada TextPath después de cargar
+  // las fuentes y aplica offsetX = -textWidth/2 para centrarlo en el anillo.
+  const textNodeRefs = useRef<Map<string, Konva.TextPath>>(new Map());
+  const [textOffsets, setTextOffsets] = useState<Map<string, number>>(new Map());
+
   const scale = stageSize / DESIGN_SIZE;
 
   // Tamaño responsivo: cuadrado = ancho del contenedor (tope 520px)
@@ -124,6 +129,36 @@ export default function VirolaCanvas({
       cancelled = true;
     };
   }, []);
+
+  // Callback ref para capturar cada TextPath y medir su ancho
+  const textPathRef = useCallback((node: Konva.TextPath | null, id: string) => {
+    if (node) {
+      textNodeRefs.current.set(id, node);
+    } else {
+      textNodeRefs.current.delete(id);
+    }
+  }, []);
+
+  // Después de cargar fuentes, medir cada TextPath y calcular el offsetX
+  // necesario para centrar el texto en el anillo.
+  useEffect(() => {
+    if (!fontsReady) return;
+
+    let cancelled = false;
+    const raf = requestAnimationFrame(() => {
+      if (cancelled) return;
+      const next = new Map<string, number>();
+      textNodeRefs.current.forEach((node, id) => {
+        const tw = node.textWidth;
+        if (tw > 0) next.set(id, -tw / 2);
+      });
+      setTextOffsets(next);
+    });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+    };
+  }, [fontsReady, elements]);
 
   // Adjunta el Transformer (rotar/escalar) al elemento seleccionado,
   // excepto al texto curvo, que se maneja con sliders de la toolbar.
@@ -275,6 +310,7 @@ export default function VirolaCanvas({
                     return (
                       <TextPath
                         key={fontsReady ? `${el.id}-f` : el.id}
+                        ref={(node) => textPathRef(node, el.id)}
                         {...common}
                         data={ringTextPathData(TEXT_RADIUS)}
                         text={el.text}
@@ -282,6 +318,7 @@ export default function VirolaCanvas({
                         fontSize={el.fontSize}
                         fill={ENGRAVE_COLOR}
                         rotation={el.angle + el.rotation}
+                        offsetX={textOffsets.get(el.id) ?? 0}
                         onDragStart={(e) => handleTextDragStart(el, e)}
                         onDragMove={(e) => handleTextDragMove(el, e)}
                         onDragEnd={(e) => handleTextDragEnd(el, e)}
