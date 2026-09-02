@@ -95,8 +95,8 @@ export default async function ShopPage() {
   const [products, categoriesData] = await Promise.all([getProducts(), getCategories()]);
   const categories = Array.isArray(categoriesData)
     ? categoriesData
-    : categoriesData && Array.isArray(categoriesData.content)
-      ? categoriesData.content
+    : (categoriesData as any)?.content && Array.isArray((categoriesData as any).content)
+      ? (categoriesData as any).content
       : [];
 
   return (
