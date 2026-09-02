@@ -99,8 +99,8 @@ export default function VirolaCanvas({
 
   // Centrado del texto curvo: mide el ancho de cada TextPath después de cargar
   // las fuentes y aplica offsetX = -textWidth/2 para centrarlo en el anillo.
-  const textNodeRefs = useRef<Map<string, Konva.TextPath>>(new Map());
-  const [textOffsets, setTextOffsets] = useState<Map<string, number>>(new Map());
+  const textNodeRefs = useRef<Record<string, Konva.TextPath>>({});
+  const [textOffsets, setTextOffsets] = useState<Record<string, number>>({});
 
   const scale = stageSize / DESIGN_SIZE;
 
@@ -133,9 +133,9 @@ export default function VirolaCanvas({
   // Callback ref para capturar cada TextPath y medir su ancho
   const textPathRef = useCallback((node: Konva.TextPath | null, id: string) => {
     if (node) {
-      textNodeRefs.current.set(id, node);
+      textNodeRefs.current[id] = node;
     } else {
-      textNodeRefs.current.delete(id);
+      delete textNodeRefs.current[id];
     }
   }, []);
 
@@ -147,10 +147,10 @@ export default function VirolaCanvas({
     let cancelled = false;
     const raf = requestAnimationFrame(() => {
       if (cancelled) return;
-      const next = new Map<string, number>();
-      textNodeRefs.current.forEach((node, id) => {
+      const next: Record<string, number> = {};
+      Object.entries(textNodeRefs.current).forEach(([id, node]) => {
         const tw = node.textWidth;
-        if (tw > 0) next.set(id, -tw / 2);
+        if (tw > 0) next[id] = -tw / 2;
       });
       setTextOffsets(next);
     });
@@ -318,7 +318,7 @@ export default function VirolaCanvas({
                         fontSize={el.fontSize}
                         fill={ENGRAVE_COLOR}
                         rotation={el.angle + el.rotation}
-                        offsetX={textOffsets.get(el.id) ?? 0}
+                        offsetX={textOffsets[el.id] ?? 0}
                         onDragStart={(e) => handleTextDragStart(el, e)}
                         onDragMove={(e) => handleTextDragMove(el, e)}
                         onDragEnd={(e) => handleTextDragEnd(el, e)}
