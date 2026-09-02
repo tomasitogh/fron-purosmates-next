@@ -53,8 +53,8 @@ function elementToSvg(el: DesignElement): string {
       // sobre el radio medio del anillo (TEXT_RADIUS), igual a como lo dibuja Konva TextPath.
       return (
         `<g transform="rotate(${el.angle + el.rotation})">` +
-        `<text font-family="'${escapeXml(el.fontFamily)}', sans-serif" font-size="${el.fontSize}" fill="${ENGRAVE_COLOR}" dominant-baseline="central">` +
-        `<textPath href="#virola-text-circle" xlink:href="#virola-text-circle">${escapeXml(el.text)}</textPath>` +
+        `<text font-family="'${escapeXml(el.fontFamily)}', sans-serif" font-size="${el.fontSize}" fill="${ENGRAVE_COLOR}" dominant-baseline="central" text-anchor="middle">` +
+        `<textPath href="#virola-text-circle" xlink:href="#virola-text-circle" startOffset="0%">${escapeXml(el.text)}</textPath>` +
         `</text></g>`
       );
     case 'shape':

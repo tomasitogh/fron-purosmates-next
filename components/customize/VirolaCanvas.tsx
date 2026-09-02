@@ -67,17 +67,20 @@ function VirolaTextElement({
   pointerAngleDeg,
 }: VirolaTextElementProps) {
   const textRef = useRef<Konva.TextPath>(null);
-  const [offsetX, setOffsetX] = useState(0);
+  const [textWidth, setTextWidth] = useState(0);
   const textGrabOffsetRef = useRef(0);
 
-  // Mide el ancho del texto curvo para centrarlo (offsetX = -textWidth / 2)
+  // Mide el ancho del texto curvo para calcular su extensión angular y centrarlo
   useEffect(() => {
     if (!fontsReady || !textRef.current) return;
     const tw = textRef.current.textWidth;
     if (tw > 0) {
-      setOffsetX(-tw / 2);
+      setTextWidth(tw);
     }
   }, [fontsReady, element.text, element.fontFamily, element.fontSize]);
+
+  // Ángulo en grados que abarca la mitad del texto a lo largo del radio
+  const halfAngle = textWidth > 0 ? ((textWidth / TEXT_RADIUS) * 180) / Math.PI / 2 : 0;
 
   const handleDragStart = (e: KonvaEventObject<DragEvent>) => {
     const node = e.target;
@@ -97,7 +100,7 @@ function VirolaTextElement({
     const nextRotation = norm360(pointerAngle - textGrabOffsetRef.current);
     if (nextRotation === norm360(element.angle + element.rotation)) return;
 
-    node.rotation(nextRotation);
+    node.rotation(nextRotation - halfAngle);
     onUpdateElement(element.id, { angle: norm360(nextRotation - element.rotation) });
   };
 
@@ -115,8 +118,10 @@ function VirolaTextElement({
       fontFamily={element.fontFamily}
       fontSize={element.fontSize}
       fill={ENGRAVE_COLOR}
-      rotation={element.angle + element.rotation}
-      offsetX={offsetX}
+      textBaseline="middle"
+      rotation={element.angle + element.rotation - halfAngle}
+      offsetX={0}
+      offsetY={0}
       onClick={() => onSelect(element.id)}
       onTap={() => onSelect(element.id)}
       onDragStart={handleDragStart}
