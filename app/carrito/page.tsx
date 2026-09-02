@@ -132,31 +132,6 @@ export default function Carrito() {
     }, 100);
   };
 
-  const handleLoadFromCustomizer = async () => {
-    try {
-      setLoadingSavedDesign(true);
-      const raw = localStorage.getItem(DESIGN_STORAGE_KEY);
-      if (!raw) {
-        toast.error('No se encontró ningún diseño en el personalizador. Creá uno en /customize.');
-        return;
-      }
-      const design = JSON.parse(raw);
-      if (!design.elements || design.elements.length === 0) {
-        toast.error('Tu diseño del personalizador no tiene elementos agregados.');
-        return;
-      }
-      const svg = await generateSvgFromDesign(design);
-      setSvgContent(svg);
-      setSvgFileName('Diseño del Personalizador');
-      toast.success('¡Diseño del personalizador cargado con éxito!');
-    } catch (err) {
-      console.error('Error al generar SVG desde storage', err);
-      toast.error('Ocurrió un error al cargar el diseño.');
-    } finally {
-      setLoadingSavedDesign(false);
-    }
-  };
-
   const handleUploadSvgFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
