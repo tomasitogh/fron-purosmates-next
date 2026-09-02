@@ -47,14 +47,14 @@ function shapeToSvg(el: ShapeElement): string {
 function elementToSvg(el: DesignElement): string {
   switch (el.type) {
     case 'text':
-      // El texto sigue la circunferencia guía; el <g> lo rota a su posición angular.
-      // rotation adicional del usuario se suma al ángulo.
-      // dominant-baseline="central" es VITAL para que el texto se centre verticalmente
-      // sobre el radio medio del anillo (TEXT_RADIUS), igual a como lo dibuja Konva TextPath.
+      // El texto sigue la circunferencia guía centrada en 50% (arriba a las 12 hs).
+      // text-anchor="middle" y startOffset="50%" centran el texto en el tope sin recortar
+      // los primeros caracteres (evita el límite de distancia 0 en SVG textPath).
+      // dominant-baseline="central" lo centra verticalmente sobre el radio medio.
       return (
         `<g transform="rotate(${el.angle + el.rotation})">` +
         `<text font-family="'${escapeXml(el.fontFamily)}', sans-serif" font-size="${el.fontSize}" fill="${ENGRAVE_COLOR}" dominant-baseline="central" text-anchor="middle">` +
-        `<textPath href="#virola-text-circle" xlink:href="#virola-text-circle" startOffset="0%">${escapeXml(el.text)}</textPath>` +
+        `<textPath href="#virola-text-circle" xlink:href="#virola-text-circle" startOffset="50%">${escapeXml(el.text)}</textPath>` +
         `</text></g>`
       );
     case 'shape':
@@ -172,7 +172,7 @@ export async function generateSvgFromDesign(design: VirolaDesign): Promise<strin
      viewBox="${-half} ${-half} ${DESIGN_SIZE} ${DESIGN_SIZE}"
      width="${DESIGN_SIZE}" height="${DESIGN_SIZE}">
   <defs>
-${fontsCss}    <path id="virola-text-circle" d="${ringTextPathData(TEXT_RADIUS)}" fill="none"/>
+${fontsCss}    <path id="virola-text-circle" d="M 0 ${TEXT_RADIUS} A ${TEXT_RADIUS} ${TEXT_RADIUS} 0 1 1 0 ${-TEXT_RADIUS} A ${TEXT_RADIUS} ${TEXT_RADIUS} 0 1 1 0 ${TEXT_RADIUS}" fill="none"/>
     <clipPath id="virola-clip">
       <path d="${ringClipPathData()}"/>
     </clipPath>
