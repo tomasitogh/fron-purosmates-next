@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Circle, Group, Layer, Line, Path, Ring, Stage, TextPath, Transformer } from 'react-konva';
 import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
@@ -49,14 +49,120 @@ function clipToRing(ctx: Konva.Context) {
   ctx.arc(0, 0, INNER_RADIUS, 0, Math.PI * 2, true);
 }
 
-function shapeNode(el: ShapeElement, common: Record<string, unknown>): React.ReactNode {
-  if (el.shape === 'circle') {
-    return <Circle key={el.id} {...common} radius={20} fill={ENGRAVE_COLOR} />;
+const RING_TEXT_PATH = ringTextPathData(TEXT_RADIUS);
+
+interface VirolaTextElementProps {
+  element: Extract<DesignElement, { type: 'text' }>;
+  fontsReady: boolean;
+  onSelect: (id: string) => void;
+  onUpdateElement: (id: string, patch: ElementPatch) => void;
+  pointerAngleDeg: (stage: Konva.Stage | null) => number | null;
+}
+
+function VirolaTextElement({
+  element,
+  fontsReady,
+  onSelect,
+  onUpdateElement,
+  pointerAngleDeg,
+}: VirolaTextElementProps) {
+  const textRef = useRef<Konva.TextPath>(null);
+  const [offsetX, setOffsetX] = useState(0);
+  const textGrabOffsetRef = useRef(0);
+
+  // Mide el ancho del texto curvo para centrarlo (offsetX = -textWidth / 2)
+  useEffect(() => {
+    if (!fontsReady || !textRef.current) return;
+    const tw = textRef.current.textWidth;
+    if (tw > 0) {
+      setOffsetX(-tw / 2);
+    }
+  }, [fontsReady, element.text, element.fontFamily, element.fontSize]);
+
+  const handleDragStart = (e: KonvaEventObject<DragEvent>) => {
+    const node = e.target;
+    onSelect(element.id);
+    node.position({ x: 0, y: 0 }); // el texto nunca se traslada: solo rota
+    const pointerAngle = pointerAngleDeg(node.getStage());
+    textGrabOffsetRef.current =
+      pointerAngle == null ? 0 : norm360(pointerAngle - (element.angle + element.rotation));
+  };
+
+  const handleDragMove = (e: KonvaEventObject<DragEvent>) => {
+    const node = e.target;
+    node.position({ x: 0, y: 0 }); // pegado a la circunferencia durante TODO el drag
+    const pointerAngle = pointerAngleDeg(node.getStage());
+    if (pointerAngle == null) return;
+
+    const nextRotation = norm360(pointerAngle - textGrabOffsetRef.current);
+    if (nextRotation === norm360(element.angle + element.rotation)) return;
+
+    node.rotation(nextRotation);
+    onUpdateElement(element.id, { angle: norm360(nextRotation - element.rotation) });
+  };
+
+  const handleDragEnd = (e: KonvaEventObject<DragEvent>) => {
+    e.target.position({ x: 0, y: 0 });
+  };
+
+  return (
+    <TextPath
+      ref={textRef}
+      id={element.id}
+      draggable
+      data={RING_TEXT_PATH}
+      text={element.text}
+      fontFamily={element.fontFamily}
+      fontSize={element.fontSize}
+      fill={ENGRAVE_COLOR}
+      rotation={element.angle + element.rotation}
+      offsetX={offsetX}
+      onClick={() => onSelect(element.id)}
+      onTap={() => onSelect(element.id)}
+      onDragStart={handleDragStart}
+      onDragMove={handleDragMove}
+      onDragEnd={handleDragEnd}
+    />
+  );
+}
+
+interface VirolaShapeElementProps {
+  element: ShapeElement;
+  onSelect: (id: string) => void;
+  onUpdateElement: (id: string, patch: ElementPatch) => void;
+}
+
+function VirolaShapeElement({ element, onSelect, onUpdateElement }: VirolaShapeElementProps) {
+  const common = {
+    id: element.id,
+    draggable: true,
+    onClick: () => onSelect(element.id),
+    onTap: () => onSelect(element.id),
+    onDragStart: () => onSelect(element.id),
+    onDragEnd: (e: KonvaEventObject<DragEvent>) =>
+      onUpdateElement(element.id, { x: e.target.x(), y: e.target.y() }),
+    onTransformEnd: (e: KonvaEventObject<Event>) => {
+      const node = e.target;
+      onUpdateElement(element.id, {
+        x: node.x(),
+        y: node.y(),
+        rotation: node.rotation(),
+        scale: node.scaleX(),
+      });
+    },
+    x: element.x,
+    y: element.y,
+    rotation: element.rotation,
+    scaleX: element.scale,
+    scaleY: element.scale,
+  };
+
+  if (element.shape === 'circle') {
+    return <Circle {...common} radius={20} fill={ENGRAVE_COLOR} />;
   }
-  if (el.shape === 'line') {
+  if (element.shape === 'line') {
     return (
       <Line
-        key={el.id}
         {...common}
         points={[-20, 0, 20, 0]}
         stroke={ENGRAVE_COLOR}
@@ -66,8 +172,46 @@ function shapeNode(el: ShapeElement, common: Record<string, unknown>): React.Rea
       />
     );
   }
+  return <Line {...common} points={shapePoints(element.shape)} closed fill={ENGRAVE_COLOR} />;
+}
+
+interface VirolaPathElementProps {
+  element: Extract<DesignElement, { type: 'path' }>;
+  onSelect: (id: string) => void;
+  onUpdateElement: (id: string, patch: ElementPatch) => void;
+}
+
+function VirolaPathElement({ element, onSelect, onUpdateElement }: VirolaPathElementProps) {
   return (
-    <Line key={el.id} {...common} points={shapePoints(el.shape)} closed fill={ENGRAVE_COLOR} />
+    <Path
+      id={element.id}
+      draggable
+      onClick={() => onSelect(element.id)}
+      onTap={() => onSelect(element.id)}
+      onDragStart={() => onSelect(element.id)}
+      onDragEnd={(e: KonvaEventObject<DragEvent>) =>
+        onUpdateElement(element.id, { x: e.target.x(), y: e.target.y() })
+      }
+      data={element.d}
+      fill={ENGRAVE_COLOR}
+      fillRule="evenodd"
+      x={element.x}
+      y={element.y}
+      rotation={element.rotation}
+      scaleX={element.scale}
+      scaleY={element.scale}
+      offsetX={element.sourceWidth / 2}
+      offsetY={element.sourceHeight / 2}
+      onTransformEnd={(e: KonvaEventObject<Event>) => {
+        const node = e.target;
+        onUpdateElement(element.id, {
+          x: node.x(),
+          y: node.y(),
+          rotation: node.rotation(),
+          scale: node.scaleX(),
+        });
+      }}
+    />
   );
 }
 
@@ -93,14 +237,6 @@ export default function VirolaCanvas({
   const transformerRef = useRef<Konva.Transformer>(null);
   const [stageSize, setStageSize] = useState(0);
   const [fontsReady, setFontsReady] = useState(false);
-  // Offset angular (grados) entre el puntero y el inicio del texto al MOMENTO de
-  // agarrarlo. Mantiene fijo el punto de agarre: el glifo bajo el dedo no salta.
-  const textGrabOffsetRef = useRef(0);
-
-  // Centrado del texto curvo: mide el ancho de cada TextPath después de cargar
-  // las fuentes y aplica offsetX = -textWidth/2 para centrarlo en el anillo.
-  const textNodeRefs = useRef<Record<string, Konva.TextPath>>({});
-  const [textOffsets, setTextOffsets] = useState<Record<string, number>>({});
 
   const scale = stageSize / DESIGN_SIZE;
 
@@ -129,36 +265,6 @@ export default function VirolaCanvas({
       cancelled = true;
     };
   }, []);
-
-  // Callback ref para capturar cada TextPath y medir su ancho
-  const textPathRef = useCallback((node: Konva.TextPath | null, id: string) => {
-    if (node) {
-      textNodeRefs.current[id] = node;
-    } else {
-      delete textNodeRefs.current[id];
-    }
-  }, []);
-
-  // Después de cargar fuentes, medir cada TextPath y calcular el offsetX
-  // necesario para centrar el texto en el anillo.
-  useEffect(() => {
-    if (!fontsReady) return;
-
-    let cancelled = false;
-    const raf = requestAnimationFrame(() => {
-      if (cancelled) return;
-      const next: Record<string, number> = {};
-      Object.entries(textNodeRefs.current).forEach(([id, node]) => {
-        const tw = node.textWidth;
-        if (tw > 0) next[id] = -tw / 2;
-      });
-      setTextOffsets(next);
-    });
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(raf);
-    };
-  }, [fontsReady, elements]);
 
   // Adjunta el Transformer (rotar/escalar) al elemento seleccionado,
   // excepto al texto curvo, que se maneja con sliders de la toolbar.
@@ -193,59 +299,6 @@ export default function VirolaCanvas({
     const y = (pointer.y - stageSize / 2) / scale;
     if (Math.hypot(x, y) < MIN_POINTER_RADIUS) return null;
     return norm360((Math.atan2(y, x) * 180) / Math.PI + 90);
-  };
-
-  const handleTextDragStart = (
-    el: Extract<DesignElement, { type: 'text' }>,
-    e: KonvaEventObject<DragEvent>
-  ) => {
-    const node = e.target;
-    onSelect(el.id);
-    node.position({ x: 0, y: 0 }); // el texto nunca se traslada: solo rota
-    const pointerAngle = pointerAngleDeg(node.getStage());
-    textGrabOffsetRef.current =
-      pointerAngle == null ? 0 : norm360(pointerAngle - (el.angle + el.rotation));
-  };
-
-  const handleTextDragMove = (
-    el: Extract<DesignElement, { type: 'text' }>,
-    e: KonvaEventObject<DragEvent>
-  ) => {
-    const node = e.target;
-    node.position({ x: 0, y: 0 }); // pegado a la circunferencia durante TODO el drag
-    const pointerAngle = pointerAngleDeg(node.getStage());
-    if (pointerAngle == null) return;
-
-    const nextRotation = norm360(pointerAngle - textGrabOffsetRef.current);
-    if (nextRotation === norm360(el.angle + el.rotation)) return;
-
-    // Feedback instantáneo (Konva dibuja antes de que React commite)…
-    node.rotation(nextRotation);
-    // …y el JSON sigue siendo la fuente de verdad (el slider de la toolbar
-    // se actualiza en vivo con el mismo valor).
-    onUpdateElement(el.id, { angle: norm360(nextRotation - el.rotation) });
-  };
-
-  const handleTextDragEnd = (_el: DesignElement, e: KonvaEventObject<DragEvent>) => {
-    e.target.position({ x: 0, y: 0 });
-  };
-
-  const handleDragEnd = (el: DesignElement, e: KonvaEventObject<DragEvent>) => {
-    if (el.type === 'text') return; // el texto usa los handlers polares de arriba
-    onUpdateElement(el.id, { x: e.target.x(), y: e.target.y() });
-  };
-
-  const handleTransformEnd = (
-    el: ShapeElement | Extract<DesignElement, { type: 'path' }>,
-    e: KonvaEventObject<Event>
-  ) => {
-    const node = e.target;
-    onUpdateElement(el.id, {
-      x: node.x(),
-      y: node.y(),
-      rotation: node.rotation(),
-      scale: node.scaleX(),
-    });
   };
 
   return (
@@ -297,66 +350,34 @@ export default function VirolaCanvas({
               {/* Diseño del usuario, recortado al anillo */}
               <Group clipFunc={clipToRing}>
                 {elements.map((el) => {
-                  const common = {
-                    id: el.id,
-                    draggable: true,
-                    onClick: () => onSelect(el.id),
-                    onTap: () => onSelect(el.id),
-                    onDragStart: () => onSelect(el.id),
-                    onDragEnd: (e: KonvaEventObject<DragEvent>) => handleDragEnd(el, e),
-                  };
-
                   if (el.type === 'text') {
                     return (
-                      <TextPath
-                        key={fontsReady ? `${el.id}-f` : el.id}
-                        ref={(node) => textPathRef(node, el.id)}
-                        {...common}
-                        data={ringTextPathData(TEXT_RADIUS)}
-                        text={el.text}
-                        fontFamily={el.fontFamily}
-                        fontSize={el.fontSize}
-                        fill={ENGRAVE_COLOR}
-                        rotation={el.angle + el.rotation}
-                        offsetX={textOffsets[el.id] ?? 0}
-                        onDragStart={(e) => handleTextDragStart(el, e)}
-                        onDragMove={(e) => handleTextDragMove(el, e)}
-                        onDragEnd={(e) => handleTextDragEnd(el, e)}
+                      <VirolaTextElement
+                        key={el.id}
+                        element={el}
+                        fontsReady={fontsReady}
+                        onSelect={onSelect}
+                        onUpdateElement={onUpdateElement}
+                        pointerAngleDeg={pointerAngleDeg}
                       />
                     );
                   }
-
                   if (el.type === 'shape') {
-                    return shapeNode(el, {
-                      ...common,
-                      x: el.x,
-                      y: el.y,
-                      rotation: el.rotation,
-                      scaleX: el.scale,
-                      scaleY: el.scale,
-                      onTransformEnd: (e: KonvaEventObject<Event>) => handleTransformEnd(el, e),
-                    });
+                    return (
+                      <VirolaShapeElement
+                        key={el.id}
+                        element={el}
+                        onSelect={onSelect}
+                        onUpdateElement={onUpdateElement}
+                      />
+                    );
                   }
-
-                  // Imagen vectorizada (path de potrace, origin en su centro)
                   return (
-                    <Path
+                    <VirolaPathElement
                       key={el.id}
-                      {...common}
-                      data={el.d}
-                      fill={ENGRAVE_COLOR}
-                      // CRÍTICO: potrace genera subpaths que dependen de evenodd
-                      // para los "huecos" (letras, detalles internos). Con la
-                      // regla default (nonzero) todo se rellena → chicle negro.
-                      fillRule="evenodd"
-                      x={el.x}
-                      y={el.y}
-                      rotation={el.rotation}
-                      scaleX={el.scale}
-                      scaleY={el.scale}
-                      offsetX={el.sourceWidth / 2}
-                      offsetY={el.sourceHeight / 2}
-                      onTransformEnd={(e: KonvaEventObject<Event>) => handleTransformEnd(el, e)}
+                      element={el}
+                      onSelect={onSelect}
+                      onUpdateElement={onUpdateElement}
                     />
                   );
                 })}
