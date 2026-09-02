@@ -348,19 +348,23 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
     field: keyof Testimonial,
     value: string | number
   ) => {
-    const newTestimonials = [...testimonials];
-    newTestimonials[idx] = { ...newTestimonials[idx], [field]: value };
-    setTestimonials(newTestimonials);
+    setTestimonials((prev) => {
+      const newTestimonials = [...prev];
+      newTestimonials[idx] = { ...newTestimonials[idx], [field]: value };
+      return newTestimonials;
+    });
   };
 
   const addTestimonial = () => {
-    setTestimonials([...testimonials, { name: '', text: '', rating: 5 }]);
+    setTestimonials((prev) => [...prev, { name: '', text: '', rating: 5 }]);
   };
 
   const removeTestimonial = (idx: number) => {
-    const newTestimonials = [...testimonials];
-    newTestimonials.splice(idx, 1);
-    setTestimonials(newTestimonials);
+    setTestimonials((prev) => {
+      const newTestimonials = [...prev];
+      newTestimonials.splice(idx, 1);
+      return newTestimonials;
+    });
   };
 
   const saveCorporateProjects = async () => {
@@ -400,19 +404,23 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
   };
 
   const handleProjectChange = (idx: number, field: keyof CorporateProject, value: string) => {
-    const newProjects = [...projects];
-    newProjects[idx] = { ...newProjects[idx], [field]: value };
-    setProjects(newProjects);
+    setProjects((prev) => {
+      const newProjects = [...prev];
+      newProjects[idx] = { ...newProjects[idx], [field]: value };
+      return newProjects;
+    });
   };
 
   const addCorporateProject = () => {
-    setProjects([...projects, { title: '', description: '', imageUrl: '' }]);
+    setProjects((prev) => [...prev, { title: '', description: '', imageUrl: '' }]);
   };
 
   const removeCorporateProject = (idx: number) => {
-    const newProjects = [...projects];
-    newProjects.splice(idx, 1);
-    setProjects(newProjects);
+    setProjects((prev) => {
+      const newProjects = [...prev];
+      newProjects.splice(idx, 1);
+      return newProjects;
+    });
   };
 
   if (loading) {
