@@ -40,7 +40,7 @@ export default function FavoriteButton({
     <>
       <button
         onClick={handleClick}
-        className={`absolute top-2 right-2 z-10 rounded-full bg-white/80 p-2 shadow-sm backdrop-blur-sm transition-all hover:scale-110 hover:bg-white ${className}`}
+        className={`absolute top-4 right-2 z-10 rounded-full bg-white/80 p-2 shadow-sm backdrop-blur-sm transition-all hover:scale-110 hover:bg-white ${className}`}
         aria-label={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
       >
         <Heart
