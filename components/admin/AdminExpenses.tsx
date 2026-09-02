@@ -14,6 +14,8 @@ import {
   AlertCircle,
   X,
   Package,
+  ArrowLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -54,7 +56,7 @@ export interface OtherExpense {
 
 const STORAGE_KEY = 'pm-admin-expenses-data-v1';
 
-// Datos de ejemplo para que Lulita vea cómo funciona de inmediato
+// Datos iniciales de demostración
 const DEFAULT_ORDERS: SupplierOrder[] = [
   {
     id: 'ord-1',
@@ -100,16 +102,21 @@ const DEFAULT_OTHERS: OtherExpense[] = [
 ];
 
 export default function AdminExpenses() {
-  // Pestaña activa (como hojas de Excel)
-  const [activeSheet, setActiveSheet] = useState<'expenses' | 'prices'>('expenses');
+  // Pestañas (Hojas de Excel): 'gastos' | 'precios' | 'resumen'
+  const [activeSheet, setActiveSheet] = useState<'gastos' | 'precios' | 'resumen'>('gastos');
 
-  // Estado de los registros
+  // Sub-vista dentro de Hoja 1: 'menu' | 'pedidos' | 'packaging' | 'otros'
+  const [expenseSubView, setExpenseSubView] = useState<'menu' | 'pedidos' | 'packaging' | 'otros'>(
+    'menu'
+  );
+
+  // Registros
   const [orders, setOrders] = useState<SupplierOrder[]>([]);
   const [cards, setCards] = useState<CardExpense[]>([]);
   const [otherExpenses, setOtherExpenses] = useState<OtherExpense[]>([]);
 
-  // Margen deseado para el precio recomendado (por defecto 55%)
-  const [marginPercent, setMarginPercent] = useState<number>(55);
+  // Margen deseado: 100% sobre el precio neto (costo x 2)
+  const [marginPercent, setMarginPercent] = useState<number>(100);
 
   // Estados de Modales
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -124,7 +131,7 @@ export default function AdminExpenses() {
     { id: string; name: string; quantity: number | ''; unitPrice: number | '' }[]
   >([{ id: '1', name: '', quantity: '', unitPrice: '' }]);
 
-  // Formulario Tarjetas
+  // Formulario Packaging / Tarjetas
   const [cardFormTitle, setCardFormTitle] = useState('Tarjetas de agradecimiento / packaging');
   const [cardFormQty, setCardFormQty] = useState<number | ''>('');
   const [cardFormUnitPrice, setCardFormUnitPrice] = useState<number | ''>('');
@@ -136,7 +143,7 @@ export default function AdminExpenses() {
   const [otherFormUnitPrice, setOtherFormUnitPrice] = useState<number | ''>('');
   const [otherFormNotes, setOtherFormNotes] = useState('');
 
-  // Carga inicial de datos desde localStorage
+  // Cargar desde localStorage
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -145,9 +152,12 @@ export default function AdminExpenses() {
         setOrders(parsed.orders || []);
         setCards(parsed.cards || []);
         setOtherExpenses(parsed.otherExpenses || []);
-        if (parsed.marginPercent) setMarginPercent(parsed.marginPercent);
+        if (parsed.marginPercent !== undefined) {
+          setMarginPercent(parsed.marginPercent);
+        } else {
+          setMarginPercent(100);
+        }
       } else {
-        // Sembrar datos iniciales de ejemplo
         setOrders(DEFAULT_ORDERS);
         setCards(DEFAULT_CARDS);
         setOtherExpenses(DEFAULT_OTHERS);
@@ -159,13 +169,13 @@ export default function AdminExpenses() {
     }
   }, []);
 
-  // Guardar en localStorage automáticamente al cambiar
+  // Guardar en localStorage
   useEffect(() => {
     try {
       const data = { orders, cards, otherExpenses, marginPercent };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch {
-      // Ignorar errores de quota de storage
+      // Ignorar errores de storage
     }
   }, [orders, cards, otherExpenses, marginPercent]);
 
@@ -173,12 +183,10 @@ export default function AdminExpenses() {
   // CÁLCULOS GLOBALES Y PRORRATEOS
   // ==========================================
 
-  // Total de unidades de productos comprados en todos los pedidos
   const totalProductsQuantity = orders.reduce((acc, ord) => {
     return acc + ord.items.reduce((itemAcc, item) => itemAcc + Number(item.quantity || 0), 0);
   }, 0);
 
-  // Total gastado en mercadería pura
   const totalProductsCost = orders.reduce((acc, ord) => {
     return (
       acc +
@@ -189,13 +197,9 @@ export default function AdminExpenses() {
     );
   }, 0);
 
-  // Total gastado en envíos de proveedor
   const totalShippingCost = orders.reduce((acc, ord) => acc + Number(ord.shippingCost || 0), 0);
-
-  // Total gastado en pedidos (Mercadería + Envío)
   const totalOrdersCost = totalProductsCost + totalShippingCost;
 
-  // Total tarjetas y costo unitario por tarjeta
   const totalCardsCost = cards.reduce(
     (acc, card) => acc + Number(card.quantity || 0) * Number(card.unitPrice || 0),
     0
@@ -203,7 +207,6 @@ export default function AdminExpenses() {
   const totalCardsCount = cards.reduce((acc, card) => acc + Number(card.quantity || 0), 0);
   const cardCostPerUnit = totalCardsCount > 0 ? totalCardsCost / totalCardsCount : 0;
 
-  // Total otros gastos y prorrateo por unidad de producto
   const totalOtherCost = otherExpenses.reduce(
     (acc, oth) => acc + Number(oth.quantity || 0) * Number(oth.unitPrice || 0),
     0
@@ -211,11 +214,10 @@ export default function AdminExpenses() {
   const otherCostPerProductUnit =
     totalProductsQuantity > 0 ? totalOtherCost / totalProductsQuantity : 0;
 
-  // Gran total invertido en el negocio
   const grandTotalCost = totalOrdersCost + totalCardsCost + totalOtherCost;
 
   // ==========================================
-  // MANEJADORES DE FORMULARIOS
+  // MANEJADORES
   // ==========================================
 
   const handleAddOrderItemRow = () => {
@@ -233,7 +235,7 @@ export default function AdminExpenses() {
   const handleSaveOrder = (e: React.FormEvent) => {
     e.preventDefault();
     if (!orderFormTitle.trim()) {
-      toast.error('Por favor, ingresá un nombre o referencia para el pedido');
+      toast.error('Ingresá una referencia para el pedido');
       return;
     }
 
@@ -262,12 +264,11 @@ export default function AdminExpenses() {
 
     setOrders([newOrder, ...orders]);
     setShowOrderModal(false);
-    // Reset
     setOrderFormTitle('');
     setOrderFormShipping('');
     setOrderFormNotes('');
     setOrderFormItems([{ id: '1', name: '', quantity: '', unitPrice: '' }]);
-    toast.success('¡Pedido a proveedor guardado!');
+    toast.success('¡Pedido guardado!');
   };
 
   const handleSaveCard = (e: React.FormEvent) => {
@@ -283,7 +284,7 @@ export default function AdminExpenses() {
     const newCard: CardExpense = {
       id: 'card-' + Date.now(),
       date: new Date().toISOString().split('T')[0],
-      title: cardFormTitle.trim() || 'Tarjetas de presentación / agradecimiento',
+      title: cardFormTitle.trim() || 'Packaging / Tarjetas',
       quantity: qty,
       unitPrice,
       notes: cardFormNotes.trim() || undefined,
@@ -294,7 +295,7 @@ export default function AdminExpenses() {
     setCardFormQty('');
     setCardFormUnitPrice('');
     setCardFormNotes('');
-    toast.success('¡Gasto en tarjetas guardado!');
+    toast.success('¡Gasto en packaging guardado!');
   };
 
   const handleSaveOther = (e: React.FormEvent) => {
@@ -307,7 +308,7 @@ export default function AdminExpenses() {
     const unitPrice = Number(otherFormUnitPrice);
 
     if (!unitPrice || unitPrice <= 0) {
-      toast.error('Ingresá un monto o precio unitario válido');
+      toast.error('Ingresá un monto válido');
       return;
     }
 
@@ -326,10 +327,9 @@ export default function AdminExpenses() {
     setOtherFormQty(1);
     setOtherFormUnitPrice('');
     setOtherFormNotes('');
-    toast.success('¡Otro gasto guardado!');
+    toast.success('¡Gasto guardado!');
   };
 
-  // Exportar a archivo CSV para Excel
   const handleExportCSV = () => {
     const rows = [
       ['Tipo', 'Descripción / Concepto', 'Fecha', 'Cantidad', 'Precio Unitario', 'Total'],
@@ -338,7 +338,7 @@ export default function AdminExpenses() {
     orders.forEach((ord) => {
       ord.items.forEach((it) => {
         rows.push([
-          'Pedido (Mercadería)',
+          'Pedido',
           `${ord.title} - ${it.name}`,
           ord.date,
           it.quantity.toString(),
@@ -360,7 +360,7 @@ export default function AdminExpenses() {
 
     cards.forEach((c) => {
       rows.push([
-        'Tarjetas',
+        'Packaging',
         c.title,
         c.date,
         c.quantity.toString(),
@@ -392,128 +392,555 @@ export default function AdminExpenses() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success('¡Planilla de gastos descargada!');
+    toast.success('¡Planilla descargada!');
   };
 
   return (
-    <div className="space-y-6">
-      {/* Encabezado y Navegación de Hojas tipo Excel */}
-      <div className="flex flex-col justify-between gap-4 border-b border-gray-200 pb-5 sm:flex-row sm:items-center">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-[#254642] p-2 text-white shadow-xs">
-              <FileSpreadsheet className="h-5 w-5 text-[#D4AF37]" />
+    <div className="mx-auto max-w-5xl space-y-6">
+      {/* ===================================================================== */}
+      {/* HOJA 1: GASTOS (DISEÑO MINIMALISTA DEL BOCETO DE LULITA)              */}
+      {/* ===================================================================== */}
+      {activeSheet === 'gastos' && (
+        <div className="space-y-6">
+          {/* Sub-vista: Menú Principal de Gastos (Boceto Superior) */}
+          {expenseSubView === 'menu' && (
+            <div className="mx-auto max-w-xl rounded-2xl border border-gray-300 bg-white p-8 shadow-xs">
+              {/* Encabezado Superior: CONTROL DE GASTOS */}
+              <div className="mb-8 flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-stone-50 py-3 text-center shadow-xs">
+                <div className="rounded-md bg-[#254642] p-1.5 text-white">
+                  <FileSpreadsheet className="h-4 w-4 text-[#D4AF37]" />
+                </div>
+                <h2 className="font-bold tracking-wider text-gray-800 uppercase">
+                  CONTROL DE GASTOS
+                </h2>
+              </div>
+
+              {/* Botones Grandes Centrales: PEDIDOS / PACKAGING / OTROS... */}
+              <div className="space-y-4 px-4 py-2">
+                <button
+                  type="button"
+                  onClick={() => setExpenseSubView('pedidos')}
+                  className="group flex w-full items-center justify-between rounded-xl border-2 border-gray-300 bg-white px-6 py-4 text-center font-bold tracking-wider text-gray-800 uppercase shadow-xs transition hover:border-[#254642] hover:bg-stone-50 hover:text-[#254642]"
+                >
+                  <span className="w-full text-center text-sm font-extrabold sm:text-base">
+                    PEDIDOS
+                  </span>
+                  <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-[#254642]" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setExpenseSubView('packaging')}
+                  className="group flex w-full items-center justify-between rounded-xl border-2 border-gray-300 bg-white px-6 py-4 text-center font-bold tracking-wider text-gray-800 uppercase shadow-xs transition hover:border-[#254642] hover:bg-stone-50 hover:text-[#254642]"
+                >
+                  <span className="w-full text-center text-sm font-extrabold sm:text-base">
+                    PACKAGING
+                  </span>
+                  <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-[#254642]" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setExpenseSubView('otros')}
+                  className="group flex w-full items-center justify-between rounded-xl border-2 border-gray-300 bg-white px-6 py-4 text-center font-bold tracking-wider text-gray-800 uppercase shadow-xs transition hover:border-[#254642] hover:bg-stone-50 hover:text-[#254642]"
+                >
+                  <span className="w-full text-center text-sm font-extrabold sm:text-base">
+                    OTROS...
+                  </span>
+                  <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-[#254642]" />
+                </button>
+              </div>
             </div>
+          )}
+
+          {/* Sub-vista: PEDIDOS (Boceto Fila 2 Izquierda) */}
+          {expenseSubView === 'pedidos' && (
+            <div className="rounded-2xl border border-gray-300 bg-white p-6 shadow-xs">
+              <div className="mb-6 flex items-center justify-between border-b pb-4">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setExpenseSubView('menu')}
+                    className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-100"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Volver
+                  </button>
+                  <div className="rounded-lg border border-gray-300 bg-stone-50 px-4 py-1.5">
+                    <h3 className="font-bold tracking-wide text-gray-800 uppercase">PEDIDOS</h3>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowOrderModal(true)}
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-[#254642] bg-[#254642] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#1a3330]"
+                >
+                  <Plus className="h-4 w-4" />+ NUEVO PEDIDO
+                </button>
+              </div>
+
+              {/* Lista de Pedidos */}
+              {orders.length === 0 ? (
+                <div className="py-12 text-center text-sm text-gray-400">
+                  No tenés pedidos cargados todavía. Tocá en &ldquo;+ NUEVO PEDIDO&rdquo; para
+                  cargar el primero.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {orders.map((ord) => {
+                    const orderItemsTotal = ord.items.reduce(
+                      (sum, it) => sum + it.quantity * it.unitPrice,
+                      0
+                    );
+                    const orderTotalQty = ord.items.reduce((sum, it) => sum + it.quantity, 0);
+                    const shippingPerUnit =
+                      orderTotalQty > 0 ? ord.shippingCost / orderTotalQty : 0;
+
+                    return (
+                      <div
+                        key={ord.id}
+                        className="rounded-xl border border-gray-200 bg-stone-50/40 p-4 transition hover:bg-white"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h5 className="font-bold text-gray-900">{ord.title}</h5>
+                              <span className="rounded bg-gray-200 px-2 py-0.5 text-[11px] font-medium text-gray-700">
+                                {ord.date}
+                              </span>
+                            </div>
+                            {ord.notes && <p className="text-xs text-gray-500">{ord.notes}</p>}
+                          </div>
+
+                          <div className="flex items-center gap-4">
+                            <div className="text-right">
+                              <span className="text-[11px] text-gray-500">Total con envío:</span>
+                              <p className="font-mono text-base font-bold text-[#254642]">
+                                ${(orderItemsTotal + ord.shippingCost).toLocaleString('es-AR')}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm('¿Eliminar este pedido?')) {
+                                  setOrders(orders.filter((o) => o.id !== ord.id));
+                                  toast.success('Pedido eliminado');
+                                }
+                              }}
+                              className="rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                              title="Eliminar pedido"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 overflow-x-auto rounded-lg border border-gray-200 bg-white p-3">
+                          <table className="w-full text-left text-xs">
+                            <thead>
+                              <tr className="border-b text-gray-400">
+                                <th className="pb-1 font-medium">Producto</th>
+                                <th className="pb-1 text-center font-medium">Cantidad</th>
+                                <th className="pb-1 text-right font-medium">Precio Proveedor</th>
+                                <th className="pb-1 text-right font-medium">Subtotal</th>
+                                <th className="pb-1 text-right font-medium text-blue-600">
+                                  Envío x Unidad
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {ord.items.map((it) => (
+                                <tr key={it.id}>
+                                  <td className="py-2 font-medium text-gray-800">{it.name}</td>
+                                  <td className="py-2 text-center font-semibold text-gray-700">
+                                    {it.quantity} u.
+                                  </td>
+                                  <td className="py-2 text-right font-mono text-gray-700">
+                                    ${it.unitPrice.toLocaleString('es-AR')}
+                                  </td>
+                                  <td className="py-2 text-right font-mono font-bold text-gray-900">
+                                    ${(it.quantity * it.unitPrice).toLocaleString('es-AR')}
+                                  </td>
+                                  <td className="py-2 text-right font-mono font-semibold text-blue-600">
+                                    +${shippingPerUnit.toFixed(1)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            <tfoot>
+                              <tr className="border-t border-gray-200 text-gray-500">
+                                <td colSpan={3} className="pt-2 font-medium">
+                                  Costo de envío / flete del pedido:
+                                </td>
+                                <td colSpan={2} className="pt-2 text-right font-bold text-blue-600">
+                                  ${ord.shippingCost.toLocaleString('es-AR')}
+                                </td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Sub-vista: PACKAGING (Boceto Fila 2 Centro) */}
+          {expenseSubView === 'packaging' && (
+            <div className="rounded-2xl border border-gray-300 bg-white p-6 shadow-xs">
+              <div className="mb-6 flex items-center justify-between border-b pb-4">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setExpenseSubView('menu')}
+                    className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-100"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Volver
+                  </button>
+                  <div className="rounded-lg border border-gray-300 bg-stone-50 px-4 py-1.5">
+                    <h3 className="font-bold tracking-wide text-gray-800 uppercase">PACKAGING</h3>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowCardModal(true)}
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-amber-600 bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-amber-700"
+                >
+                  <Plus className="h-4 w-4" />+ NUEVO GASTO
+                </button>
+              </div>
+
+              {cards.length === 0 ? (
+                <div className="py-12 text-center text-sm text-gray-400">
+                  No hay gastos de packaging o tarjetas cargados. Tocá &ldquo;+ NUEVO GASTO&rdquo;
+                  para cargar uno.
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-gray-200">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b bg-gray-50 text-gray-500">
+                        <th className="px-4 py-3 font-medium">Descripción</th>
+                        <th className="px-4 py-3 font-medium">Fecha</th>
+                        <th className="px-4 py-3 text-center font-medium">Cantidad</th>
+                        <th className="px-4 py-3 text-right font-medium">Precio Unit.</th>
+                        <th className="px-4 py-3 text-right font-medium">Total Gastado</th>
+                        <th className="px-4 py-3 text-center font-medium">Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {cards.map((c) => (
+                        <tr key={c.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 font-medium text-gray-800">
+                            {c.title}
+                            {c.notes && <p className="text-[11px] text-gray-400">{c.notes}</p>}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500">{c.date}</td>
+                          <td className="px-4 py-3 text-center font-bold text-gray-700">
+                            {c.quantity.toLocaleString('es-AR')} u.
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono text-gray-700">
+                            ${c.unitPrice.toLocaleString('es-AR')}
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono font-bold text-amber-900">
+                            ${(c.quantity * c.unitPrice).toLocaleString('es-AR')}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm('¿Eliminar este registro?')) {
+                                  setCards(cards.filter((card) => card.id !== c.id));
+                                  toast.success('Eliminado');
+                                }
+                              }}
+                              className="text-gray-400 hover:text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Sub-vista: OTROS (Boceto Fila 2 Derecha) */}
+          {expenseSubView === 'otros' && (
+            <div className="rounded-2xl border border-gray-300 bg-white p-6 shadow-xs">
+              <div className="mb-6 flex items-center justify-between border-b pb-4">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setExpenseSubView('menu')}
+                    className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-100"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Volver
+                  </button>
+                  <div className="rounded-lg border border-gray-300 bg-stone-50 px-4 py-1.5">
+                    <h3 className="font-bold tracking-wide text-gray-800 uppercase">OTROS...</h3>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowOtherModal(true)}
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-purple-700 bg-purple-700 px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-purple-800"
+                >
+                  <Plus className="h-4 w-4" />+ NUEVO GASTO
+                </button>
+              </div>
+
+              {otherExpenses.length === 0 ? (
+                <div className="py-12 text-center text-sm text-gray-400">
+                  No hay otros gastos cargados. Tocá &ldquo;+ NUEVO GASTO&rdquo; para agregar
+                  tintas, servidor, etc.
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-gray-200">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b bg-gray-50 text-gray-500">
+                        <th className="px-4 py-3 font-medium">Concepto / Gasto</th>
+                        <th className="px-4 py-3 font-medium">Fecha</th>
+                        <th className="px-4 py-3 text-center font-medium">Unidades</th>
+                        <th className="px-4 py-3 text-right font-medium">Precio Unit.</th>
+                        <th className="px-4 py-3 text-right font-medium">Total Gastado</th>
+                        <th className="px-4 py-3 text-center font-medium">Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {otherExpenses.map((o) => (
+                        <tr key={o.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 font-medium text-gray-800">
+                            {o.concept}
+                            {o.notes && <p className="text-[11px] text-gray-400">{o.notes}</p>}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500">{o.date}</td>
+                          <td className="px-4 py-3 text-center font-bold text-gray-700">
+                            {o.quantity} u.
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono text-gray-700">
+                            ${o.unitPrice.toLocaleString('es-AR')}
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono font-bold text-purple-900">
+                            ${(o.quantity * o.unitPrice).toLocaleString('es-AR')}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm('¿Eliminar este gasto?')) {
+                                  setOtherExpenses(otherExpenses.filter((oth) => oth.id !== o.id));
+                                  toast.success('Eliminado');
+                                }
+                              }}
+                              className="text-gray-400 hover:text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* HOJA 2: PRECIOS RECOMENDADOS (Boceto Inferior: Tabla Limpia)          */}
+      {/* ===================================================================== */}
+      {activeSheet === 'precios' && (
+        <div className="rounded-2xl border border-gray-300 bg-white p-6 shadow-xs">
+          <div className="mb-6 flex flex-col justify-between gap-4 border-b pb-4 sm:flex-row sm:items-center">
             <div>
-              <h2 className="text-xl font-bold text-[#254642]">Control de Gastos y Precios Web</h2>
-              <p className="text-xs text-gray-500">
-                Planilla de costos, prorrateo de envíos/extras y calculadora de rentabilidad
+              <h3 className="text-base font-bold text-gray-900 uppercase">
+                PRECIOS RECOMENDADOS PARA LA WEB
+              </h3>
+              <p className="mt-0.5 text-xs text-gray-500">
+                Basado en el costo neto a proveedor + envío + extras + margen del {marginPercent}%
               </p>
             </div>
-          </div>
-        </div>
 
-        {/* Selector de Hoja (Estilo Excel) */}
-        <div className="flex items-center rounded-lg border border-gray-300 bg-gray-100 p-1 shadow-xs">
-          <button
-            type="button"
-            onClick={() => setActiveSheet('expenses')}
-            className={`flex items-center gap-2 rounded-md px-4 py-2 text-xs font-bold transition sm:text-sm ${
-              activeSheet === 'expenses'
-                ? 'bg-white text-[#254642] shadow-xs'
-                : 'text-gray-600 hover:text-[#254642]'
-            }`}
-          >
-            <span>📝 Hoja 1: Registro de Gastos</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveSheet('prices')}
-            className={`flex items-center gap-2 rounded-md px-4 py-2 text-xs font-bold transition sm:text-sm ${
-              activeSheet === 'prices'
-                ? 'bg-white text-[#254642] shadow-xs'
-                : 'text-gray-600 hover:text-[#254642]'
-            }`}
-          >
-            <span>🏷️ Hoja 2: Precios Recomendados</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Tarjetas de Resumen Financiero Rápido */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
-        <div className="rounded-xl border border-gray-200 bg-white p-3.5 shadow-xs">
-          <div className="flex items-center justify-between text-gray-500">
-            <span className="text-xs font-medium">Mercadería</span>
-            <Package className="h-4 w-4 text-[#254642]" />
+            {/* Selector de margen (100% por defecto) */}
+            <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-stone-50 px-3 py-1.5">
+              <span className="text-xs font-semibold text-gray-600">Margen sobre costo:</span>
+              <input
+                type="number"
+                min={10}
+                max={300}
+                value={marginPercent}
+                onChange={(e) => setMarginPercent(Number(e.target.value) || 0)}
+                className="w-16 rounded border border-gray-300 bg-white px-2 py-0.5 text-center text-xs font-bold text-gray-800"
+              />
+              <span className="text-xs font-bold text-gray-600">%</span>
+            </div>
           </div>
-          <p className="mt-1 text-base font-bold text-gray-800 sm:text-lg">
-            ${totalProductsCost.toLocaleString('es-AR')}
-          </p>
-          <span className="text-[11px] text-gray-400">
-            {totalProductsQuantity} productos comprados
-          </span>
-        </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-3.5 shadow-xs">
-          <div className="flex items-center justify-between text-gray-500">
-            <span className="text-xs font-medium">Envíos Proveedor</span>
-            <Truck className="h-4 w-4 text-blue-600" />
-          </div>
-          <p className="mt-1 text-base font-bold text-gray-800 sm:text-lg">
-            ${totalShippingCost.toLocaleString('es-AR')}
-          </p>
-          <span className="text-[11px] text-gray-400">{orders.length} pedidos con flete</span>
-        </div>
+          {orders.length === 0 ? (
+            <div className="py-12 text-center text-sm text-gray-400">
+              No hay pedidos cargados en la Hoja 1. Agregá al menos un pedido para ver los precios
+              recomendados.
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-gray-200">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b bg-gray-50 text-gray-600">
+                    <th className="px-4 py-3 font-bold">Producto</th>
+                    <th className="px-4 py-3 text-right font-bold">Precio Unit. Proveedor</th>
+                    <th className="px-4 py-3 text-right font-bold text-blue-700">Gastos Extras</th>
+                    <th className="px-4 py-3 text-right font-bold text-gray-900">
+                      Costo Real Base
+                    </th>
+                    <th className="px-4 py-3 text-center font-bold text-[#254642]">
+                      Intervalo Sugerido Web
+                    </th>
+                    <th className="px-4 py-3 text-right font-bold text-green-700">
+                      Ganancia Estimada
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {orders.flatMap((ord) => {
+                    const orderTotalQty = ord.items.reduce((s, it) => s + it.quantity, 0);
+                    const shippingPerUnit =
+                      orderTotalQty > 0 ? ord.shippingCost / orderTotalQty : 0;
 
-        <div className="rounded-xl border border-gray-200 bg-white p-3.5 shadow-xs">
-          <div className="flex items-center justify-between text-gray-500">
-            <span className="text-xs font-medium">Tarjetas & Pack</span>
-            <CreditCard className="h-4 w-4 text-amber-600" />
-          </div>
-          <p className="mt-1 text-base font-bold text-gray-800 sm:text-lg">
-            ${totalCardsCost.toLocaleString('es-AR')}
-          </p>
-          <span className="text-[11px] text-gray-400">
-            ${cardCostPerUnit.toFixed(1)} c/u ({totalCardsCount} u.)
-          </span>
-        </div>
+                    return ord.items.map((it) => {
+                      const totalExtras =
+                        shippingPerUnit + cardCostPerUnit + otherCostPerProductUnit;
+                      const realCost = it.unitPrice + totalExtras;
 
-        <div className="rounded-xl border border-gray-200 bg-white p-3.5 shadow-xs">
-          <div className="flex items-center justify-between text-gray-500">
-            <span className="text-xs font-medium">Otros Gastos</span>
-            <Layers className="h-4 w-4 text-purple-600" />
-          </div>
-          <p className="mt-1 text-base font-bold text-gray-800 sm:text-lg">
-            ${totalOtherCost.toLocaleString('es-AR')}
-          </p>
-          <span className="text-[11px] text-gray-400">{otherExpenses.length} conceptos varios</span>
-        </div>
+                      // 1. Mínimo (Piso donde no pierde un peso, cubre 100% de costos + 10% colchón)
+                      const minPrice = Math.ceil((realCost * 1.1) / 100) * 100;
 
-        <div className="col-span-2 rounded-xl border-2 border-[#D4AF37]/50 bg-amber-50/40 p-3.5 shadow-xs sm:col-span-4 lg:col-span-1">
-          <div className="flex items-center justify-between text-[#254642]">
-            <span className="text-xs font-bold">Total Invertido</span>
-            <DollarSign className="h-4 w-4 text-[#D4AF37]" />
-          </div>
-          <p className="mt-1 text-lg font-black text-[#254642]">
-            ${grandTotalCost.toLocaleString('es-AR')}
-          </p>
-          <span className="text-[11px] font-medium text-amber-700">Gastos en limpio</span>
+                      // 2. Recomendado: 100% sobre costo neto (Costo x 2)
+                      const recommendedPrice =
+                        Math.ceil((realCost * (1 + marginPercent / 100)) / 100) * 100;
+
+                      // 3. Máximo Ubicado: precio premium de mercado
+                      const maxPrice = Math.ceil((realCost * 2.3) / 100) * 100;
+
+                      const profit = recommendedPrice - realCost;
+
+                      return (
+                        <tr key={`${ord.id}-${it.id}`} className="hover:bg-stone-50/50">
+                          {/* Nombre */}
+                          <td className="px-4 py-3">
+                            <p className="font-bold text-gray-900">{it.name}</p>
+                            <span className="text-[10px] text-gray-400">Pedido: {ord.title}</span>
+                          </td>
+
+                          {/* Precio Unitario Proveedor */}
+                          <td className="px-4 py-3 text-right font-mono text-sm font-semibold text-gray-800">
+                            ${it.unitPrice.toLocaleString('es-AR')}
+                          </td>
+
+                          {/* Gastos Extras */}
+                          <td className="px-4 py-3 text-right">
+                            <span className="font-mono text-sm font-bold text-blue-700">
+                              +${Math.round(totalExtras).toLocaleString('es-AR')}
+                            </span>
+                            <div className="text-[10px] text-gray-400">
+                              Env: ${shippingPerUnit.toFixed(0)} | Pack: $
+                              {cardCostPerUnit.toFixed(0)}
+                            </div>
+                          </td>
+
+                          {/* Costo Real Base */}
+                          <td className="px-4 py-3 text-right">
+                            <span className="font-mono text-sm font-black text-gray-900">
+                              ${Math.round(realCost).toLocaleString('es-AR')}
+                            </span>
+                            <span className="block text-[10px] text-gray-400">Piso real</span>
+                          </td>
+
+                          {/* Intervalo Recomendado */}
+                          <td className="px-4 py-3">
+                            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+                              {/* Mínimo */}
+                              <div className="rounded-md border border-gray-200 bg-gray-50 px-2 py-1 text-center">
+                                <span className="block text-[9px] tracking-wider text-gray-500 uppercase">
+                                  Mínimo
+                                </span>
+                                <span className="font-mono font-bold text-gray-700">
+                                  ${minPrice.toLocaleString('es-AR')}
+                                </span>
+                              </div>
+
+                              <span className="text-gray-300">→</span>
+
+                              {/* Recomendado (100%) */}
+                              <div className="rounded-md border-2 border-[#D4AF37] bg-amber-50/70 px-2.5 py-1 text-center shadow-xs">
+                                <span className="block text-[9px] font-bold tracking-wider text-[#254642] uppercase">
+                                  Sugerido Web ({marginPercent}%)
+                                </span>
+                                <span className="font-mono text-sm font-black text-[#254642]">
+                                  ${recommendedPrice.toLocaleString('es-AR')}
+                                </span>
+                              </div>
+
+                              <span className="text-gray-300">→</span>
+
+                              {/* Máximo Ubicado */}
+                              <div className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-center">
+                                <span className="block text-[9px] tracking-wider text-emerald-700 uppercase">
+                                  Máx. Ubicado
+                                </span>
+                                <span className="font-mono font-bold text-emerald-800">
+                                  ${maxPrice.toLocaleString('es-AR')}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Ganancia */}
+                          <td className="px-4 py-3 text-right">
+                            <span className="font-mono text-sm font-black text-green-700">
+                              +${Math.round(profit).toLocaleString('es-AR')}
+                            </span>
+                            <span className="block text-[10px] font-semibold text-green-600">
+                              +{marginPercent}% sobre costo
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    });
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* ===================================================================== */}
-      {/* HOJA 1: REGISTRO DE GASTOS                                            */}
+      {/* HOJA 3: RESUMEN Y BALANCE GENERAL (LOS CUADRADOS DE CADA GASTO)      */}
       {/* ===================================================================== */}
-      {activeSheet === 'expenses' && (
+      {activeSheet === 'resumen' && (
         <div className="space-y-6">
-          {/* Botonera de Acciones Rápidas */}
-          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-xs">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-4">
+          <div className="rounded-2xl border border-gray-300 bg-white p-6 shadow-xs">
+            <div className="mb-6 flex items-center justify-between border-b pb-4">
               <div>
-                <h3 className="font-bold text-gray-800">Cargar un nuevo gasto o compra</h3>
-                <p className="text-xs text-gray-500">
-                  Elegí el tipo de gasto que hiciste para agregarlo a la planilla
+                <h3 className="text-base font-bold text-gray-900 uppercase">
+                  BALANCE GENERAL Y TOTALES
+                </h3>
+                <p className="mt-0.5 text-xs text-gray-500">
+                  Resumen consolidado de todos los gastos registrados en Puros Mates
                 </p>
               </div>
 
@@ -527,568 +954,125 @@ export default function AdminExpenses() {
               </button>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              {/* Botón 1: Pedido */}
-              <button
-                type="button"
-                onClick={() => setShowOrderModal(true)}
-                className="flex items-center gap-3 rounded-xl border-2 border-[#254642]/20 bg-stone-50/70 p-4 text-left transition hover:border-[#254642] hover:bg-white hover:shadow-sm"
-              >
-                <div className="rounded-lg bg-[#254642] p-2.5 text-white">
-                  <Package className="h-5 w-5 text-[#D4AF37]" />
+            {/* Cuadrados de cada gasto sumado */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Cuadro 1: Mercadería */}
+              <div className="rounded-xl border border-gray-200 bg-stone-50/70 p-4 shadow-xs">
+                <div className="flex items-center justify-between text-gray-500">
+                  <span className="text-xs font-bold uppercase">Mercadería Pura</span>
+                  <Package className="h-5 w-5 text-[#254642]" />
                 </div>
-                <div>
-                  <span className="block text-sm font-bold text-[#254642]">
-                    + Pedido a Proveedor
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    Productos, cantidades, precios y costo de envío
-                  </span>
-                </div>
-              </button>
-
-              {/* Botón 2: Tarjetas */}
-              <button
-                type="button"
-                onClick={() => setShowCardModal(true)}
-                className="flex items-center gap-3 rounded-xl border-2 border-amber-300/40 bg-amber-50/30 p-4 text-left transition hover:border-amber-400 hover:bg-white hover:shadow-sm"
-              >
-                <div className="rounded-lg bg-amber-600 p-2.5 text-white">
-                  <CreditCard className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <span className="block text-sm font-bold text-gray-800">
-                    + Tarjetas y Packaging
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    Tarjetas de gracias, folletos o packaging
-                  </span>
-                </div>
-              </button>
-
-              {/* Botón 3: Otros Gastos */}
-              <button
-                type="button"
-                onClick={() => setShowOtherModal(true)}
-                className="flex items-center gap-3 rounded-xl border-2 border-purple-200 bg-purple-50/30 p-4 text-left transition hover:border-purple-400 hover:bg-white hover:shadow-sm"
-              >
-                <div className="rounded-lg bg-purple-700 p-2.5 text-white">
-                  <Layers className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <span className="block text-sm font-bold text-gray-800">+ Otro Gasto Libre</span>
-                  <span className="text-xs text-gray-500">
-                    Servidor web, tinta de sellos, cinta, etc.
-                  </span>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* Listado 1: Pedidos a Proveedor */}
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xs">
-            <div className="border-b border-gray-200 bg-stone-50/60 px-5 py-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Package className="h-4 w-4 text-[#254642]" />
-                  <h4 className="text-sm font-bold text-[#254642]">
-                    Historial de Pedidos de Mercadería ({orders.length})
-                  </h4>
-                </div>
-                <span className="text-xs font-semibold text-gray-500">
-                  Total Pedidos: ${totalOrdersCost.toLocaleString('es-AR')}
-                </span>
-              </div>
-            </div>
-
-            {orders.length === 0 ? (
-              <div className="p-8 text-center text-sm text-gray-400">
-                No hay pedidos de mercadería cargados todavía. Tocá &ldquo;+ Pedido a
-                Proveedor&rdquo; para empezar.
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-100">
-                {orders.map((ord) => {
-                  const orderItemsTotal = ord.items.reduce(
-                    (sum, it) => sum + it.quantity * it.unitPrice,
-                    0
-                  );
-                  const orderTotalQty = ord.items.reduce((sum, it) => sum + it.quantity, 0);
-                  const shippingPerUnit = orderTotalQty > 0 ? ord.shippingCost / orderTotalQty : 0;
-
-                  return (
-                    <div key={ord.id} className="p-4 transition hover:bg-stone-50/40">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h5 className="text-sm font-bold text-gray-800">{ord.title}</h5>
-                            <span className="rounded bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-600">
-                              {ord.date}
-                            </span>
-                          </div>
-                          {ord.notes && <p className="text-xs text-gray-500">{ord.notes}</p>}
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <span className="text-xs text-gray-500">Total con envío:</span>
-                            <p className="text-sm font-bold text-[#254642]">
-                              ${(orderItemsTotal + ord.shippingCost).toLocaleString('es-AR')}
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (confirm('¿Eliminar este pedido de la planilla?')) {
-                                setOrders(orders.filter((o) => o.id !== ord.id));
-                                toast.success('Pedido eliminado');
-                              }
-                            }}
-                            className="rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
-                            title="Eliminar pedido"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Tabla interna de productos del pedido */}
-                      <div className="mt-3 overflow-x-auto rounded-lg border border-gray-100 bg-gray-50/50 p-2.5">
-                        <table className="w-full text-left text-xs text-gray-600">
-                          <thead>
-                            <tr className="border-b border-gray-200 text-gray-400">
-                              <th className="pb-1 font-medium">Producto</th>
-                              <th className="pb-1 text-center font-medium">Cantidad</th>
-                              <th className="pb-1 text-right font-medium">
-                                Precio Unit. Proveedor
-                              </th>
-                              <th className="pb-1 text-right font-medium">Subtotal</th>
-                              <th className="pb-1 text-right font-medium text-blue-600">
-                                Flete x Unidad
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-100">
-                            {ord.items.map((it) => (
-                              <tr key={it.id}>
-                                <td className="py-1.5 font-medium text-gray-800">{it.name}</td>
-                                <td className="py-1.5 text-center">{it.quantity} u.</td>
-                                <td className="py-1.5 text-right font-mono">
-                                  ${it.unitPrice.toLocaleString('es-AR')}
-                                </td>
-                                <td className="py-1.5 text-right font-mono font-bold text-gray-700">
-                                  ${(it.quantity * it.unitPrice).toLocaleString('es-AR')}
-                                </td>
-                                <td className="py-1.5 text-right font-mono text-blue-600">
-                                  +${shippingPerUnit.toFixed(1)}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                          <tfoot>
-                            <tr className="border-t border-gray-200 pt-1 text-gray-500">
-                              <td colSpan={3} className="pt-2 font-medium">
-                                Costo de flete/envío total de este pedido:
-                              </td>
-                              <td colSpan={2} className="pt-2 text-right font-bold text-blue-600">
-                                ${ord.shippingCost.toLocaleString('es-AR')}
-                              </td>
-                            </tr>
-                          </tfoot>
-                        </table>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Listado 2: Tarjetas y Packaging */}
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xs">
-            <div className="border-b border-gray-200 bg-amber-50/40 px-5 py-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="h-4 w-4 text-amber-700" />
-                  <h4 className="text-sm font-bold text-amber-900">
-                    Tarjetas y Packaging ({cards.length})
-                  </h4>
-                </div>
-                <span className="text-xs font-semibold text-amber-900">
-                  Total: ${totalCardsCost.toLocaleString('es-AR')}
-                </span>
-              </div>
-            </div>
-
-            {cards.length === 0 ? (
-              <div className="p-6 text-center text-sm text-gray-400">
-                No hay compras de tarjetas cargadas.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-gray-100 bg-gray-50 text-gray-500">
-                      <th className="px-4 py-2 font-medium">Descripción</th>
-                      <th className="px-4 py-2 font-medium">Fecha</th>
-                      <th className="px-4 py-2 text-center font-medium">Cantidad</th>
-                      <th className="px-4 py-2 text-right font-medium">Precio Unit.</th>
-                      <th className="px-4 py-2 text-right font-medium">Total Gastado</th>
-                      <th className="px-4 py-2 text-center font-medium">Acción</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {cards.map((c) => (
-                      <tr key={c.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-2.5 font-medium text-gray-800">
-                          {c.title}
-                          {c.notes && <p className="text-[11px] text-gray-400">{c.notes}</p>}
-                        </td>
-                        <td className="px-4 py-2.5 text-gray-500">{c.date}</td>
-                        <td className="px-4 py-2.5 text-center font-semibold text-gray-700">
-                          {c.quantity.toLocaleString('es-AR')} u.
-                        </td>
-                        <td className="px-4 py-2.5 text-right font-mono text-gray-700">
-                          ${c.unitPrice.toLocaleString('es-AR')}
-                        </td>
-                        <td className="px-4 py-2.5 text-right font-mono font-bold text-[#254642]">
-                          ${(c.quantity * c.unitPrice).toLocaleString('es-AR')}
-                        </td>
-                        <td className="px-4 py-2.5 text-center">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (confirm('¿Eliminar este registro de tarjetas?')) {
-                                setCards(cards.filter((card) => card.id !== c.id));
-                                toast.success('Tarjetas eliminadas');
-                              }
-                            }}
-                            className="text-gray-400 hover:text-red-600"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          {/* Listado 3: Otros Gastos */}
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xs">
-            <div className="border-b border-gray-200 bg-purple-50/40 px-5 py-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Layers className="h-4 w-4 text-purple-700" />
-                  <h4 className="text-sm font-bold text-purple-900">
-                    Otros Gastos Libres ({otherExpenses.length})
-                  </h4>
-                </div>
-                <span className="text-xs font-semibold text-purple-900">
-                  Total: ${totalOtherCost.toLocaleString('es-AR')}
-                </span>
-              </div>
-            </div>
-
-            {otherExpenses.length === 0 ? (
-              <div className="p-6 text-center text-sm text-gray-400">
-                No hay otros gastos cargados. Tocá &ldquo;+ Otro Gasto Libre&rdquo; para registrar
-                tintas, servidor, etc.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-gray-100 bg-gray-50 text-gray-500">
-                      <th className="px-4 py-2 font-medium">Concepto / Gasto</th>
-                      <th className="px-4 py-2 font-medium">Fecha</th>
-                      <th className="px-4 py-2 text-center font-medium">Unidades</th>
-                      <th className="px-4 py-2 text-right font-medium">Precio Unit.</th>
-                      <th className="px-4 py-2 text-right font-medium">Total Gastado</th>
-                      <th className="px-4 py-2 text-center font-medium">Acción</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {otherExpenses.map((o) => (
-                      <tr key={o.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-2.5 font-medium text-gray-800">
-                          {o.concept}
-                          {o.notes && <p className="text-[11px] text-gray-400">{o.notes}</p>}
-                        </td>
-                        <td className="px-4 py-2.5 text-gray-500">{o.date}</td>
-                        <td className="px-4 py-2.5 text-center font-semibold text-gray-700">
-                          {o.quantity} u.
-                        </td>
-                        <td className="px-4 py-2.5 text-right font-mono text-gray-700">
-                          ${o.unitPrice.toLocaleString('es-AR')}
-                        </td>
-                        <td className="px-4 py-2.5 text-right font-mono font-bold text-purple-900">
-                          ${(o.quantity * o.unitPrice).toLocaleString('es-AR')}
-                        </td>
-                        <td className="px-4 py-2.5 text-center">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (confirm('¿Eliminar este gasto?')) {
-                                setOtherExpenses(otherExpenses.filter((oth) => oth.id !== o.id));
-                                toast.success('Gasto eliminado');
-                              }
-                            }}
-                            className="text-gray-400 hover:text-red-600"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ===================================================================== */}
-      {/* HOJA 2: PRECIOS RECOMENDADOS PARA LA WEB                              */}
-      {/* ===================================================================== */}
-      {activeSheet === 'prices' && (
-        <div className="space-y-6">
-          {/* Panel Explicativo y Slider de Margen */}
-          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-xs">
-            <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
-              <div>
-                <h3 className="flex items-center gap-2 font-bold text-gray-900">
-                  <TrendingUp className="h-5 w-5 text-[#D4AF37]" />
-                  Calculadora de Precios Sugeridos y Rentabilidad
-                </h3>
-                <p className="mt-1 text-xs text-gray-600">
-                  El sistema toma el <strong>precio que le pagás al proveedor</strong>, le suma{' '}
-                  <strong>su parte del envío</strong>, el <strong>costo de tarjetas</strong> y los{' '}
-                  <strong>gastos extras</strong>, y calcula el precio ideal para vender en la tienda
-                  online.
+                <p className="mt-2 text-2xl font-black text-gray-900">
+                  ${totalProductsCost.toLocaleString('es-AR')}
                 </p>
+                <span className="mt-1 block text-xs text-gray-500">
+                  {totalProductsQuantity} productos en {orders.length} pedidos
+                </span>
               </div>
 
-              {/* Control de % de Ganancia Deseada */}
-              <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50/50 p-3">
-                <div>
-                  <span className="block text-xs font-bold text-amber-900">
-                    Margen de Ganancia Deseado:
-                  </span>
-                  <span className="text-[11px] text-amber-700">Por defecto: 55%</span>
+              {/* Cuadro 2: Envíos */}
+              <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-4 shadow-xs">
+                <div className="flex items-center justify-between text-blue-700">
+                  <span className="text-xs font-bold uppercase">Envíos / Fletes</span>
+                  <Truck className="h-5 w-5 text-blue-600" />
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <input
-                    type="number"
-                    min={10}
-                    max={200}
-                    value={marginPercent}
-                    onChange={(e) => setMarginPercent(Number(e.target.value) || 0)}
-                    className="w-16 rounded border border-gray-300 bg-white px-2 py-1 text-center font-bold text-gray-800"
-                  />
-                  <span className="font-bold text-gray-700">%</span>
+                <p className="mt-2 text-2xl font-black text-blue-950">
+                  ${totalShippingCost.toLocaleString('es-AR')}
+                </p>
+                <span className="mt-1 block text-xs text-blue-700">Flete de todos los pedidos</span>
+              </div>
+
+              {/* Cuadro 3: Packaging */}
+              <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-4 shadow-xs">
+                <div className="flex items-center justify-between text-amber-700">
+                  <span className="text-xs font-bold uppercase">Packaging & Tarjetas</span>
+                  <CreditCard className="h-5 w-5 text-amber-600" />
                 </div>
+                <p className="mt-2 text-2xl font-black text-amber-950">
+                  ${totalCardsCost.toLocaleString('es-AR')}
+                </p>
+                <span className="mt-1 block text-xs text-amber-700">
+                  ${cardCostPerUnit.toFixed(1)} c/u ({totalCardsCount} u. compradas)
+                </span>
+              </div>
+
+              {/* Cuadro 4: Otros Gastos */}
+              <div className="rounded-xl border border-purple-200 bg-purple-50/40 p-4 shadow-xs">
+                <div className="flex items-center justify-between text-purple-700">
+                  <span className="text-xs font-bold uppercase">Otros Gastos Libres</span>
+                  <Layers className="h-5 w-5 text-purple-600" />
+                </div>
+                <p className="mt-2 text-2xl font-black text-purple-950">
+                  ${totalOtherCost.toLocaleString('es-AR')}
+                </p>
+                <span className="mt-1 block text-xs text-purple-700">
+                  {otherExpenses.length} conceptos (servidor, tintas, etc.)
+                </span>
               </div>
             </div>
-          </div>
 
-          {/* Tabla de Precios Recomendados */}
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xs">
-            <div className="border-b border-gray-200 bg-stone-50 px-5 py-3">
-              <h4 className="text-sm font-bold text-[#254642]">
-                Lista de Productos y Precios para la Tienda
-              </h4>
-            </div>
-
-            {orders.length === 0 ? (
-              <div className="p-8 text-center text-sm text-gray-400">
-                Aún no hay productos cargados en la Hoja 1. Agregá al menos un pedido a proveedor
-                para ver las recomendaciones de precios.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50 text-gray-600">
-                      <th className="px-4 py-3 font-semibold">Producto</th>
-                      <th className="px-4 py-3 text-right font-semibold">Precio Unit. Proveedor</th>
-                      <th className="px-4 py-3 text-right font-semibold text-blue-700">
-                        Gastos Extras Unit.
-                        <span className="block text-[10px] font-normal text-gray-400">
-                          (Envío + Tarjeta + Otros)
-                        </span>
-                      </th>
-                      <th className="px-4 py-3 text-right font-semibold text-gray-900">
-                        Costo Real Base
-                        <span className="block text-[10px] font-normal text-gray-400">
-                          (Piso absoluto)
-                        </span>
-                      </th>
-                      <th className="px-4 py-3 text-center font-semibold text-amber-900">
-                        Intervalo Recomendado para la Web
-                        <span className="block text-[10px] font-normal text-gray-400">
-                          Mínimo vs Recomendado ({marginPercent}%) vs Máximo
-                        </span>
-                      </th>
-                      <th className="px-4 py-3 text-right font-semibold text-green-700">
-                        Ganancia x Unidad
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {/* Agrupamos por producto de cada pedido */}
-                    {orders.flatMap((ord) => {
-                      const orderTotalQty = ord.items.reduce((s, it) => s + it.quantity, 0);
-                      const shippingPerUnit =
-                        orderTotalQty > 0 ? ord.shippingCost / orderTotalQty : 0;
-
-                      return ord.items.map((it) => {
-                        // Gastos extras unitarios
-                        const totalExtras =
-                          shippingPerUnit + cardCostPerUnit + otherCostPerProductUnit;
-
-                        // Costo real unitario
-                        const realCost = it.unitPrice + totalExtras;
-
-                        // Intervalo de Precios:
-                        // 1. Mínimo (donde no pierde un peso, cubre costos + 10% por imprevistos/comisiones)
-                        const minPrice = Math.ceil((realCost * 1.1) / 100) * 100;
-
-                        // 2. Recomendado (con el margen indicado, ej. 55% sobre costo / markup)
-                        const recommendedPrice =
-                          Math.ceil((realCost * (1 + marginPercent / 100)) / 100) * 100;
-
-                        // 3. Máximo "Ubicado" (margen premium para mayor ganancia sin quedar fuera de mercado)
-                        const maxPrice = Math.ceil((realCost * 2.2) / 100) * 100;
-
-                        // Ganancia con el precio recomendado
-                        const profit = recommendedPrice - realCost;
-                        const profitPercent = ((profit / realCost) * 100).toFixed(0);
-
-                        return (
-                          <tr key={`${ord.id}-${it.id}`} className="hover:bg-stone-50/60">
-                            {/* Producto */}
-                            <td className="px-4 py-3">
-                              <span className="font-bold text-gray-900">{it.name}</span>
-                              <p className="text-[11px] text-gray-400">De: {ord.title}</p>
-                            </td>
-
-                            {/* 1. Precio Unitario Proveedor */}
-                            <td className="px-4 py-3 text-right font-mono text-sm font-semibold text-gray-800">
-                              ${it.unitPrice.toLocaleString('es-AR')}
-                            </td>
-
-                            {/* 2. Gastos Extras Unitarios */}
-                            <td className="px-4 py-3 text-right">
-                              <span className="font-mono text-sm font-bold text-blue-700">
-                                +${Math.round(totalExtras).toLocaleString('es-AR')}
-                              </span>
-                              <div className="text-[10px] text-gray-400">
-                                Envío: ${shippingPerUnit.toFixed(0)} | Tarjeta: $
-                                {cardCostPerUnit.toFixed(0)} | Otros: $
-                                {otherCostPerProductUnit.toFixed(0)}
-                              </div>
-                            </td>
-
-                            {/* 3. Costo Real Base */}
-                            <td className="px-4 py-3 text-right">
-                              <span className="font-mono text-sm font-black text-gray-900">
-                                ${Math.round(realCost).toLocaleString('es-AR')}
-                              </span>
-                              <span className="block text-[10px] text-gray-400">Costo total</span>
-                            </td>
-
-                            {/* 4. Intervalo Recomendado */}
-                            <td className="px-4 py-3">
-                              <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-                                {/* Mínimo */}
-                                <div className="rounded-md border border-gray-200 bg-gray-50 px-2 py-1 text-center">
-                                  <span className="block text-[9px] tracking-wider text-gray-500 uppercase">
-                                    Mínimo (Piso)
-                                  </span>
-                                  <span className="font-mono font-bold text-gray-700">
-                                    ${minPrice.toLocaleString('es-AR')}
-                                  </span>
-                                </div>
-
-                                <span className="text-gray-300">→</span>
-
-                                {/* Recomendado */}
-                                <div className="rounded-md border-2 border-[#D4AF37] bg-amber-50/70 px-2.5 py-1 text-center shadow-xs">
-                                  <span className="block text-[9px] font-bold tracking-wider text-[#254642] uppercase">
-                                    Sugerido Web ({marginPercent}%)
-                                  </span>
-                                  <span className="font-mono text-sm font-black text-[#254642]">
-                                    ${recommendedPrice.toLocaleString('es-AR')}
-                                  </span>
-                                </div>
-
-                                <span className="text-gray-300">→</span>
-
-                                {/* Máximo Ubicado */}
-                                <div className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-center">
-                                  <span className="block text-[9px] tracking-wider text-emerald-700 uppercase">
-                                    Máx. Ubicado
-                                  </span>
-                                  <span className="font-mono font-bold text-emerald-800">
-                                    ${maxPrice.toLocaleString('es-AR')}
-                                  </span>
-                                </div>
-                              </div>
-                            </td>
-
-                            {/* 5. Ganancia */}
-                            <td className="px-4 py-3 text-right">
-                              <span className="font-mono text-sm font-black text-green-700">
-                                +${Math.round(profit).toLocaleString('es-AR')}
-                              </span>
-                              <span className="block text-[10px] font-semibold text-green-600">
-                                {profitPercent}% ganancia
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      });
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          {/* Tips de Negocio para Lulita */}
-          <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 text-xs text-blue-900">
-            <div className="flex items-start gap-2.5">
-              <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600" />
-              <div>
-                <p className="font-bold">¿Cómo interpretar estos números en Puros Mates?</p>
-                <ul className="mt-1 list-disc space-y-0.5 pl-4 text-blue-800">
-                  <li>
-                    <strong>Precio Mínimo:</strong> Es el valor piso. Vendiéndolo a este precio no
-                    perdés ni un peso (cubre mercadería, flete, tarjetitas y otros gastos).
-                  </li>
-                  <li>
-                    <strong>Precio Sugerido Web:</strong> Es el precio ideal para publicar en la web
-                    con tu margen del {marginPercent}%. Podés ajustarlo desde el casillero de arriba
-                    cuando quieras.
-                  </li>
-                  <li>
-                    <strong>Máximo Ubicado:</strong> Te permite cobrar un extra en mates con
-                    detalles especiales, virolas cinceladas o combos con bombilla sin quedar fuera
-                    de mercado.
-                  </li>
-                </ul>
-              </div>
+            {/* Gran Total Invertido */}
+            <div className="mt-6 rounded-2xl border-2 border-[#D4AF37] bg-amber-50/50 p-6 text-center shadow-xs">
+              <span className="text-xs font-bold tracking-wider text-[#254642] uppercase">
+                GRAN TOTAL INVERTIDO EN EL NEGOCIO
+              </span>
+              <p className="mt-1 text-3xl font-black text-[#254642] sm:text-4xl">
+                ${grandTotalCost.toLocaleString('es-AR')}
+              </p>
+              <p className="mt-1 text-xs text-amber-800">
+                Suma total de mercadería + fletes + packaging + otros gastos
+              </p>
             </div>
           </div>
         </div>
       )}
 
       {/* ===================================================================== */}
-      {/* MODAL 1: NUEVO PEDIDO A PROVEEDOR                                     */}
+      {/* NAVEGADOR INFERIOR DE HOJAS (COMO EN EXCEL / BOCETO DE LULITA)       */}
+      {/* ===================================================================== */}
+      <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+        <button
+          type="button"
+          onClick={() => {
+            setActiveSheet('gastos');
+            setExpenseSubView('menu');
+          }}
+          className={`rounded-xl border-2 px-5 py-2.5 text-xs font-extrabold tracking-wider uppercase shadow-xs transition ${
+            activeSheet === 'gastos'
+              ? 'border-[#254642] bg-[#254642] text-white'
+              : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+          }`}
+        >
+          HOJA UNO -&gt; GASTOS
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSheet('precios')}
+          className={`rounded-xl border-2 px-5 py-2.5 text-xs font-extrabold tracking-wider uppercase shadow-xs transition ${
+            activeSheet === 'precios'
+              ? 'border-[#254642] bg-[#254642] text-white'
+              : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+          }`}
+        >
+          HOJA DOS -&gt; PRECIOS RECOMENDADOS
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSheet('resumen')}
+          className={`rounded-xl border-2 px-5 py-2.5 text-xs font-extrabold tracking-wider uppercase shadow-xs transition ${
+            activeSheet === 'resumen'
+              ? 'border-[#254642] bg-[#254642] text-white'
+              : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+          }`}
+        >
+          HOJA TRES -&gt; TOTALES Y BALANCE
+        </button>
+      </div>
+
+      {/* ===================================================================== */}
+      {/* MODAL 1: NUEVO PEDIDO                                                 */}
       {/* ===================================================================== */}
       {showOrderModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
@@ -1096,9 +1080,7 @@ export default function AdminExpenses() {
             <div className="flex items-center justify-between border-b pb-3">
               <div className="flex items-center gap-2">
                 <Package className="h-5 w-5 text-[#254642]" />
-                <h3 className="text-lg font-bold text-[#254642]">
-                  Cargar Nuevo Pedido a Proveedor
-                </h3>
+                <h3 className="text-lg font-bold text-[#254642]">Cargar Nuevo Pedido</h3>
               </div>
               <button
                 type="button"
@@ -1124,7 +1106,6 @@ export default function AdminExpenses() {
                 />
               </div>
 
-              {/* Lista dinámica de productos */}
               <div>
                 <div className="mb-2 flex items-center justify-between">
                   <label className="text-xs font-semibold text-gray-700">
@@ -1223,7 +1204,7 @@ export default function AdminExpenses() {
                 </div>
               </div>
 
-              {/* Costo de Envío del pedido */}
+              {/* Costo de Envío */}
               <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-3">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
@@ -1258,7 +1239,7 @@ export default function AdminExpenses() {
                   type="text"
                   value={orderFormNotes}
                   onChange={(e) => setOrderFormNotes(e.target.value)}
-                  placeholder="Ej: Proveedor Misiones - Pagado por transferencia"
+                  placeholder="Ej: Pagado por transferencia bancaria"
                   className="w-full rounded-lg border border-gray-300 p-2 text-xs focus:border-[#D4AF37] focus:outline-none"
                 />
               </div>
@@ -1284,7 +1265,7 @@ export default function AdminExpenses() {
       )}
 
       {/* ===================================================================== */}
-      {/* MODAL 2: NUEVA COMPRA DE TARJETAS                                     */}
+      {/* MODAL 2: NUEVO PACKAGING                                              */}
       {/* ===================================================================== */}
       {showCardModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
@@ -1292,7 +1273,7 @@ export default function AdminExpenses() {
             <div className="flex items-center justify-between border-b pb-3">
               <div className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5 text-amber-600" />
-                <h3 className="text-lg font-bold text-gray-800">Cargar Compra de Tarjetas</h3>
+                <h3 className="text-lg font-bold text-gray-800">Cargar Packaging / Tarjetas</h3>
               </div>
               <button
                 type="button"
@@ -1321,7 +1302,7 @@ export default function AdminExpenses() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-gray-700">
-                    Cantidad Comprada *
+                    Cantidad *
                   </label>
                   <input
                     type="number"
@@ -1349,14 +1330,14 @@ export default function AdminExpenses() {
                     onChange={(e) =>
                       setCardFormUnitPrice(e.target.value === '' ? '' : Number(e.target.value))
                     }
-                    placeholder="Ej: 50"
+                    placeholder="Ej: 80"
                     className="w-full rounded-lg border border-gray-300 p-2 text-right text-sm font-bold focus:border-[#D4AF37] focus:outline-none"
                   />
                 </div>
               </div>
 
               <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3 text-right">
-                <span className="text-xs text-amber-800">Total calculado de la compra:</span>
+                <span className="text-xs text-amber-800">Total calculado:</span>
                 <p className="font-mono text-base font-black text-amber-950">
                   $
                   {(Number(cardFormQty || 0) * Number(cardFormUnitPrice || 0)).toLocaleString(
@@ -1364,7 +1345,7 @@ export default function AdminExpenses() {
                   )}
                 </p>
                 <span className="text-[10px] text-gray-500">
-                  Se sumará a los gastos extras de tus mates.
+                  Se sumará a los costos extras de tus productos.
                 </span>
               </div>
 
@@ -1376,7 +1357,7 @@ export default function AdminExpenses() {
                   type="text"
                   value={cardFormNotes}
                   onChange={(e) => setCardFormNotes(e.target.value)}
-                  placeholder="Ej: Imprenta local en papel ilustración"
+                  placeholder="Ej: Papel kraft con sello"
                   className="w-full rounded-lg border border-gray-300 p-2 text-xs focus:border-[#D4AF37] focus:outline-none"
                 />
               </div>
@@ -1393,7 +1374,7 @@ export default function AdminExpenses() {
                   type="submit"
                   className="rounded-lg bg-amber-700 px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-800"
                 >
-                  Guardar Tarjetas
+                  Guardar
                 </button>
               </div>
             </form>
@@ -1402,7 +1383,7 @@ export default function AdminExpenses() {
       )}
 
       {/* ===================================================================== */}
-      {/* MODAL 3: NUEVO OTRO GASTO LIBRE                                       */}
+      {/* MODAL 3: NUEVO OTRO GASTO                                             */}
       {/* ===================================================================== */}
       {showOtherModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
@@ -1431,7 +1412,7 @@ export default function AdminExpenses() {
                   required
                   value={otherFormConcept}
                   onChange={(e) => setOtherFormConcept(e.target.value)}
-                  placeholder="Ej: Servidor web, Tinta para sellos, Cinta de embalar"
+                  placeholder="Ej: Servidor web, Tinta para sellos, Cinta"
                   className="w-full rounded-lg border border-gray-300 p-2 text-xs focus:border-[#D4AF37] focus:outline-none"
                 />
               </div>
