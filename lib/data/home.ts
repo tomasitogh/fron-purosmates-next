@@ -1,4 +1,5 @@
 import type { Banner, CorporateProject, HomeImage, Testimonial } from '@/lib/actions/home.actions';
+import { SAMPLE_PRODUCTS } from './sampleProducts';
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
@@ -84,11 +85,20 @@ function hasStock(product: any): boolean {
 export async function getFeaturedProducts(limit = 10): Promise<FeaturedProduct[]> {
   try {
     const res = await fetch(`${API_URL}/products`, { next: { revalidate: 60 } });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      return SAMPLE_PRODUCTS.slice(0, limit).map((p) => ({
+        id: p.id,
+        name: p.name,
+        slug: p.slug || '',
+        price: p.price,
+        categoryDescription: p.category?.description || '',
+        image: p.images?.[0],
+      }));
+    }
     const data = await res.json();
     const products = Array.isArray(data) ? data : Array.isArray(data?.content) ? data.content : [];
 
-    return products
+    const featured = products
       .filter((p: any) => p?.active !== false && p && (p.slug || p.id))
       .filter(hasStock)
       .sort((a: any, b: any) => Number(b?.price ?? 0) - Number(a?.price ?? 0))
@@ -101,8 +111,28 @@ export async function getFeaturedProducts(limit = 10): Promise<FeaturedProduct[]
         categoryDescription: p.category?.description ?? p.categoryName ?? p.category?.name ?? '',
         image: Array.isArray(p.images) && p.images[0] ? p.images[0] : undefined,
       }));
+
+    if (featured.length === 0) {
+      return SAMPLE_PRODUCTS.slice(0, limit).map((p) => ({
+        id: p.id,
+        name: p.name,
+        slug: p.slug || '',
+        price: p.price,
+        categoryDescription: p.category?.description || '',
+        image: p.images?.[0],
+      }));
+    }
+
+    return featured;
   } catch (error) {
-    console.error('Error fetching featured products:', error);
-    return [];
+    console.error('Error fetching featured products, using sample products:', error);
+    return SAMPLE_PRODUCTS.slice(0, limit).map((p) => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug || '',
+      price: p.price,
+      categoryDescription: p.category?.description || '',
+      image: p.images?.[0],
+    }));
   }
 }

@@ -13,17 +13,22 @@ interface ProductPageProps {
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 const baseUrl = getBaseUrl();
 
+import { findSampleProductBySlug, SAMPLE_PRODUCTS } from '@/lib/data/sampleProducts';
+
 // React cache() dedupes the fetch between generateMetadata and the page render
 const getProductBySlug = cache(async (slug: string) => {
   try {
     const res = await fetch(`${API_URL}/products/slug/${slug}`, {
       next: { revalidate: 60 },
     });
-    if (!res.ok) return null;
-    return res.json();
+    if (!res.ok) {
+      return findSampleProductBySlug(slug) || null;
+    }
+    const data = await res.json();
+    return data || findSampleProductBySlug(slug) || null;
   } catch (error) {
     console.error('Error fetching product:', error);
-    return null;
+    return findSampleProductBySlug(slug) || null;
   }
 });
 
@@ -34,7 +39,9 @@ export async function generateStaticParams() {
     const res = await fetch(`${API_URL}/products`, {
       next: { revalidate: 60 },
     });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      return SAMPLE_PRODUCTS.map((p) => ({ slug: p.slug }));
+    }
 
     const data = await res.json();
     const products = Array.isArray(data)
@@ -43,12 +50,14 @@ export async function generateStaticParams() {
         ? data.content
         : [];
 
-    return products
+    const params = products
       .filter((product: any) => product?.slug)
       .map((product: any) => ({ slug: product.slug }));
+
+    return params.length > 0 ? params : SAMPLE_PRODUCTS.map((p) => ({ slug: p.slug }));
   } catch (error) {
     console.error('Error fetching products for generateStaticParams:', error);
-    return [];
+    return SAMPLE_PRODUCTS.map((p) => ({ slug: p.slug }));
   }
 }
 

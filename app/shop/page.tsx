@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { SAMPLE_CATEGORIES, SAMPLE_PRODUCTS } from '@/lib/data/sampleProducts';
+
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
 async function getProducts() {
@@ -27,13 +29,17 @@ async function getProducts() {
       next: { revalidate: 60 },
     });
     if (!res.ok) {
-      console.error('Failed to fetch products');
-      return [];
+      console.error('Failed to fetch products, using sample products');
+      return SAMPLE_PRODUCTS;
     }
-    return await res.json();
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      return data;
+    }
+    return SAMPLE_PRODUCTS;
   } catch (error) {
-    console.error('Error fetching products:', error);
-    return [];
+    console.error('Error fetching products, using sample products:', error);
+    return SAMPLE_PRODUCTS;
   }
 }
 
@@ -43,13 +49,17 @@ async function getCategories() {
       next: { revalidate: 60 },
     });
     if (!res.ok) {
-      console.error('Failed to fetch categories');
-      return [];
+      console.error('Failed to fetch categories, using sample categories');
+      return SAMPLE_CATEGORIES;
     }
-    return await res.json();
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      return data;
+    }
+    return SAMPLE_CATEGORIES;
   } catch (error) {
-    console.error('Error fetching categories:', error);
-    return [];
+    console.error('Error fetching categories, using sample categories:', error);
+    return SAMPLE_CATEGORIES;
   }
 }
 
