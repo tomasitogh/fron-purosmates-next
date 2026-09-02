@@ -8,8 +8,9 @@ import AdminProducts from '@/components/admin/AdminProducts';
 import AdminOrders from '@/components/admin/AdminOrders';
 import AdminSettings from '@/components/admin/AdminSettings';
 import AdminStock from '@/components/admin/AdminStock';
+import AdminExpenses from '@/components/admin/AdminExpenses';
 
-type AdminTab = 'products' | 'orders' | 'settings' | 'stock';
+type AdminTab = 'products' | 'orders' | 'settings' | 'stock' | 'expenses';
 
 export default function AdminPanel() {
   const { user: clerkUser, isLoaded } = useUser();
@@ -19,7 +20,10 @@ export default function AdminPanel() {
 
   const tabParam = searchParams.get('tab');
   const activeTab: AdminTab =
-    tabParam === 'orders' || tabParam === 'settings' || tabParam === 'stock'
+    tabParam === 'orders' ||
+    tabParam === 'settings' ||
+    tabParam === 'stock' ||
+    tabParam === 'expenses'
       ? tabParam
       : 'products';
 
@@ -62,6 +66,7 @@ export default function AdminPanel() {
       {activeTab === 'products' && <AdminProducts getToken={getToken} />}
       {activeTab === 'orders' && <AdminOrders getToken={getToken} />}
       {activeTab === 'stock' && <AdminStock getToken={getToken} />}
+      {activeTab === 'expenses' && <AdminExpenses />}
       {activeTab === 'settings' && <AdminSettings getToken={getToken} />}
     </AdminLayout>
   );
