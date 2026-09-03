@@ -11,6 +11,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/**/*.test.ts",
     "lint-staged": "lint-staged",
     "prepare": "husky",
     "postinstall": "prisma generate"
