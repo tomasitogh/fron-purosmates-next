@@ -12,9 +12,10 @@ import {
   Briefcase,
   Menu,
   X,
+  CalendarDays,
 } from 'lucide-react';
 
-type AdminTab = 'products' | 'orders' | 'settings' | 'stock' | 'mayorista';
+type AdminTab = 'products' | 'orders' | 'settings' | 'stock' | 'mayorista' | 'calendar';
 
 interface AdminLayoutProps {
   activeTab: AdminTab;
@@ -27,6 +28,7 @@ const tabs = [
   { id: 'orders' as AdminTab, label: 'Pedidos', icon: ShoppingBag },
   { id: 'stock' as AdminTab, label: 'Stock', icon: Warehouse },
   { id: 'mayorista' as AdminTab, label: 'Mayorista', icon: Briefcase },
+  { id: 'calendar' as AdminTab, label: 'Calendario', icon: CalendarDays },
   { id: 'settings' as AdminTab, label: 'Ajustes', icon: Settings },
 ];
 
@@ -54,13 +56,6 @@ export default function AdminLayout({ activeTab, onTabChange, children }: AdminL
           >
             <Menu className="h-5 w-5" />
           </button>
-          <Link
-            href="/"
-            className="rounded-lg p-2 text-[#254642]/60 transition hover:bg-gray-100 hover:text-[#254642]"
-            aria-label="Volver a la tienda"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
           <div className="flex min-w-0 flex-1 items-center gap-1.5">
             <LayoutDashboard className="h-4 w-4 shrink-0 text-[#D4AF37]" />
             <span className="truncate text-sm font-semibold tracking-wide text-[#254642]">
