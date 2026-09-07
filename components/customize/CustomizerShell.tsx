@@ -206,7 +206,6 @@ export default function CustomizerShell() {
               : 'border border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
           }`}
         >
-          <span className="text-base">💍</span>
           <span>Virola de Metal</span>
           {virolaElements.length > 0 && (
             <span className="py-0.2 ml-1 rounded-full bg-[#D4AF37] px-1.5 text-[11px] font-extrabold text-[#254642]">
@@ -227,8 +226,7 @@ export default function CustomizerShell() {
               : 'border border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
           }`}
         >
-          <span className="text-base">🧉</span>
-          <span>Base de Cuero (Suela)</span>
+          <span>Base de Cuero</span>
           {leatherElements.length > 0 && (
             <span className="py-0.2 ml-1 rounded-full bg-stone-900 px-1.5 text-[11px] font-extrabold text-white">
               {leatherElements.length}

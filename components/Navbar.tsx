@@ -95,7 +95,8 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-[#254642] shadow-md">
+      <div className="h-16 w-full shrink-0" aria-hidden="true" />
+      <header className="fixed top-0 right-0 left-0 z-50 w-full bg-[#254642] shadow-md">
         <nav className="w-full" aria-label="Navegación principal">
           {/* Barra principal superior */}
           <div className="flex h-16 w-full items-center justify-between px-2 sm:px-4 md:px-6 lg:px-8">
@@ -316,7 +317,7 @@ export default function Navbar() {
       {/* MENÚ LATERAL DESPLEGABLE (Drawer) - Solo para Mobile / Tablet */}
       {/* Fondo oscurecido al abrir menú */}
       <div
-        className={`fixed inset-0 z-50 bg-black/60 backdrop-blur-xs transition-opacity duration-300 lg:hidden ${
+        className={`fixed inset-0 z-[60] bg-black/60 backdrop-blur-xs transition-opacity duration-300 lg:hidden ${
           isMenuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
         }`}
         onClick={closeMenu}
@@ -325,7 +326,7 @@ export default function Navbar() {
 
       {/* Panel lateral que se desliza desde la izquierda */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 flex w-80 max-w-[85vw] flex-col border-r border-white/10 bg-[#254642] shadow-2xl transition-transform duration-300 ease-out lg:hidden ${
+        className={`fixed top-0 bottom-0 left-0 z-[70] flex w-80 max-w-[85vw] flex-col border-r border-white/10 bg-[#254642] shadow-2xl transition-transform duration-300 ease-out lg:hidden ${
           isMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
