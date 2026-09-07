@@ -5,6 +5,8 @@ import fileReducer from './fileSlice';
 import categoryReducer from './categorySlice';
 import productReducer from './productSlice';
 import authReducer from './authSlice';
+import favoritesReducer from './favoritesSlice';
+import tasksReducer from './taskSlice';
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +16,8 @@ export const store = configureStore({
     categories: categoryReducer,
     products: productReducer,
     auth: authReducer,
+    favorites: favoritesReducer,
+    tasks: tasksReducer,
   },
 });
 

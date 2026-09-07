@@ -31,7 +31,7 @@ export default function Navbar() {
   const searchParams = useSearchParams();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isProductsExpanded, setIsProductsExpanded] = useState(true);
+  const [isProductsExpanded, setIsProductsExpanded] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [q, setQ] = useState(searchParams.get('q') || '');
   const [isSearchOpenMobile, setIsSearchOpenMobile] = useState(false);
@@ -96,7 +96,7 @@ export default function Navbar() {
   return (
     <>
       <div className="h-16 w-full shrink-0" aria-hidden="true" />
-      <header className="fixed top-0 right-0 left-0 z-50 w-full bg-[#254642] shadow-md">
+      <header className="fixed inset-x-0 top-0 z-50 w-full [transform:translateZ(0)] bg-[#254642] shadow-md">
         <nav className="w-full" aria-label="Navegación principal">
           {/* Barra principal superior */}
           <div className="flex h-16 w-full items-center justify-between px-2 sm:px-4 md:px-6 lg:px-8">
@@ -105,7 +105,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={toggleMenu}
-                className="flex shrink-0 items-center justify-center rounded-xl p-1.5 text-[#F5F5DC] transition hover:bg-white/10 focus:ring-2 focus:ring-[#D4AF37] focus:outline-none sm:p-2 lg:hidden"
+                className="flex shrink-0 items-center justify-center rounded-xl bg-transparent p-1.5 text-[#F5F5DC] transition hover:bg-white/10 focus:ring-2 focus:ring-[#D4AF37] focus:outline-none sm:p-2 lg:hidden"
                 aria-label="Abrir menú de navegación"
                 aria-expanded={isMenuOpen}
               >
@@ -212,7 +212,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={() => setIsSearchOpenMobile(!isSearchOpenMobile)}
-                className="flex items-center justify-center rounded-xl p-2 text-[#F5F5DC] transition hover:bg-white/10 focus:outline-none md:hidden"
+                className="flex items-center justify-center rounded-xl bg-transparent p-2 text-[#F5F5DC] transition hover:bg-white/10 focus:outline-none md:hidden"
                 aria-label="Buscar"
               >
                 <Search className="h-5 w-5" />
@@ -345,7 +345,7 @@ export default function Navbar() {
           <button
             type="button"
             onClick={closeMenu}
-            className="rounded-lg p-1.5 text-[#F5F5DC] transition hover:bg-white/10 hover:text-white"
+            className="rounded-lg bg-transparent p-1.5 text-[#F5F5DC] transition hover:bg-white/10 hover:text-white"
             aria-label="Cerrar menú"
           >
             <X className="h-6 w-6" />
@@ -369,7 +369,7 @@ export default function Navbar() {
             <button
               type="button"
               onClick={() => setIsProductsExpanded(!isProductsExpanded)}
-              className="flex w-full items-center justify-between px-4 py-3 text-left font-medium text-[#F5F5DC] transition hover:bg-white/10"
+              className="flex w-full items-center justify-between bg-transparent px-4 py-3 text-left font-medium text-[#F5F5DC] transition hover:bg-white/10"
             >
               <div className="flex items-center gap-3">
                 <ShoppingBag className="h-5 w-5 text-[#D4AF37]" />
@@ -488,7 +488,7 @@ export default function Navbar() {
       {/* Barra inferior rápida - EXCLUSIVA PARA MÓVILES (Oculta en Desktop con lg:hidden) */}
       <nav
         aria-label="Navegación móvil inferior"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-white/20 bg-[#254642] shadow-lg lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 [transform:translateZ(0)] border-t border-white/20 bg-[#254642] pb-[env(safe-area-inset-bottom,0px)] shadow-lg lg:hidden"
       >
         <div className="mx-auto flex h-14 max-w-xl items-center justify-around px-1">
           <BottomNavItem
@@ -534,7 +534,7 @@ export default function Navbar() {
           ) : (
             <button
               onClick={openAuthModal}
-              className="flex h-14 min-w-[50px] flex-1 flex-col items-center justify-center rounded-lg p-0 text-[#F5F5DC] transition hover:bg-white/10 focus:outline-none sm:w-14 sm:flex-initial"
+              className="flex h-14 min-w-[50px] flex-1 flex-col items-center justify-center rounded-lg bg-transparent p-0 text-[#F5F5DC] transition hover:bg-white/10 focus:outline-none sm:w-14 sm:flex-initial"
               aria-label="Ingresar"
             >
               <User className="h-5 w-5" />

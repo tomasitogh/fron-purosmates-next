@@ -1,12 +1,12 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useRef, useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { Upload, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { uploadFiles, clearUploadedFiles } from '@/redux/fileSlice';
-import { AppDispatch, RootState } from '@/redux/store';
+import { AppDispatch } from '@/redux/store';
 import { TokenGetter } from '@/lib/apiClient';
 
 interface SingleImageUploaderProps {
@@ -21,29 +21,10 @@ export default function SingleImageUploader({
   getToken,
 }: SingleImageUploaderProps) {
   const dispatch = useDispatch<AppDispatch>();
-  const {
-    uploadedUrls,
-    loading: uploading,
-    error,
-  } = useSelector((state: RootState) => state.files);
+  const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Cuando el upload termina, avisar al padre con la URL de Cloudinary
-  useEffect(() => {
-    if (uploadedUrls.length > 0) {
-      onChange(uploadedUrls[0]);
-      dispatch(clearUploadedFiles());
-    }
-  }, [uploadedUrls, onChange, dispatch]);
-
-  useEffect(() => {
-    if (error) {
-      toast.error(error);
-      dispatch(clearUploadedFiles());
-    }
-  }, [error, dispatch]);
-
-  const handleFile = (file: File | undefined) => {
+  const handleFile = async (file: File | undefined) => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
@@ -51,7 +32,24 @@ export default function SingleImageUploader({
       return;
     }
 
-    dispatch(uploadFiles({ files: [file], getToken }));
+    setUploading(true);
+    try {
+      const resultAction = await dispatch(uploadFiles({ files: [file], getToken }));
+      if (uploadFiles.fulfilled.match(resultAction)) {
+        if (resultAction.payload && resultAction.payload.length > 0) {
+          onChange(resultAction.payload[0]);
+        }
+        dispatch(clearUploadedFiles());
+      } else if (uploadFiles.rejected.match(resultAction)) {
+        const errorMsg = resultAction.error.message || 'Error al subir la imagen';
+        toast.error(errorMsg);
+      }
+    } catch (err: unknown) {
+      console.error('Error uploading image:', err);
+      toast.error('Error al subir la imagen');
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (

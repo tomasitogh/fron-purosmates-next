@@ -61,10 +61,14 @@ function elementToSvg(el: DesignElement, isLeather = false): string {
           `${escapeXml(el.text)}</text>`
         );
       }
+      // El texto sigue la circunferencia guía centrada en 50% (arriba a las 12 hs).
+      // text-anchor="middle" y startOffset="50%" centran el texto en el tope sin recortar
+      // los primeros caracteres (evita el límite de distancia 0 en SVG textPath).
+      // dominant-baseline="central" lo centra verticalmente sobre el radio medio.
       return (
         `<g transform="rotate(${(el.angle ?? 0) + el.rotation})">` +
-        `<text font-family="'${escapeXml(el.fontFamily)}', sans-serif" font-size="${el.fontSize}" fill="${ENGRAVE_COLOR}" dominant-baseline="central">` +
-        `<textPath href="#virola-text-circle" xlink:href="#virola-text-circle">${escapeXml(el.text)}</textPath>` +
+        `<text font-family="'${escapeXml(el.fontFamily)}', sans-serif" font-size="${el.fontSize}" fill="${ENGRAVE_COLOR}" dominant-baseline="central" text-anchor="middle">` +
+        `<textPath href="#virola-text-circle" xlink:href="#virola-text-circle" startOffset="50%">${escapeXml(el.text)}</textPath>` +
         `</text></g>`
       );
     case 'shape':
@@ -245,8 +249,8 @@ export async function generateSvgFromDesign(design: CustomizeDesign): Promise<st
      viewBox="${-half} ${-half} ${DESIGN_SIZE} ${DESIGN_SIZE}"
      width="${DESIGN_SIZE}" height="${DESIGN_SIZE}">
   <defs>
-${fontsCss}    <path id="virola-text-circle" d="${ringTextPathData(TEXT_RADIUS)}" fill="none"/>
-  <clipPath id="virola-clip">
+${fontsCss}    <path id="virola-text-circle" d="M 0 ${TEXT_RADIUS} A ${TEXT_RADIUS} ${TEXT_RADIUS} 0 1 1 0 ${-TEXT_RADIUS} A ${TEXT_RADIUS} ${TEXT_RADIUS} 0 1 1 0 ${TEXT_RADIUS}" fill="none"/>
+    <clipPath id="virola-clip">
       <path d="${ringClipPathData()}"/>
     </clipPath>
   </defs>

@@ -5,9 +5,12 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/redux/store';
 import { addToCart } from '@/redux/cartSlice';
+import { fetchFavorites } from '@/redux/favoritesSlice';
+import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
 import AuthModal from '@/components/AuthModal';
 import ProductImagePreview from '@/components/ProductImagePreview';
+import FavoriteButton from '@/components/FavoriteButton';
 import { slugify } from '@/lib/slugify';
 import ProductModal, { Product } from '@/components/ProductModal';
 import ShopFilters from '@/components/ShopFilters';
@@ -23,6 +26,7 @@ type SortOption = 'relevance' | 'newest' | 'price-asc' | 'price-desc';
 
 export default function ShopContent({ initialProducts, initialCategories }: ShopContentProps) {
   const dispatch = useDispatch<AppDispatch>();
+  const { isAuthenticated, getToken } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000]);
@@ -82,6 +86,12 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSidebarCategoryIds(urlCategoryIds);
   }, [urlCategoryIds]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchFavorites(getToken));
+    }
+  }, [isAuthenticated, dispatch, getToken]);
 
   const selectedCategoryIds = sidebarCategoryIds;
 
@@ -307,6 +317,7 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
                           Sin Stock
                         </div>
                       )}
+                      <FavoriteButton productId={product.id} />
                       {product.images?.[0] ? (
                         <ProductImagePreview
                           src={product.images[0].url}

@@ -17,6 +17,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   themeColor: '#254642',
+  interactiveWidget: 'resizes-content',
 };
 
 export const metadata: Metadata = {
@@ -162,15 +163,18 @@ export default function RootLayout({
               <Navbar />
             </Suspense>
 
+            <div className="h-16" aria-hidden="true" />
             <main className="flex min-h-screen flex-col">{children}</main>
             <Footer />
-            <div className="h-14 lg:hidden" aria-hidden="true" />
+            <div
+              className="h-[calc(3.5rem+env(safe-area-inset-bottom,0px))] lg:hidden"
+              aria-hidden="true"
+            />
             <FloatingWhatsApp />
             <Suspense fallback={null}>
               <FacebookPixel />
             </Suspense>
           </Providers>
-          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID || ''} />
           <GoogleTagManager gtmId="GTM-MLZ6GKF2" />
           <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer />
         </body>
