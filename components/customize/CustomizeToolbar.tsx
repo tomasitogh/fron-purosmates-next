@@ -79,6 +79,12 @@ export default function CustomizeToolbar({
   const editingTransform =
     selectedElement && selectedElement.type !== 'text' ? selectedElement : null;
 
+  // Precomputados en scope normal (NO dentro del JSX): el transpilador SWC
+  // falla al declarar la variable temporal cuando `x.prop ?? 0` va directo
+  // dentro de un contenedor de expresión JSX (ReferenceError en runtime).
+  const editingTextRotation = editingText ? (editingText.rotation ?? 0) : 0;
+  const editingTextAngle = editingText ? (editingText.angle ?? 0) : 0;
+
   return (
     <aside className="w-full rounded-2xl border border-stone-200 bg-white p-4 shadow-sm md:w-80">
       <div className="space-y-4">
@@ -159,26 +165,26 @@ export default function CustomizeToolbar({
 
                 {surface === 'leather' ? (
                   <label className="block text-xs font-medium text-stone-500">
-                    Rotación: {Math.round(editingText.rotation ?? 0)}°
+                    Rotación: {Math.round(editingTextRotation)}°
                     <input
                       type="range"
                       min={-180}
                       max={180}
                       step={1}
-                      value={editingText.rotation ?? 0}
+                      value={editingTextRotation}
                       onChange={(e) => onUpdateSelected({ rotation: Number(e.target.value) })}
                       className="mt-1 w-full accent-stone-800"
                     />
                   </label>
                 ) : (
                   <label className="block text-xs font-medium text-stone-500">
-                    Posición en el anillo: {Math.round(editingText.angle ?? 0)}°
+                    Posición en el anillo: {Math.round(editingTextAngle)}°
                     <input
                       type="range"
                       min={0}
                       max={360}
                       step={1}
-                      value={editingText.angle ?? 0}
+                      value={editingTextAngle}
                       onChange={(e) => onUpdateSelected({ angle: Number(e.target.value) })}
                       className="mt-1 w-full accent-stone-800"
                     />
