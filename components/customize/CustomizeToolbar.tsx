@@ -15,7 +15,7 @@ import {
   Type,
 } from 'lucide-react';
 import { AVAILABLE_FONTS } from './constants';
-import type { DesignElement, ShapeKind } from './types';
+import type { CustomizeSurface, DesignElement, ShapeKind } from './types';
 
 export interface SelectedElementPatch {
   text?: string;
@@ -27,6 +27,7 @@ export interface SelectedElementPatch {
 }
 
 interface CustomizeToolbarProps {
+  surface?: CustomizeSurface;
   selectedElement: DesignElement | null;
   uploading: boolean;
   onAddText: (text: string) => void;
@@ -59,6 +60,7 @@ const iconBtn =
  * Tiene dos modos: "agregar" (default) y "editar" (cuando hay un elemento seleccionado).
  */
 export default function CustomizeToolbar({
+  surface = 'virola',
   selectedElement,
   uploading,
   onAddText,
@@ -155,18 +157,33 @@ export default function CustomizeToolbar({
                   />
                 </label>
 
-                <label className="block text-xs font-medium text-stone-500">
-                  Posición en el anillo: {Math.round(editingText.angle)}°
-                  <input
-                    type="range"
-                    min={0}
-                    max={360}
-                    step={1}
-                    value={editingText.angle}
-                    onChange={(e) => onUpdateSelected({ angle: Number(e.target.value) })}
-                    className="mt-1 w-full accent-stone-800"
-                  />
-                </label>
+                {surface === 'leather' ? (
+                  <label className="block text-xs font-medium text-stone-500">
+                    Rotación: {Math.round(editingText.rotation ?? 0)}°
+                    <input
+                      type="range"
+                      min={-180}
+                      max={180}
+                      step={1}
+                      value={editingText.rotation ?? 0}
+                      onChange={(e) => onUpdateSelected({ rotation: Number(e.target.value) })}
+                      className="mt-1 w-full accent-stone-800"
+                    />
+                  </label>
+                ) : (
+                  <label className="block text-xs font-medium text-stone-500">
+                    Posición en el anillo: {Math.round(editingText.angle ?? 0)}°
+                    <input
+                      type="range"
+                      min={0}
+                      max={360}
+                      step={1}
+                      value={editingText.angle ?? 0}
+                      onChange={(e) => onUpdateSelected({ angle: Number(e.target.value) })}
+                      className="mt-1 w-full accent-stone-800"
+                    />
+                  </label>
+                )}
               </>
             )}
 

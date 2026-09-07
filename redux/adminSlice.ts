@@ -178,6 +178,49 @@ export const deleteOrder = createAsyncThunk(
   }
 );
 
+export interface ManualOrderPayload {
+  guestFirstname: string;
+  guestLastname: string;
+  guestEmail?: string;
+  guestPhone: string;
+  shippingPreference?: string;
+  locality?: string;
+  address?: string;
+  floorApartment?: string;
+  extraIndications?: string;
+  status?: string;
+  paymentStatus?: string;
+  paymentMethod?: string;
+  sendEmail?: boolean;
+  total?: number;
+  items: {
+    variantId: number;
+    quantity: number;
+    hasCustomization?: boolean;
+    unitPrice?: number;
+  }[];
+}
+
+// Thunk para crear un pedido manualmente (admin)
+export const createManualOrder = createAsyncThunk(
+  'admin/createManualOrder',
+  async ({ orderData, getToken }: { orderData: ManualOrderPayload; getToken: TokenGetter }) => {
+    try {
+      const { data } = await withAuthRetry(getToken, (token) =>
+        axios.post<Order>(`${ORDERS_API_URL}/manual`, orderData, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        })
+      );
+      return data;
+    } catch (e: unknown) {
+      throwReadableError(e);
+    }
+  }
+);
+
 // Thunk para crear un producto
 export const createProduct = createAsyncThunk(
   'admin/createProduct',
@@ -364,6 +407,21 @@ const adminSlice = createSlice({
       .addCase(deleteOrder.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Error al eliminar pedido';
+      })
+      // Create Manual Order
+      .addCase(createManualOrder.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.successMessage = null;
+      })
+      .addCase(createManualOrder.fulfilled, (state, action) => {
+        state.loading = false;
+        state.successMessage = 'Pedido manual creado exitosamente';
+        state.orders.unshift(action.payload);
+      })
+      .addCase(createManualOrder.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Error al crear pedido manual';
       })
       // Bulk Update Stock
       .addCase(bulkUpdateStock.pending, (state) => {

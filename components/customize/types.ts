@@ -9,6 +9,8 @@
  * Las coordenadas (x, y) de los elementos son relativas al centro.
  */
 
+export type CustomizeSurface = 'virola' | 'leather';
+
 export type ShapeKind = 'line' | 'triangle' | 'square' | 'circle' | 'star';
 
 interface ElementBase {
@@ -18,19 +20,23 @@ interface ElementBase {
 }
 
 /**
- * Texto curvo que sigue la circunferencia del anillo.
- * `angle` indica en qué punto de la circunferencia empieza (0 = arriba, sentido horario).
+ * Texto curvo (virola) o recto plano (base de cuero).
+ * `angle`: posición angular sobre el anillo de la virola (0-360).
+ * `x, y`: coordenadas cartesianas para la base plana de cuero.
  */
 export interface TextElement extends ElementBase {
   type: 'text';
   text: string;
   fontFamily: string;
   fontSize: number;
-  /** Posición angular sobre el anillo, en grados (0-360) */
-  angle: number;
+  /** Posición angular sobre el anillo (para virola) */
+  angle?: number;
+  /** Posición en el plano x, y (para base de cuero) */
+  x?: number;
+  y?: number;
 }
 
-/** Forma geométrica básica, posicionada libremente dentro del anillo. */
+/** Forma geométrica básica, posicionada libremente. */
 export interface ShapeElement extends ElementBase {
   type: 'shape';
   shape: ShapeKind;
@@ -57,5 +63,8 @@ export type DesignElement = TextElement | ShapeElement | PathElement;
 
 export interface VirolaDesign {
   version: 1;
+  surface?: CustomizeSurface;
   elements: DesignElement[];
 }
+
+export type CustomizeDesign = VirolaDesign;

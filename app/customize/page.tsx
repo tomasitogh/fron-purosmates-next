@@ -28,11 +28,11 @@ export default function CustomizePage() {
           </div>
 
           <h1 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl">
-            Diseñá el Grabado de tu Virola
+            Diseñá el Grabado de tu Mate
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-stone-200 sm:text-base md:text-lg">
-            Personalizá tu mate en vivo. Escribí tus nombres, fechas o frases especiales, sumá
-            símbolos o subí tu propio logo para ver cómo quedará grabado con láser en el metal.
+            Personalizá tu mate en vivo. Grabá tu virola de metal o la base de cuero con costura de
+            tiento: escribí nombres, fechas, escudos o logos con precisión láser.
           </p>
 
           {/* Marketing Steps */}

@@ -109,3 +109,14 @@ export const GOOGLE_FONTS_HREF =
     (f) => `family=${encodeURIComponent(f.family).replace(/%20/g, '+')}:wght@400;700`
   ).join('&') +
   '&display=swap';
+
+/** --- Constantes para la Base de Cuero (Suela) --- */
+export const LEATHER_WIDTH = 560;
+export const LEATHER_HEIGHT = 180;
+export const SEAM_WIDTH = 28;
+export const LEATHER_BG_COLOR = '#C1854D'; // Color suela cálido
+export const LEATHER_BORDER_COLOR = '#8D5627';
+export const SEAM_BORDER_COLOR = '#4A2610';
+export const SEAM_THREAD_COLOR = '#2A1308';
+export const LEATHER_ENGRAVE_COLOR = '#1E0F07'; // Quemado láser sobre cuero
+export const LEATHER_STORAGE_KEY = 'leather-design';

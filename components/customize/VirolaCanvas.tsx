@@ -169,7 +169,7 @@ export default function VirolaCanvas({
     node.position({ x: 0, y: 0 }); // el texto nunca se traslada: solo rota
     const pointerAngle = pointerAngleDeg(node.getStage());
     textGrabOffsetRef.current =
-      pointerAngle == null ? 0 : norm360(pointerAngle - (el.angle + el.rotation));
+      pointerAngle == null ? 0 : norm360(pointerAngle - ((el.angle ?? 0) + el.rotation));
   };
 
   const handleTextDragMove = (
@@ -182,7 +182,7 @@ export default function VirolaCanvas({
     if (pointerAngle == null) return;
 
     const nextRotation = norm360(pointerAngle - textGrabOffsetRef.current);
-    if (nextRotation === norm360(el.angle + el.rotation)) return;
+    if (nextRotation === norm360((el.angle ?? 0) + el.rotation)) return;
 
     // Feedback instantáneo (Konva dibuja antes de que React commite)…
     node.rotation(nextRotation);
@@ -281,7 +281,7 @@ export default function VirolaCanvas({
                         fontFamily={el.fontFamily}
                         fontSize={el.fontSize}
                         fill={ENGRAVE_COLOR}
-                        rotation={el.angle + el.rotation}
+                        rotation={(el.angle ?? 0) + el.rotation}
                         onDragStart={(e) => handleTextDragStart(el, e)}
                         onDragMove={(e) => handleTextDragMove(el, e)}
                         onDragEnd={(e) => handleTextDragEnd(el, e)}
