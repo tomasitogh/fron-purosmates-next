@@ -8,10 +8,12 @@ import {
   AUTOSAVE_DEBOUNCE_MS,
   DEFAULT_FONT_FAMILY,
   DESIGN_STORAGE_KEY,
+  LEATHER_STORAGE_KEY,
   TEXT_RADIUS,
 } from './constants';
-import type { DesignElement, ShapeKind, VirolaDesign } from './types';
+import type { CustomizeDesign, CustomizeSurface, DesignElement, ShapeKind } from './types';
 import VirolaCanvas, { type ElementPatch } from './VirolaCanvas';
+import LeatherCanvas from './LeatherCanvas';
 import CustomizeToolbar, { type SelectedElementPatch } from './CustomizeToolbar';
 
 let idCounter = 0;
@@ -20,50 +22,48 @@ function nextId() {
   return `${Date.now().toString(36)}-${idCounter}`;
 }
 
-/**
- * Orquestador del personalizador: dueño del estado (el JSON del diseño),
- * del autoguardado en localStorage, de la subida de imágenes y de la
- * exportación del SVG. El canvas y la toolbar son "tontos": reciben
- * datos y avisan cambios.
- */
-/**
- * Lee el diseño autoguardado. Se usa como inicializador lazy de useState:
- * como este componente se carga con `ssr: false`, SIEMPRE corre en el cliente
- * (localStorage existe) y no hay riesgo de mismatch de hidratación.
- */
-function loadSavedDesign(): DesignElement[] {
+function loadSavedDesign(key: string): DesignElement[] {
   try {
-    const raw = localStorage.getItem(DESIGN_STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     if (raw) {
-      const design = JSON.parse(raw) as VirolaDesign;
+      const design = JSON.parse(raw) as CustomizeDesign;
       if (design.version === 1 && Array.isArray(design.elements)) {
         return design.elements;
       }
     }
   } catch {
-    // JSON corrupto o storage no disponible → empezar de cero
+    // JSON corrupto o storage no disponible
   }
   return [];
 }
 
 export default function CustomizerShell() {
-  const [elements, setElements] = useState<DesignElement[]>(loadSavedDesign);
+  const [surface, setSurface] = useState<CustomizeSurface>('virola');
+  const [virolaElements, setVirolaElements] = useState<DesignElement[]>(() =>
+    loadSavedDesign(DESIGN_STORAGE_KEY)
+  );
+  const [leatherElements, setLeatherElements] = useState<DesignElement[]>(() =>
+    loadSavedDesign(LEATHER_STORAGE_KEY)
+  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  // Autoguardado con debounce. Como el estado inicial ya viene del storage,
-  // el primer guardado simplemente reescribe los mismos datos (sin pérdida).
+  const elements = surface === 'virola' ? virolaElements : leatherElements;
+  const setElements = surface === 'virola' ? setVirolaElements : setLeatherElements;
+
+  // Autoguardado con debounce independiente para cada superficie
   useEffect(() => {
     const timer = setTimeout(() => {
-      const design: VirolaDesign = { version: 1, elements };
+      const key = surface === 'virola' ? DESIGN_STORAGE_KEY : LEATHER_STORAGE_KEY;
+      const design: CustomizeDesign = { version: 1, surface, elements };
       try {
-        localStorage.setItem(DESIGN_STORAGE_KEY, JSON.stringify(design));
+        localStorage.setItem(key, JSON.stringify(design));
       } catch {
-        // storage lleno o no disponible: el diseño sigue vivo en memoria
+        // storage lleno o no disponible
       }
     }, AUTOSAVE_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [elements]);
+  }, [elements, surface]);
 
   const selectedElement = elements.find((el) => el.id === selectedId) ?? null;
 
@@ -73,31 +73,29 @@ export default function CustomizerShell() {
     );
   };
 
-  // ---- Acciones de la toolbar ----
-
   const handleAddText = (text: string) => {
     const el: DesignElement = {
       id: nextId(),
       type: 'text',
       text,
       fontFamily: DEFAULT_FONT_FAMILY,
-      fontSize: 22,
+      fontSize: surface === 'virola' ? 22 : 24,
       angle: 0,
       rotation: 0,
+      x: surface === 'leather' ? -120 : 0,
+      y: surface === 'leather' ? 0 : TEXT_RADIUS,
     };
     setElements((prev) => [...prev, el]);
     setSelectedId(el.id);
   };
 
   const handleAddShape = (shape: ShapeKind) => {
-    // Aparece sobre la banda visible del anillo (abajo); en (0,0) quedaría
-    // oculto por el recorte, porque el centro es el hueco de la virola.
     const el: DesignElement = {
       id: nextId(),
       type: 'shape',
       shape,
-      x: 0,
-      y: TEXT_RADIUS,
+      x: surface === 'leather' ? 120 : 0,
+      y: surface === 'leather' ? 0 : TEXT_RADIUS,
       rotation: 0,
       scale: 1,
     };
@@ -117,11 +115,9 @@ export default function CustomizerShell() {
         return;
       }
 
-      // Escala inicial: dimensión menor ≈ alto de la banda (45) para que luzca
-      // sobre la virola, limitando la mayor a 120 para que no desborde mucho.
       const fit = Math.min(
-        45 / Math.min(result.width, result.height),
-        120 / Math.max(result.width, result.height),
+        (surface === 'virola' ? 45 : 70) / Math.min(result.width, result.height),
+        (surface === 'virola' ? 120 : 140) / Math.max(result.width, result.height),
         1.5
       );
 
@@ -131,8 +127,8 @@ export default function CustomizerShell() {
         d: result.d,
         sourceWidth: result.width,
         sourceHeight: result.height,
-        x: 0,
-        y: TEXT_RADIUS, // nace sobre la banda visible, no en el hueco
+        x: surface === 'leather' ? -120 : 0,
+        y: surface === 'leather' ? 0 : TEXT_RADIUS,
         rotation: 0,
         scale: fit,
       };
@@ -166,17 +162,17 @@ export default function CustomizerShell() {
       toast.error('Agregá al menos un elemento al diseño.');
       return;
     }
-    const toastId = toast.loading('Embeber tipografías y armando el SVG…');
+    const toastId = toast.loading('Preparando matriz SVG para grabado láser…');
     try {
-      const svg = await generateSvgFromDesign({ version: 1, elements });
+      const svg = await generateSvgFromDesign({ version: 1, surface, elements });
       const blob = new Blob([svg], { type: 'image/svg+xml' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'grabado-virola.svg';
+      link.download = `grabado-${surface === 'virola' ? 'virola' : 'base-cuero'}.svg`;
       link.click();
       URL.revokeObjectURL(url);
-      toast.success('SVG descargado. Abrilo en el navegador para validarlo.');
+      toast.success('SVG descargado exitosamente.');
     } catch {
       toast.error('No se pudo generar el SVG.');
     } finally {
@@ -184,39 +180,104 @@ export default function CustomizerShell() {
     }
   };
 
-  // Stub: en una fase posterior este JSON se envía a la API de Spring Boot
   const handleConfirm = () => {
     if (elements.length === 0) {
       toast.error('Agregá al menos un elemento al diseño.');
       return;
     }
-    const design: VirolaDesign = { version: 1, elements };
-    console.log('[customize] Diseño confirmado (pendiente enviar a Spring Boot):', design);
-    toast.success('Diseño listo. La integración con el pedido llega en la próxima fase.');
+    const design: CustomizeDesign = { version: 1, surface, elements };
+    console.log('[customize] Diseño confirmado:', design);
+    toast.success('¡Diseño listo! Podés descargar la matriz SVG con el botón superior.');
   };
 
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:items-start">
-      <div className="flex min-w-0 flex-1 justify-center">
-        <VirolaCanvas
-          elements={elements}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-          onUpdateElement={handleCanvasUpdate}
+    <div className="space-y-4">
+      {/* Selector de Superficie: Virola vs Base de Cuero */}
+      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            setSurface('virola');
+            setSelectedId(null);
+          }}
+          className={`flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold shadow-xs transition ${
+            surface === 'virola'
+              ? 'bg-[#254642] text-white shadow-sm ring-2 ring-[#254642]/30'
+              : 'border border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
+          }`}
+        >
+          <span>Virola de Metal</span>
+          {virolaElements.length > 0 && (
+            <span className="py-0.2 ml-1 rounded-full bg-[#D4AF37] px-1.5 text-[11px] font-extrabold text-[#254642]">
+              {virolaElements.length}
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setSurface('leather');
+            setSelectedId(null);
+          }}
+          className={`flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold shadow-xs transition ${
+            surface === 'leather'
+              ? 'bg-[#A86632] text-white shadow-sm ring-2 ring-[#A86632]/30'
+              : 'border border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
+          }`}
+        >
+          <span>Base de Cuero</span>
+          {leatherElements.length > 0 && (
+            <span className="py-0.2 ml-1 rounded-full bg-stone-900 px-1.5 text-[11px] font-extrabold text-white">
+              {leatherElements.length}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Indicador contextual de zona */}
+      <div className="text-center text-xs text-stone-500">
+        {surface === 'virola' ? (
+          <p>Grabado láser circular sobre el anillo de metal superior.</p>
+        ) : (
+          <p>Grabado láser plano sobre la faja de cuero color suela (costura central de tiento).</p>
+        )}
+      </div>
+
+      {/* Lienzo y Herramientas */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-start">
+        <div className="flex min-w-0 flex-1 justify-center">
+          {surface === 'virola' ? (
+            <VirolaCanvas
+              elements={elements}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onUpdateElement={handleCanvasUpdate}
+            />
+          ) : (
+            <LeatherCanvas
+              elements={elements}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onUpdateElement={handleCanvasUpdate}
+            />
+          )}
+        </div>
+
+        <CustomizeToolbar
+          surface={surface}
+          selectedElement={selectedElement}
+          uploading={uploading}
+          onAddText={handleAddText}
+          onAddShape={handleAddShape}
+          onUploadImage={handleUploadImage}
+          onUpdateSelected={handleUpdateSelected}
+          onDeleteSelected={handleDeleteSelected}
+          onDeselect={() => setSelectedId(null)}
+          onDownloadSvg={handleDownloadSvg}
+          onConfirm={handleConfirm}
         />
       </div>
-      <CustomizeToolbar
-        selectedElement={selectedElement}
-        uploading={uploading}
-        onAddText={handleAddText}
-        onAddShape={handleAddShape}
-        onUploadImage={handleUploadImage}
-        onUpdateSelected={handleUpdateSelected}
-        onDeleteSelected={handleDeleteSelected}
-        onDeselect={() => setSelectedId(null)}
-        onDownloadSvg={handleDownloadSvg}
-        onConfirm={handleConfirm}
-      />
     </div>
   );
 }

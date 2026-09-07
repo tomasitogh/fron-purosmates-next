@@ -88,7 +88,7 @@ function VirolaTextElement({
     node.position({ x: 0, y: 0 }); // el texto nunca se traslada: solo rota
     const pointerAngle = pointerAngleDeg(node.getStage());
     textGrabOffsetRef.current =
-      pointerAngle == null ? 0 : norm360(pointerAngle - (element.angle + element.rotation));
+      pointerAngle == null ? 0 : norm360(pointerAngle - ((element.angle ?? 0) + element.rotation));
   };
 
   const handleDragMove = (e: KonvaEventObject<DragEvent>) => {
@@ -98,7 +98,7 @@ function VirolaTextElement({
     if (pointerAngle == null) return;
 
     const nextRotation = norm360(pointerAngle - textGrabOffsetRef.current);
-    if (nextRotation === norm360(element.angle + element.rotation)) return;
+    if (nextRotation === norm360((element.angle ?? 0) + element.rotation)) return;
 
     node.rotation(nextRotation - halfAngle);
     onUpdateElement(element.id, { angle: norm360(nextRotation - element.rotation) });
@@ -119,7 +119,7 @@ function VirolaTextElement({
       fontSize={element.fontSize}
       fill={ENGRAVE_COLOR}
       textBaseline="middle"
-      rotation={element.angle + element.rotation - halfAngle}
+      rotation={(element.angle ?? 0) + element.rotation - halfAngle}
       offsetX={0}
       offsetY={0}
       onClick={() => onSelect(element.id)}

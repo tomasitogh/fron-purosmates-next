@@ -2,14 +2,17 @@ import {
   DESIGN_SIZE,
   ENGRAVE_COLOR,
   INNER_RADIUS,
+  LEATHER_HEIGHT,
+  LEATHER_WIDTH,
   LINE_STROKE_WIDTH,
   OUTER_RADIUS,
+  SEAM_WIDTH,
   TEXT_RADIUS,
   ringClipPathData,
   ringTextPathData,
   shapePoints,
 } from '@/components/customize/constants';
-import type { DesignElement, ShapeElement, VirolaDesign } from '@/components/customize/types';
+import type { CustomizeDesign, DesignElement, ShapeElement } from '@/components/customize/types';
 
 /** Escapa caracteres especiales para meter texto plano dentro de XML */
 function escapeXml(value: string): string {
@@ -44,15 +47,26 @@ function shapeToSvg(el: ShapeElement): string {
   return `<polygon points="${pairs.join(' ')}" transform="${transform}" fill="${ENGRAVE_COLOR}"/>`;
 }
 
-function elementToSvg(el: DesignElement): string {
+function elementToSvg(el: DesignElement, isLeather = false): string {
   switch (el.type) {
     case 'text':
+      if (isLeather) {
+        const x = el.x ?? 0;
+        const y = el.y ?? 0;
+        const rot = el.rotation ?? 0;
+        const transform = rot !== 0 ? ` transform="rotate(${rot} ${x} ${y})"` : '';
+        return (
+          `<text x="${x}" y="${y}" font-family="'${escapeXml(el.fontFamily)}', sans-serif" ` +
+          `font-size="${el.fontSize}" fill="${ENGRAVE_COLOR}" text-anchor="middle" dominant-baseline="central"${transform}>` +
+          `${escapeXml(el.text)}</text>`
+        );
+      }
       // El texto sigue la circunferencia guía centrada en 50% (arriba a las 12 hs).
       // text-anchor="middle" y startOffset="50%" centran el texto en el tope sin recortar
       // los primeros caracteres (evita el límite de distancia 0 en SVG textPath).
       // dominant-baseline="central" lo centra verticalmente sobre el radio medio.
       return (
-        `<g transform="rotate(${el.angle + el.rotation})">` +
+        `<g transform="rotate(${(el.angle ?? 0) + el.rotation})">` +
         `<text font-family="'${escapeXml(el.fontFamily)}', sans-serif" font-size="${el.fontSize}" fill="${ENGRAVE_COLOR}" dominant-baseline="central" text-anchor="middle">` +
         `<textPath href="#virola-text-circle" xlink:href="#virola-text-circle" startOffset="50%">${escapeXml(el.text)}</textPath>` +
         `</text></g>`
@@ -60,10 +74,6 @@ function elementToSvg(el: DesignElement): string {
     case 'shape':
       return shapeToSvg(el);
     case 'path':
-      // El path de potrace nace con origen en la esquina superior izquierda del
-      // bitmap; el último translate lo recentra para que (x, y) sea su centro.
-      // fill-rule="evenodd" es OBLIGATORIO: potrace lo emite en su SVG y sin él
-      // los huecos internos (letras, detalles) se rellenan todos de negro.
       return (
         `<g transform="translate(${el.x} ${el.y}) rotate(${el.rotation}) scale(${el.scale})">` +
         `<path d="${el.d}" transform="translate(${-el.sourceWidth / 2} ${-el.sourceHeight / 2})" fill="${ENGRAVE_COLOR}" fill-rule="evenodd"/>` +
@@ -143,7 +153,74 @@ async function embeddedFontCssFor(family: string): Promise<string> {
  * - El grupo #guia-referencia son los círculos del borde físico: sirven para
  *   validar visualmente y se borran antes de enviar a la grabadora.
  */
-export async function generateSvgFromDesign(design: VirolaDesign): Promise<string> {
+export async function generateSvgFromLeatherDesign(design: CustomizeDesign): Promise<string> {
+  const halfW = LEATHER_WIDTH / 2;
+  const halfH = LEATHER_HEIGHT / 2;
+  const halfSeam = SEAM_WIDTH / 2;
+
+  const families = [
+    ...new Set(
+      design.elements
+        .filter((el): el is Extract<DesignElement, { type: 'text' }> => el.type === 'text')
+        .map((el) => el.fontFamily)
+    ),
+  ];
+
+  let fontsCss = '';
+  if (families.length > 0) {
+    try {
+      const css = (await Promise.all(families.map(embeddedFontCssFor))).join('\n');
+      fontsCss = `    <style>\n${css}\n    </style>\n`;
+    } catch {
+      // fallback
+    }
+  }
+
+  // Costura central con cruces
+  const numStitches = 7;
+  const step = LEATHER_HEIGHT / numStitches;
+  const stitchesSvg: string[] = [];
+  for (let i = 0; i < numStitches; i++) {
+    const yTop = -halfH + i * step;
+    const yBottom = yTop + step;
+    stitchesSvg.push(
+      `<line x1="${-halfSeam + 4}" y1="${yTop + 3}" x2="${halfSeam - 4}" y2="${yBottom - 3}" stroke="#888888" stroke-width="1.5"/>`
+    );
+    stitchesSvg.push(
+      `<line x1="${halfSeam - 4}" y1="${yTop + 3}" x2="${-halfSeam + 4}" y2="${yBottom - 3}" stroke="#888888" stroke-width="1.5"/>`
+    );
+  }
+
+  const body = design.elements.map((el) => elementToSvg(el, true)).join('\n    ');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     viewBox="${-halfW} ${-halfH} ${LEATHER_WIDTH} ${LEATHER_HEIGHT}"
+     width="${LEATHER_WIDTH}" height="${LEATHER_HEIGHT}">
+  <defs>
+${fontsCss}    <clipPath id="leather-clip">
+      <rect x="${-halfW}" y="${-halfH}" width="${LEATHER_WIDTH}" height="${LEATHER_HEIGHT}" rx="8"/>
+    </clipPath>
+  </defs>
+  <!-- Guía de referencia: borde de la faja y costura central de cruces. -->
+  <g id="guia-referencia" fill="none" stroke="#bbbbbb" stroke-width="1">
+    <rect x="${-halfW}" y="${-halfH}" width="${LEATHER_WIDTH}" height="${LEATHER_HEIGHT}" rx="8"/>
+    <line x1="${-halfSeam}" y1="${-halfH}" x2="${-halfSeam}" y2="${halfH}" stroke-dasharray="4 2"/>
+    <line x1="${halfSeam}" y1="${-halfH}" x2="${halfSeam}" y2="${halfH}" stroke-dasharray="4 2"/>
+    ${stitchesSvg.join('\n    ')}
+  </g>
+  <g id="grabado" clip-path="url(#leather-clip)">
+    ${body}
+  </g>
+</svg>
+`;
+}
+
+export async function generateSvgFromDesign(design: CustomizeDesign): Promise<string> {
+  if (design.surface === 'leather') {
+    return generateSvgFromLeatherDesign(design);
+  }
+
   const half = DESIGN_SIZE / 2;
 
   // Familias únicas usadas por los textos del diseño
@@ -165,7 +242,7 @@ export async function generateSvgFromDesign(design: VirolaDesign): Promise<strin
     }
   }
 
-  const body = design.elements.map(elementToSvg).join('\n    ');
+  const body = design.elements.map((el) => elementToSvg(el, false)).join('\n    ');
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"

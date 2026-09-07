@@ -11,8 +11,7 @@
 
 @layer base {
   html {
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow-x: clip;
     -webkit-overflow-scrolling: touch;
   }
 
@@ -41,8 +40,7 @@
     padding: 0;
     min-width: 320px;
     min-height: 100vh;
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow-x: clip;
     -webkit-overflow-scrolling: touch;
   }
 

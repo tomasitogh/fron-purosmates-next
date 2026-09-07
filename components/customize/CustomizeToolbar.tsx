@@ -15,7 +15,7 @@ import {
   Type,
 } from 'lucide-react';
 import { AVAILABLE_FONTS } from './constants';
-import type { DesignElement, ShapeKind } from './types';
+import type { CustomizeSurface, DesignElement, ShapeKind } from './types';
 
 export interface SelectedElementPatch {
   text?: string;
@@ -27,6 +27,7 @@ export interface SelectedElementPatch {
 }
 
 interface CustomizeToolbarProps {
+  surface?: CustomizeSurface;
   selectedElement: DesignElement | null;
   uploading: boolean;
   onAddText: (text: string) => void;
@@ -59,6 +60,7 @@ const iconBtn =
  * Tiene dos modos: "agregar" (default) y "editar" (cuando hay un elemento seleccionado).
  */
 export default function CustomizeToolbar({
+  surface = 'virola',
   selectedElement,
   uploading,
   onAddText,
@@ -76,6 +78,12 @@ export default function CustomizeToolbar({
   const editingText = selectedElement?.type === 'text' ? selectedElement : null;
   const editingTransform =
     selectedElement && selectedElement.type !== 'text' ? selectedElement : null;
+
+  // Precomputados en scope normal (NO dentro del JSX): el transpilador SWC
+  // falla al declarar la variable temporal cuando `x.prop ?? 0` va directo
+  // dentro de un contenedor de expresión JSX (ReferenceError en runtime).
+  const editingTextRotation = editingText ? (editingText.rotation ?? 0) : 0;
+  const editingTextAngle = editingText ? (editingText.angle ?? 0) : 0;
 
   return (
     <aside className="w-full rounded-2xl border border-stone-200 bg-white p-4 shadow-sm md:w-80">
@@ -155,18 +163,33 @@ export default function CustomizeToolbar({
                   />
                 </label>
 
-                <label className="block text-xs font-medium text-stone-500">
-                  Posición en el anillo: {Math.round(editingText.angle)}°
-                  <input
-                    type="range"
-                    min={0}
-                    max={360}
-                    step={1}
-                    value={editingText.angle}
-                    onChange={(e) => onUpdateSelected({ angle: Number(e.target.value) })}
-                    className="mt-1 w-full accent-stone-800"
-                  />
-                </label>
+                {surface === 'leather' ? (
+                  <label className="block text-xs font-medium text-stone-500">
+                    Rotación: {Math.round(editingTextRotation)}°
+                    <input
+                      type="range"
+                      min={-180}
+                      max={180}
+                      step={1}
+                      value={editingTextRotation}
+                      onChange={(e) => onUpdateSelected({ rotation: Number(e.target.value) })}
+                      className="mt-1 w-full accent-stone-800"
+                    />
+                  </label>
+                ) : (
+                  <label className="block text-xs font-medium text-stone-500">
+                    Posición en el anillo: {Math.round(editingTextAngle)}°
+                    <input
+                      type="range"
+                      min={0}
+                      max={360}
+                      step={1}
+                      value={editingTextAngle}
+                      onChange={(e) => onUpdateSelected({ angle: Number(e.target.value) })}
+                      className="mt-1 w-full accent-stone-800"
+                    />
+                  </label>
+                )}
               </>
             )}
 
