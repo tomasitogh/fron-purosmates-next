@@ -141,7 +141,6 @@ export default function LeatherCanvas({
   const handleTransformEnd = (el: DesignElement, e: KonvaEventObject<Event>) => {
     const node = e.target;
     const nextRotation = Math.round(node.rotation());
-    const nextScale = (el.type !== 'text' ? el.scale : 1) * node.scaleX();
 
     if (el.type === 'text') {
       // En texto aumentamos el fontSize y reseteamos el scale del nodo a 1
@@ -155,13 +154,15 @@ export default function LeatherCanvas({
         fontSize: Math.max(12, Math.min(60, newFontSize)),
       });
     } else {
-      node.scaleX(1);
-      node.scaleY(1);
+      // El Transformer de Konva multiplica el scale actual del nodo por el
+      // factor del drag, así que node.scaleX() ya es el valor absoluto
+      // acumulado. Guardarlo directo (sin multiplicar por el.scale) evita
+      // el efecto opuesto/doble al resize (misma corrección que la virola).
       onUpdateElement(el.id, {
         x: Math.round(node.x()),
         y: Math.round(node.y()),
         rotation: nextRotation,
-        scale: nextScale,
+        scale: node.scaleX(),
       });
     }
   };
