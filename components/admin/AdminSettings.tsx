@@ -40,6 +40,25 @@ interface ProductCategory {
   displayOrder?: number;
 }
 
+const ONESIGNAL_APP_ID = '19f32369-e546-4917-8ae4-925ed7be4980';
+const SAFARI_WEB_ID = 'web.onesignal.auto.201c9c11-2835-4563-82b9-55a6f9094e87';
+
+const getOneSignal = async () => {
+  if (typeof window === 'undefined') return null;
+  const win = window as any;
+  const OneSignal = (await import('react-onesignal')).default;
+  try {
+    await OneSignal.init({
+      appId: ONESIGNAL_APP_ID,
+      safari_web_id: SAFARI_WEB_ID,
+      allowLocalhostAsSecureOrigin: win.location?.hostname === 'localhost',
+    });
+  } catch {
+    // Ya inicializado
+  }
+  return OneSignal;
+};
+
 interface AdminSettingsProps {
   getToken: TokenGetter;
 }
@@ -50,6 +69,9 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [projects, setProjects] = useState<CorporateProject[]>([]);
+
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(false);
+  const [loadingNotifications, setLoadingNotifications] = useState<boolean>(false);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -302,15 +324,100 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
     }
   };
 
-  const toggleNotifications = async () => {
-    if (typeof window !== 'undefined') {
+  useEffect(() => {
+    let mounted = true;
+    const initNotificationsStatus = async () => {
       try {
-        const OneSignal = (await import('react-onesignal')).default;
-        await OneSignal.Slidedown.promptPush();
+        const OneSignal = await getOneSignal();
+        if (!OneSignal || !mounted) return;
+
+        const isSupported = OneSignal.Notifications?.isPushSupported?.() ?? false;
+        if (!isSupported) {
+          if (mounted) setNotificationsEnabled(false);
+          return;
+        }
+
+        const permission = OneSignal.Notifications?.permission ?? false;
+        const optedIn = OneSignal.User?.PushSubscription?.optedIn ?? false;
+        if (mounted) {
+          setNotificationsEnabled(Boolean(permission && optedIn));
+        }
+
+        OneSignal.User?.PushSubscription?.addEventListener('change', (event: any) => {
+          if (mounted) {
+            const currentOptedIn = event.current?.optedIn ?? false;
+            const currentPerm = OneSignal.Notifications?.permission ?? false;
+            setNotificationsEnabled(Boolean(currentOptedIn && currentPerm));
+          }
+        });
       } catch (err) {
-        console.error('Error toggling notifications:', err);
-        toast.error('Error al solicitar permisos');
+        console.error('Error al inicializar estado de notificaciones:', err);
       }
+    };
+
+    initNotificationsStatus();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const toggleNotifications = async () => {
+    setLoadingNotifications(true);
+    try {
+      const OneSignal = await getOneSignal();
+      if (!OneSignal) {
+        toast.error('No se pudo conectar con el servicio de notificaciones.');
+        return;
+      }
+
+      const isSupported = OneSignal.Notifications?.isPushSupported?.() ?? false;
+      if (!isSupported) {
+        toast.error(
+          'Tu navegador no soporta notificaciones push. En iPhone, agregá la web a la pantalla de inicio.'
+        );
+        return;
+      }
+
+      if (notificationsEnabled) {
+        // Desactivar notificaciones
+        await OneSignal.User?.PushSubscription?.optOut();
+        setNotificationsEnabled(false);
+        toast.success('Notificaciones push desactivadas');
+      } else {
+        // Activar notificaciones
+        if (typeof Notification !== 'undefined' && Notification.permission === 'denied') {
+          toast.error(
+            'Las notificaciones están bloqueadas en tu navegador. Por favor permitilas desde los ajustes del sitio.'
+          );
+          return;
+        }
+
+        let granted = false;
+        if (OneSignal.Notifications?.requestPermission) {
+          granted = await OneSignal.Notifications.requestPermission();
+        } else if (typeof Notification !== 'undefined') {
+          const res = await Notification.requestPermission();
+          granted = res === 'granted';
+        }
+
+        const nativeGranted =
+          typeof Notification !== 'undefined' ? Notification.permission === 'granted' : granted;
+        if (!nativeGranted) {
+          toast.error('No se otorgaron permisos de notificación en el navegador.');
+          return;
+        }
+
+        await OneSignal.User?.PushSubscription?.optIn();
+        await OneSignal.User?.addTag('role', 'admin');
+
+        setNotificationsEnabled(true);
+        toast.success('¡Notificaciones push activadas con éxito!');
+      }
+    } catch (err: any) {
+      console.error('Error al cambiar notificaciones:', err);
+      toast.error('Error al configurar notificaciones: ' + (err.message || 'Error desconocido'));
+    } finally {
+      setLoadingNotifications(false);
     }
   };
 
@@ -749,14 +856,31 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
               <div>
                 <h3 className="font-medium text-gray-800">Alertas de nuevas ventas</h3>
                 <p className="text-sm text-gray-500">
-                  Recibir notificaciones cuando se realice una venta
+                  {notificationsEnabled
+                    ? 'Las notificaciones están activadas en este dispositivo.'
+                    : 'Recibir notificaciones cuando se realice una venta.'}
                 </p>
               </div>
               <button
+                type="button"
                 onClick={toggleNotifications}
-                className="rounded-lg bg-[#254642] px-4 py-2 font-medium whitespace-nowrap text-white hover:bg-[#1d3530]"
+                disabled={loadingNotifications}
+                className={`inline-flex items-center justify-center rounded-lg px-5 py-2.5 font-medium whitespace-nowrap text-white shadow-xs transition ${
+                  notificationsEnabled
+                    ? 'bg-red-600 hover:bg-red-700 focus:ring-2 focus:ring-red-400'
+                    : 'bg-emerald-600 hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-400'
+                } ${loadingNotifications ? 'cursor-not-allowed opacity-75' : ''}`}
               >
-                Configurar Notificaciones
+                {loadingNotifications ? (
+                  <span className="flex items-center gap-2">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Procesando...
+                  </span>
+                ) : notificationsEnabled ? (
+                  'Desactivar'
+                ) : (
+                  'Activar'
+                )}
               </button>
             </div>
           </div>

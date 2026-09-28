@@ -89,6 +89,7 @@ export const createOrder = createAsyncThunk(
       getToken,
       guestData,
       paymentMethod,
+      receiptUrl,
     }: {
       items: CartItem[];
       getToken?: TokenGetter;
@@ -102,8 +103,10 @@ export const createOrder = createAsyncThunk(
         address?: string;
         floorApartment?: string;
         extraIndications?: string;
+        receiptUrl?: string;
       };
       paymentMethod?: string;
+      receiptUrl?: string;
     },
     { rejectWithValue }
   ) => {
@@ -120,6 +123,7 @@ export const createOrder = createAsyncThunk(
         items: orderItems,
         ...guestData,
         paymentMethod,
+        ...(receiptUrl ? { receiptUrl } : {}),
       };
 
       const doPost = async (token?: string) => {

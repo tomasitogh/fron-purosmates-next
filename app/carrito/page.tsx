@@ -36,6 +36,8 @@ import ProductModal, { Product } from '@/components/ProductModal';
 import { generateSvgFromDesign } from '@/lib/customize/svg-generator';
 import { DESIGN_STORAGE_KEY } from '@/components/customize/constants';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+
 export default function Carrito() {
   const dispatch = useDispatch<AppDispatch>();
   const items = useSelector(selectCartItems);
@@ -197,6 +199,33 @@ export default function Carrito() {
     }
 
     try {
+      let uploadedReceiptUrl: string | undefined = undefined;
+
+      // Subir archivo real a Cloudinary si es transferencia
+      if (paymentMethod === 'transfer' && comprobanteFile) {
+        const toastId = toast.loading('Subiendo comprobante de pago...');
+        try {
+          const receiptFormData = new FormData();
+          receiptFormData.append('file', comprobanteFile);
+
+          const uploadRes = await axios.post(`${API_URL}/orders/upload-receipt`, receiptFormData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+
+          uploadedReceiptUrl = uploadRes.data?.receiptUrl;
+          toast.success('Comprobante subido correctamente', { id: toastId });
+        } catch (uploadErr: any) {
+          console.error('Error al subir comprobante:', uploadErr);
+          const errMsg =
+            uploadErr.response?.data?.error ||
+            'Error al subir el comprobante. Por favor intentá nuevamente.';
+          toast.error(errMsg, { id: toastId });
+          return;
+        }
+      }
+
       // Unificamos las notas del mate, indicaciones de envío y referencias de archivos
       const indicationsList: string[] = [];
       if (mateNotes.trim()) {
@@ -227,6 +256,7 @@ export default function Carrito() {
           address: guestData.address,
           floorApartment: guestData.floorApartment,
           extraIndications: combinedIndications,
+          receiptUrl: uploadedReceiptUrl,
           ...(!isAuthenticated
             ? {
                 guestEmail: guestData.email,
@@ -234,6 +264,7 @@ export default function Carrito() {
             : {}),
         },
         paymentMethod,
+        receiptUrl: uploadedReceiptUrl,
       };
 
       const resultAction = await dispatch(createOrder(orderData));

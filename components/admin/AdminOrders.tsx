@@ -19,6 +19,7 @@ interface ExtendedOrder extends Order {
   address?: string;
   floorApartment?: string;
   extraIndications?: string;
+  receiptUrl?: string;
 }
 import {
   Copy,
@@ -30,6 +31,7 @@ import {
   PlusCircle,
   Plus,
   Trash,
+  Download,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { AppDispatch, RootState } from '@/redux/store';
@@ -69,6 +71,14 @@ interface ManualItemRow {
 interface AdminOrdersProps {
   getToken: TokenGetter;
 }
+
+const getDownloadUrl = (url?: string) => {
+  if (!url) return '';
+  if (url.includes('/upload/')) {
+    return url.replace('/upload/', '/upload/fl_attachment/');
+  }
+  return url;
+};
 
 export default function AdminOrders({ getToken }: AdminOrdersProps) {
   const dispatch = useDispatch<AppDispatch>();
@@ -501,6 +511,18 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
                         >
                           <Info className="h-5 w-5" />
                         </button>
+                        {order.receiptUrl && (
+                          <a
+                            href={getDownloadUrl(order.receiptUrl)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            download
+                            className="rounded-full p-2 text-emerald-600 transition hover:bg-emerald-50 hover:text-emerald-900"
+                            title="Descargar comprobante de pago"
+                          >
+                            <Download className="h-5 w-5" />
+                          </a>
+                        )}
                         <button
                           onClick={() => handleEditClick(order)}
                           className="rounded-full p-2 text-indigo-600 transition hover:bg-indigo-50 hover:text-indigo-900"
@@ -569,6 +591,18 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
                 >
                   <Info className="h-4 w-4" />
                 </button>
+                {order.receiptUrl && (
+                  <a
+                    href={getDownloadUrl(order.receiptUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download
+                    className="rounded-lg p-2 text-emerald-600 transition hover:bg-emerald-50"
+                    title="Descargar comprobante"
+                  >
+                    <Download className="h-4 w-4" />
+                  </a>
+                )}
                 <button
                   onClick={() => handleEditClick(order)}
                   className="rounded-lg p-2 text-indigo-600 transition hover:bg-indigo-50"
@@ -699,6 +733,23 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
                         {viewingOrderItems.extraIndications || '-'}
                       </p>
                     </div>
+                    {viewingOrderItems.receiptUrl && (
+                      <div className="border-t border-gray-200 pt-3 sm:col-span-2">
+                        <p className="mb-2 text-xs tracking-wide text-gray-500 uppercase">
+                          Comprobante de pago adjunto
+                        </p>
+                        <a
+                          href={getDownloadUrl(viewingOrderItems.receiptUrl)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download
+                          className="inline-flex items-center gap-2 rounded-lg bg-[#254642] px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-[#1d3530]"
+                        >
+                          <Download className="h-4 w-4" />
+                          Descargar comprobante
+                        </a>
+                      </div>
+                    )}
                   </>
                 )}
               </div>

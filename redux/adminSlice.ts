@@ -69,6 +69,7 @@ export interface Order {
   guestLastname?: string;
   guestEmail?: string;
   guestPhone?: string;
+  receiptUrl?: string;
 }
 
 export interface ProductData {

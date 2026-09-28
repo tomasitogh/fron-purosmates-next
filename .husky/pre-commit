@@ -1,4 +1,13 @@
 #!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
+export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+
+if [ -d "$HOME/.nvm/versions/node" ]; then
+  NODE_NVM_BIN=$(ls "$HOME/.nvm/versions/node" 2>/dev/null | tail -n 1)
+  [ -n "$NODE_NVM_BIN" ] && export PATH="$PATH:$HOME/.nvm/versions/node/$NODE_NVM_BIN/bin"
+fi
+
+if ! command -v npx >/dev/null 2>&1; then
+  exit 0
+fi
 
 npx lint-staged
