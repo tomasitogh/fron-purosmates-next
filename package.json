@@ -33,6 +33,8 @@
     "@use-gesture/react": "^10.3.1",
     "axios": "^1.13.4",
     "browser-image-compression": "^2.0.2",
+    "firebase": "^12.19.0",
+    "firebase-admin": "^14.5.0",
     "heic-convert": "^2.1.0",
     "js-cookie": "^3.0.5",
     "konva": "^10.3.1",
@@ -87,5 +89,12 @@
     "@img/sharp-linux-arm64": "0.34.5",
     "@img/sharp-linux-x64": "0.34.5",
     "@next/swc-darwin-arm64": "^16.2.4"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@firebase/util",
+      "protobufjs",
+      "sharp"
+    ]
   }
 }

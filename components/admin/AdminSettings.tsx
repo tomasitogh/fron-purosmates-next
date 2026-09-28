@@ -33,6 +33,7 @@ import {
 import { revalidateStorefront } from '@/lib/actions/revalidate.actions';
 import { TokenGetter, requireFreshToken } from '@/lib/apiClient';
 import SingleImageUploader from './SingleImageUploader';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 interface ProductCategory {
   id: number;
@@ -40,43 +41,6 @@ interface ProductCategory {
   active: boolean;
   displayOrder?: number;
 }
-
-const ONESIGNAL_APP_ID = '19f32369-e546-4917-8ae4-925ed7be4980';
-const SAFARI_WEB_ID = 'web.onesignal.auto.201c9c11-2835-4563-82b9-55a6f9094e87';
-
-const withOneSignal = (): Promise<any> => {
-  return new Promise((resolve) => {
-    if (typeof window === 'undefined') return resolve(null);
-    const win = window as any;
-    if (win.OneSignal?.User) {
-      return resolve(win.OneSignal);
-    }
-    win.OneSignalDeferred = win.OneSignalDeferred || [];
-    let done = false;
-    win.OneSignalDeferred.push(async (OneSignal: any) => {
-      if (!done) {
-        done = true;
-        try {
-          await OneSignal.init({
-            appId: ONESIGNAL_APP_ID,
-            safari_web_id: SAFARI_WEB_ID,
-            allowLocalhostAsSecureOrigin: win.location?.hostname === 'localhost',
-          });
-        } catch {
-          // ignore double init
-        }
-        resolve(OneSignal);
-      }
-    });
-    // Timeout de 4 segundos de seguridad para no bloquear nunca la UI
-    setTimeout(() => {
-      if (!done) {
-        done = true;
-        resolve(win.OneSignal || null);
-      }
-    }, 4000);
-  });
-};
 
 interface AdminSettingsProps {
   getToken: TokenGetter;
@@ -89,8 +53,12 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [projects, setProjects] = useState<CorporateProject[]>([]);
 
-  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(false);
-  const [loadingNotifications, setLoadingNotifications] = useState<boolean>(false);
+  const {
+    isSubscribed: notificationsEnabled,
+    loading: loadingNotifications,
+    subscribe: subscribeNotifications,
+    unsubscribe: unsubscribeNotifications,
+  } = usePushNotifications();
   const [sendingTestNotification, setSendingTestNotification] = useState<boolean>(false);
 
   const [loading, setLoading] = useState(true);
@@ -344,203 +312,36 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
     }
   };
 
-  useEffect(() => {
-    if (typeof window === 'undefined' || !('Notification' in window)) {
-      setNotificationsEnabled(false);
-      return;
-    }
-
-    if (Notification.permission === 'granted') {
-      let mounted = true;
-      (async () => {
-        try {
-          const OneSignal = await withOneSignal();
-          if (!mounted) return;
-          if (OneSignal?.User?.PushSubscription) {
-            const optedIn = OneSignal.User.PushSubscription.optedIn ?? true;
-            setNotificationsEnabled(optedIn);
-
-            OneSignal.User.PushSubscription.addEventListener?.('change', (event: any) => {
-              if (mounted) {
-                setNotificationsEnabled(Boolean(event.current?.optedIn));
-              }
-            });
-          } else {
-            setNotificationsEnabled(true);
-          }
-        } catch {
-          if (mounted) setNotificationsEnabled(true);
-        }
-      })();
-      return () => {
-        mounted = false;
-      };
-    } else {
-      setNotificationsEnabled(false);
-    }
-  }, []);
-
   const toggleNotifications = async () => {
-    if (loadingNotifications) return;
-
-    // Si ya están activadas, desactivar
     if (notificationsEnabled) {
-      setLoadingNotifications(true);
-      try {
-        const OneSignal = await withOneSignal();
-        if (OneSignal?.User?.PushSubscription?.optOut) {
-          await OneSignal.User.PushSubscription.optOut();
-        }
-        setNotificationsEnabled(false);
-        toast.success('Notificaciones push desactivadas');
-      } catch (err: any) {
-        console.error('Error al desactivar notificaciones:', err);
-        toast.error('Error al desactivar notificaciones');
-      } finally {
-        setLoadingNotifications(false);
-      }
-      return;
-    }
-
-    // SI ESTÁN DESACTIVADAS Y SE QUIERE ACTIVAR:
-    // 1. Verificación síncrona en el cliente (sin ningún await previo)
-    if (typeof window === 'undefined' || !('Notification' in window)) {
-      toast.error(
-        'Tu navegador no soporta notificaciones push. En iPhone, tenés que abrir Safari, tocar el botón Compartir y elegir "Agregar a pantalla de inicio" (PWA).'
-      );
-      return;
-    }
-
-    const isIos =
-      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    const isStandalone =
-      (window.navigator as any).standalone === true ||
-      window.matchMedia('(display-mode: standalone)').matches;
-
-    if (isIos && !isStandalone) {
-      toast.error(
-        'En iPhone, tenés que abrir la app desde el icono en la Pantalla de Inicio (PWA) para activar notificaciones.'
-      );
-      return;
-    }
-
-    if (Notification.permission === 'denied') {
-      toast.error(
-        'Las notificaciones están bloqueadas en tu iPhone. Andá a Configuración > Notificaciones > Puros Mates y activalas.'
-      );
-      return;
-    }
-
-    // 2. PEDIDO DE PERMISO SÍNCRONO EN EL CLICK (CRÍTICO PARA WEBKIT / IOS)
-    // En iOS WebKit, Notification.requestPermission() DEBE ejecutarse inmediatamente en el evento de click.
-    // Si hay un solo await previo (como import() o fetch()), iOS descarta el gesto y cuelga la promesa.
-    if (Notification.permission === 'default') {
-      const requestNativePermission = (): Promise<NotificationPermission> => {
-        return new Promise<NotificationPermission>((resolve) => {
-          let resolved = false;
-          const finish = (result: NotificationPermission) => {
-            if (!resolved) {
-              resolved = true;
-              resolve(result);
-            }
-          };
-
-          const timer = setTimeout(() => {
-            finish(Notification.permission);
-          }, 12000);
-
-          try {
-            const res = Notification.requestPermission((status) => {
-              clearTimeout(timer);
-              finish(status);
-            });
-            if (res && typeof (res as any).then === 'function') {
-              (res as Promise<NotificationPermission>)
-                .then((status) => {
-                  clearTimeout(timer);
-                  finish(status);
-                })
-                .catch(() => {
-                  clearTimeout(timer);
-                  finish(Notification.permission);
-                });
-            }
-          } catch {
-            clearTimeout(timer);
-            finish(Notification.permission);
-          }
-        });
-      };
-
-      const permResult = await requestNativePermission();
-      if (permResult !== 'granted') {
-        toast.error('No se concedieron permisos de notificación.');
-        return;
-      }
-    }
-
-    // 3. Con el permiso nativo ya confirmado ("granted"), procedemos con OneSignal
-    setLoadingNotifications(true);
-    try {
-      const OneSignal = await withOneSignal();
-      if (OneSignal) {
-        // En iOS Safari PWA, optIn() puede tardar o colgarse en el event listener interno.
-        // Usamos un timeout de 3.5 segundos para no trabar nunca la interfaz.
-        const optInPromise = OneSignal.User?.PushSubscription?.optIn
-          ? Promise.resolve(OneSignal.User.PushSubscription.optIn()).catch((e) =>
-              console.warn('OneSignal optIn error:', e)
-            )
-          : Promise.resolve();
-
-        const tagPromise = OneSignal.User?.addTag
-          ? Promise.resolve(OneSignal.User.addTag('role', 'admin')).catch((e) =>
-              console.warn('OneSignal addTag error:', e)
-            )
-          : Promise.resolve();
-
-        await Promise.race([
-          Promise.allSettled([optInPromise, tagPromise]),
-          new Promise((resolve) => setTimeout(resolve, 3500)),
-        ]);
-      }
-      setNotificationsEnabled(true);
-      toast.success('¡Notificaciones push activadas con éxito!');
-    } catch (err: any) {
-      console.error('Error al registrar en OneSignal:', err);
-      setNotificationsEnabled(true);
-      toast.success('¡Notificaciones push activadas!');
-    } finally {
-      setLoadingNotifications(false);
+      await unsubscribeNotifications();
+    } else {
+      await subscribeNotifications();
     }
   };
 
   const handleSendTestNotification = async () => {
     setSendingTestNotification(true);
     try {
-      const token = await requireFreshToken(getToken);
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
-      const res = await fetch(`${baseUrl}/api/v1/admin/test-notification`, {
+      const res = await fetch('/api/notifications/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        body: JSON.stringify({
+          type: 'test',
+          title: 'Notificación de prueba 🔔',
+          body: '¡Las notificaciones para administradores están funcionando correctamente!',
+          url: '/admin',
+        }),
       });
 
-      if (!res.ok) {
-        let msg = `Error ${res.status}`;
-        try {
-          const body = await res.json();
-          msg = body.error || body.message || msg;
-        } catch {
-          const text = await res.text();
-          if (text) msg = text;
-        }
-        throw new Error(msg);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || data.message || `Error ${res.status}`);
       }
 
-      toast.success('¡Notificación de prueba enviada a los admins!');
+      toast.success(`¡Notificación enviada a ${data.recipientCount ?? 1} dispositivo(s) admin!`);
     } catch (err: any) {
       console.error('Error al enviar notificación de prueba:', err);
       toast.error('Error al enviar prueba: ' + (err.message || 'Error del servidor'));

@@ -176,7 +176,6 @@ export default function RootLayout({
             </Suspense>
           </Providers>
           <GoogleTagManager gtmId="GTM-MLZ6GKF2" />
-          <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer />
         </body>
       </html>
     </ClerkProvider>
