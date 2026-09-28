@@ -43,20 +43,38 @@ interface ProductCategory {
 const ONESIGNAL_APP_ID = '19f32369-e546-4917-8ae4-925ed7be4980';
 const SAFARI_WEB_ID = 'web.onesignal.auto.201c9c11-2835-4563-82b9-55a6f9094e87';
 
-const getOneSignal = async () => {
-  if (typeof window === 'undefined') return null;
-  const win = window as any;
-  const OneSignal = (await import('react-onesignal')).default;
-  try {
-    await OneSignal.init({
-      appId: ONESIGNAL_APP_ID,
-      safari_web_id: SAFARI_WEB_ID,
-      allowLocalhostAsSecureOrigin: win.location?.hostname === 'localhost',
+const withOneSignal = (): Promise<any> => {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') return resolve(null);
+    const win = window as any;
+    if (win.OneSignal?.User) {
+      return resolve(win.OneSignal);
+    }
+    win.OneSignalDeferred = win.OneSignalDeferred || [];
+    let done = false;
+    win.OneSignalDeferred.push(async (OneSignal: any) => {
+      if (!done) {
+        done = true;
+        try {
+          await OneSignal.init({
+            appId: ONESIGNAL_APP_ID,
+            safari_web_id: SAFARI_WEB_ID,
+            allowLocalhostAsSecureOrigin: win.location?.hostname === 'localhost',
+          });
+        } catch {
+          // ignore double init
+        }
+        resolve(OneSignal);
+      }
     });
-  } catch {
-    // Ya inicializado
-  }
-  return OneSignal;
+    // Timeout de 4 segundos de seguridad para no bloquear nunca la UI
+    setTimeout(() => {
+      if (!done) {
+        done = true;
+        resolve(win.OneSignal || null);
+      }
+    }, 4000);
+  });
 };
 
 interface AdminSettingsProps {
@@ -325,97 +343,160 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
   };
 
   useEffect(() => {
-    let mounted = true;
-    const initNotificationsStatus = async () => {
-      try {
-        const OneSignal = await getOneSignal();
-        if (!OneSignal || !mounted) return;
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      setNotificationsEnabled(false);
+      return;
+    }
 
-        const isSupported = OneSignal.Notifications?.isPushSupported?.() ?? false;
-        if (!isSupported) {
-          if (mounted) setNotificationsEnabled(false);
-          return;
-        }
+    if (Notification.permission === 'granted') {
+      let mounted = true;
+      (async () => {
+        try {
+          const OneSignal = await withOneSignal();
+          if (!mounted) return;
+          if (OneSignal?.User?.PushSubscription) {
+            const optedIn = OneSignal.User.PushSubscription.optedIn ?? true;
+            setNotificationsEnabled(optedIn);
 
-        const permission = OneSignal.Notifications?.permission ?? false;
-        const optedIn = OneSignal.User?.PushSubscription?.optedIn ?? false;
-        if (mounted) {
-          setNotificationsEnabled(Boolean(permission && optedIn));
-        }
-
-        OneSignal.User?.PushSubscription?.addEventListener('change', (event: any) => {
-          if (mounted) {
-            const currentOptedIn = event.current?.optedIn ?? false;
-            const currentPerm = OneSignal.Notifications?.permission ?? false;
-            setNotificationsEnabled(Boolean(currentOptedIn && currentPerm));
+            OneSignal.User.PushSubscription.addEventListener?.('change', (event: any) => {
+              if (mounted) {
+                setNotificationsEnabled(Boolean(event.current?.optedIn));
+              }
+            });
+          } else {
+            setNotificationsEnabled(true);
           }
-        });
-      } catch (err) {
-        console.error('Error al inicializar estado de notificaciones:', err);
-      }
-    };
-
-    initNotificationsStatus();
-    return () => {
-      mounted = false;
-    };
+        } catch {
+          if (mounted) setNotificationsEnabled(true);
+        }
+      })();
+      return () => {
+        mounted = false;
+      };
+    } else {
+      setNotificationsEnabled(false);
+    }
   }, []);
 
   const toggleNotifications = async () => {
-    setLoadingNotifications(true);
-    try {
-      const OneSignal = await getOneSignal();
-      if (!OneSignal) {
-        toast.error('No se pudo conectar con el servicio de notificaciones.');
-        return;
-      }
+    if (loadingNotifications) return;
 
-      const isSupported = OneSignal.Notifications?.isPushSupported?.() ?? false;
-      if (!isSupported) {
-        toast.error(
-          'Tu navegador no soporta notificaciones push. En iPhone, agregá la web a la pantalla de inicio.'
-        );
-        return;
-      }
-
-      if (notificationsEnabled) {
-        // Desactivar notificaciones
-        await OneSignal.User?.PushSubscription?.optOut();
+    // Si ya están activadas, desactivar
+    if (notificationsEnabled) {
+      setLoadingNotifications(true);
+      try {
+        const OneSignal = await withOneSignal();
+        if (OneSignal?.User?.PushSubscription?.optOut) {
+          await OneSignal.User.PushSubscription.optOut();
+        }
         setNotificationsEnabled(false);
         toast.success('Notificaciones push desactivadas');
-      } else {
-        // Activar notificaciones
-        if (typeof Notification !== 'undefined' && Notification.permission === 'denied') {
-          toast.error(
-            'Las notificaciones están bloqueadas en tu navegador. Por favor permitilas desde los ajustes del sitio.'
-          );
-          return;
-        }
-
-        let granted = false;
-        if (OneSignal.Notifications?.requestPermission) {
-          granted = await OneSignal.Notifications.requestPermission();
-        } else if (typeof Notification !== 'undefined') {
-          const res = await Notification.requestPermission();
-          granted = res === 'granted';
-        }
-
-        const nativeGranted =
-          typeof Notification !== 'undefined' ? Notification.permission === 'granted' : granted;
-        if (!nativeGranted) {
-          toast.error('No se otorgaron permisos de notificación en el navegador.');
-          return;
-        }
-
-        await OneSignal.User?.PushSubscription?.optIn();
-        await OneSignal.User?.addTag('role', 'admin');
-
-        setNotificationsEnabled(true);
-        toast.success('¡Notificaciones push activadas con éxito!');
+      } catch (err: any) {
+        console.error('Error al desactivar notificaciones:', err);
+        toast.error('Error al desactivar notificaciones');
+      } finally {
+        setLoadingNotifications(false);
       }
+      return;
+    }
+
+    // SI ESTÁN DESACTIVADAS Y SE QUIERE ACTIVAR:
+    // 1. Verificación síncrona en el cliente (sin ningún await previo)
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      toast.error(
+        'Tu navegador no soporta notificaciones push. En iPhone, tenés que abrir Safari, tocar el botón Compartir y elegir "Agregar a pantalla de inicio" (PWA).'
+      );
+      return;
+    }
+
+    const isIos =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isStandalone =
+      (window.navigator as any).standalone === true ||
+      window.matchMedia('(display-mode: standalone)').matches;
+
+    if (isIos && !isStandalone) {
+      toast.error(
+        'En iPhone, tenés que abrir la app desde el icono en la Pantalla de Inicio (PWA) para activar notificaciones.'
+      );
+      return;
+    }
+
+    if (Notification.permission === 'denied') {
+      toast.error(
+        'Las notificaciones están bloqueadas en tu iPhone. Andá a Configuración > Notificaciones > Puros Mates y activalas.'
+      );
+      return;
+    }
+
+    // 2. PEDIDO DE PERMISO SÍNCRONO EN EL CLICK (CRÍTICO PARA WEBKIT / IOS)
+    // En iOS WebKit, Notification.requestPermission() DEBE ejecutarse inmediatamente en el evento de click.
+    // Si hay un solo await previo (como import() o fetch()), iOS descarta el gesto y cuelga la promesa.
+    if (Notification.permission === 'default') {
+      const requestNativePermission = (): Promise<NotificationPermission> => {
+        return new Promise<NotificationPermission>((resolve) => {
+          let resolved = false;
+          const finish = (result: NotificationPermission) => {
+            if (!resolved) {
+              resolved = true;
+              resolve(result);
+            }
+          };
+
+          const timer = setTimeout(() => {
+            finish(Notification.permission);
+          }, 12000);
+
+          try {
+            const res = Notification.requestPermission((status) => {
+              clearTimeout(timer);
+              finish(status);
+            });
+            if (res && typeof (res as any).then === 'function') {
+              (res as Promise<NotificationPermission>)
+                .then((status) => {
+                  clearTimeout(timer);
+                  finish(status);
+                })
+                .catch(() => {
+                  clearTimeout(timer);
+                  finish(Notification.permission);
+                });
+            }
+          } catch {
+            clearTimeout(timer);
+            finish(Notification.permission);
+          }
+        });
+      };
+
+      const permResult = await requestNativePermission();
+      if (permResult !== 'granted') {
+        toast.error('No se concedieron permisos de notificación.');
+        return;
+      }
+    }
+
+    // 3. Con el permiso nativo ya confirmado ("granted"), procedemos con OneSignal
+    setLoadingNotifications(true);
+    try {
+      const OneSignal = await withOneSignal();
+      if (OneSignal) {
+        if (OneSignal.User?.PushSubscription?.optIn) {
+          await OneSignal.User.PushSubscription.optIn();
+        }
+        if (OneSignal.User?.addTag) {
+          await OneSignal.User.addTag('role', 'admin');
+        }
+      }
+      setNotificationsEnabled(true);
+      toast.success('¡Notificaciones push activadas con éxito!');
     } catch (err: any) {
-      console.error('Error al cambiar notificaciones:', err);
-      toast.error('Error al configurar notificaciones: ' + (err.message || 'Error desconocido'));
+      console.error('Error al registrar en OneSignal:', err);
+      // Aun si OneSignal tuvo timeout, el permiso del OS ya está concedido
+      setNotificationsEnabled(true);
+      toast.success('¡Notificaciones push activadas!');
     } finally {
       setLoadingNotifications(false);
     }
