@@ -6,6 +6,7 @@ import {
   Trash2,
   MessageSquare,
   Bell,
+  Send,
   Image as ImageIcon,
   Filter,
   LayoutGrid,
@@ -90,6 +91,7 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
 
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(false);
   const [loadingNotifications, setLoadingNotifications] = useState<boolean>(false);
+  const [sendingTestNotification, setSendingTestNotification] = useState<boolean>(false);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -510,6 +512,40 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
       toast.success('¡Notificaciones push activadas!');
     } finally {
       setLoadingNotifications(false);
+    }
+  };
+
+  const handleSendTestNotification = async () => {
+    setSendingTestNotification(true);
+    try {
+      const token = await requireFreshToken(getToken);
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+      const res = await fetch(`${baseUrl}/api/v1/admin/test-notification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        let msg = `Error ${res.status}`;
+        try {
+          const body = await res.json();
+          msg = body.error || body.message || msg;
+        } catch {
+          const text = await res.text();
+          if (text) msg = text;
+        }
+        throw new Error(msg);
+      }
+
+      toast.success('¡Notificación de prueba enviada a los admins!');
+    } catch (err: any) {
+      console.error('Error al enviar notificación de prueba:', err);
+      toast.error('Error al enviar prueba: ' + (err.message || 'Error del servidor'));
+    } finally {
+      setSendingTestNotification(false);
     }
   };
 
@@ -972,6 +1008,36 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
                   'Desactivar'
                 ) : (
                   'Activar'
+                )}
+              </button>
+            </div>
+
+            <div className="flex flex-col justify-between gap-4 border-t border-gray-100 pt-4 sm:flex-row sm:items-center">
+              <div>
+                <h4 className="text-sm font-medium text-gray-800">
+                  Comprobar recepción de alertas
+                </h4>
+                <p className="text-xs text-gray-500">
+                  Envía una notificación push inmediata a todos los administradores registrados para
+                  comprobar que lleguen al dispositivo.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleSendTestNotification}
+                disabled={sendingTestNotification}
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-xs transition hover:bg-gray-50 focus:ring-2 focus:ring-gray-300 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {sendingTestNotification ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-600 border-t-transparent" />
+                    Enviando prueba...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 text-gray-600" />
+                    Enviar notificación de prueba
+                  </>
                 )}
               </button>
             </div>
