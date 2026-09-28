@@ -483,18 +483,29 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
     try {
       const OneSignal = await withOneSignal();
       if (OneSignal) {
-        if (OneSignal.User?.PushSubscription?.optIn) {
-          await OneSignal.User.PushSubscription.optIn();
-        }
-        if (OneSignal.User?.addTag) {
-          await OneSignal.User.addTag('role', 'admin');
-        }
+        // En iOS Safari PWA, optIn() puede tardar o colgarse en el event listener interno.
+        // Usamos un timeout de 3.5 segundos para no trabar nunca la interfaz.
+        const optInPromise = OneSignal.User?.PushSubscription?.optIn
+          ? Promise.resolve(OneSignal.User.PushSubscription.optIn()).catch((e) =>
+              console.warn('OneSignal optIn error:', e)
+            )
+          : Promise.resolve();
+
+        const tagPromise = OneSignal.User?.addTag
+          ? Promise.resolve(OneSignal.User.addTag('role', 'admin')).catch((e) =>
+              console.warn('OneSignal addTag error:', e)
+            )
+          : Promise.resolve();
+
+        await Promise.race([
+          Promise.allSettled([optInPromise, tagPromise]),
+          new Promise((resolve) => setTimeout(resolve, 3500)),
+        ]);
       }
       setNotificationsEnabled(true);
       toast.success('¡Notificaciones push activadas con éxito!');
     } catch (err: any) {
       console.error('Error al registrar en OneSignal:', err);
-      // Aun si OneSignal tuvo timeout, el permiso del OS ya está concedido
       setNotificationsEnabled(true);
       toast.success('¡Notificaciones push activadas!');
     } finally {
