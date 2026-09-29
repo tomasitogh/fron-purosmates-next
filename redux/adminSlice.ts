@@ -105,6 +105,10 @@ export interface ProductData {
 
 interface AdminState {
   orders: Order[];
+  ordersTotalElements: number;
+  ordersTotalPages: number;
+  ordersPage: number; // 0-indexed, espejo del `number` de Spring Page
+  ordersPageSize: number;
   inquiries: CorporateGiftInquiry[];
   loading: boolean;
   error: string | null;
@@ -150,6 +154,57 @@ export const fetchAllOrders = createAsyncThunk(
         },
       })
     );
+    return data;
+  }
+);
+
+// Respuesta paginada de Spring Data (Page<OrderResponseDTO> serializado).
+export interface OrdersPageResponse {
+  content: Order[];
+  totalElements: number;
+  totalPages: number;
+  number: number; // página actual, 0-indexed
+  size: number;
+}
+
+// Paginado server-side: GET /api/v1/orders?page=0&size=10&status=PENDING.
+// `status` en 'ALL'/undefined = sin filtro (el backend no filtra).
+// Acepta tanto Page (nuevo) como List legacy para no romper si el backend
+// viejo responde array.
+export const fetchOrdersPage = createAsyncThunk(
+  'admin/fetchOrdersPage',
+  async ({
+    getToken,
+    page,
+    size,
+    status,
+  }: {
+    getToken: TokenGetter;
+    page: number;
+    size: number;
+    status?: string;
+  }) => {
+    const params = new URLSearchParams({
+      page: String(Math.max(0, page)),
+      size: String(Math.max(1, Math.min(size, 50))),
+    });
+    if (status && status !== 'ALL') params.append('status', status);
+    const { data } = await withAuthRetry(getToken, (token) =>
+      axios.get<OrdersPageResponse | Order[]>(`${ORDERS_API_URL}?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+    );
+    if (Array.isArray(data)) {
+      return {
+        content: data,
+        totalElements: data.length,
+        totalPages: 1,
+        number: 0,
+        size: data.length,
+      } as OrdersPageResponse;
+    }
     return data;
   }
 );
@@ -389,6 +444,10 @@ const adminSlice = createSlice({
   name: 'admin',
   initialState: {
     orders: [],
+    ordersTotalElements: 0,
+    ordersTotalPages: 1,
+    ordersPage: 0,
+    ordersPageSize: 10,
     inquiries: [],
     loading: false,
     error: null,
@@ -444,7 +503,7 @@ const adminSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Error al eliminar producto';
       })
-      // Fetch Orders
+      // Fetch Orders (legacy: lista completa, sin paginar)
       .addCase(fetchAllOrders.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -454,6 +513,23 @@ const adminSlice = createSlice({
         state.orders = action.payload;
       })
       .addCase(fetchAllOrders.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Error al cargar pedidos';
+      })
+      // Fetch Orders Page (server-side: GET /orders?page&size&status)
+      .addCase(fetchOrdersPage.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchOrdersPage.fulfilled, (state, action) => {
+        state.loading = false;
+        state.orders = action.payload.content;
+        state.ordersTotalElements = action.payload.totalElements;
+        state.ordersTotalPages = Math.max(1, action.payload.totalPages);
+        state.ordersPage = action.payload.number;
+        state.ordersPageSize = action.payload.size;
+      })
+      .addCase(fetchOrdersPage.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Error al cargar pedidos';
       })
@@ -485,6 +561,12 @@ const adminSlice = createSlice({
         state.loading = false;
         state.successMessage = 'Pedido eliminado exitosamente';
         state.orders = state.orders.filter((order) => order.id !== action.payload);
+        // Mantener el contador server-side en sync (el componente re-fetchea la página).
+        state.ordersTotalElements = Math.max(0, state.ordersTotalElements - 1);
+        state.ordersTotalPages = Math.max(
+          1,
+          Math.ceil(state.ordersTotalElements / Math.max(1, state.ordersPageSize))
+        );
       })
       .addCase(deleteOrder.rejected, (state, action) => {
         state.loading = false;
@@ -496,10 +578,16 @@ const adminSlice = createSlice({
         state.error = null;
         state.successMessage = null;
       })
-      .addCase(createManualOrder.fulfilled, (state, action) => {
+      .addCase(createManualOrder.fulfilled, (state) => {
         state.loading = false;
         state.successMessage = 'Pedido manual creado exitosamente';
-        state.orders.unshift(action.payload);
+        // En modo paginado no se hace unshift (rompería el tamaño de página):
+        // el componente re-fetchea la página actual. Solo se ajusta el total.
+        state.ordersTotalElements += 1;
+        state.ordersTotalPages = Math.max(
+          1,
+          Math.ceil(state.ordersTotalElements / Math.max(1, state.ordersPageSize))
+        );
       })
       .addCase(createManualOrder.rejected, (state, action) => {
         state.loading = false;

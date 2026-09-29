@@ -4,7 +4,7 @@ import Image from 'next/image';
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-  fetchAllOrders,
+  fetchOrdersPage,
   updateOrder,
   deleteOrder,
   createManualOrder,
@@ -22,6 +22,8 @@ interface ExtendedOrder extends Order {
   receiptUrl?: string;
 }
 import {
+  ChevronLeft,
+  ChevronRight,
   Copy,
   PenSquare,
   Trash2,
@@ -54,6 +56,8 @@ const PAYMENT_STATUS_LABELS: Record<string, { label: string; color: string }> = 
 
 const ORDER_STATUSES = ['ALL', 'PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
 
+const ORDERS_PAGE_SIZE = 10;
+
 interface ManualItemRow {
   productId: number;
   productName: string;
@@ -76,11 +80,14 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
   const dispatch = useDispatch<AppDispatch>();
   const {
     orders,
+    ordersTotalElements,
+    ordersTotalPages,
     loading,
     successMessage,
     error: adminError,
   } = useSelector((state: RootState) => state.admin);
   const [filterStatus, setFilterStatus] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1); // 1-indexed en UI, 0-indexed en backend
 
   const [editingOrder, setEditingOrder] = useState<ExtendedOrder | null>(null);
   const [editFormData, setEditFormData] = useState({
@@ -273,7 +280,14 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
         paymentMethod: 'cash',
         sendEmail: false,
       });
-      dispatch(fetchAllOrders(getToken));
+      dispatch(
+        fetchOrdersPage({
+          getToken,
+          page: currentPage - 1,
+          size: ORDERS_PAGE_SIZE,
+          status: filterStatus,
+        })
+      );
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'Error al crear pedido manual';
       toast.error(errorMsg);
@@ -282,9 +296,17 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
     }
   };
 
+  // Paginado server-side: el backend filtra por status y ordena por id desc.
   useEffect(() => {
-    dispatch(fetchAllOrders(getToken));
-  }, [dispatch, getToken]);
+    dispatch(
+      fetchOrdersPage({
+        getToken,
+        page: currentPage - 1,
+        size: ORDERS_PAGE_SIZE,
+        status: filterStatus,
+      })
+    );
+  }, [dispatch, getToken, currentPage, filterStatus]);
 
   useEffect(() => {
     if (successMessage) {
@@ -297,11 +319,19 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
     }
   }, [successMessage, adminError, dispatch]);
 
-  const filteredOrders =
-    (orders as ExtendedOrder[] | undefined)?.filter((order) => {
-      if (filterStatus === 'ALL') return true;
-      return order.status === filterStatus;
-    }) || [];
+  const paginatedOrders = (orders as ExtendedOrder[]) || [];
+
+  // El backend ya filtra, ordena (id desc) y pagina. Solo se deriva el rango
+  // visible para el texto "Mostrando X–Y de Z".
+  const totalPages = Math.max(1, ordersTotalPages);
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+  const rangeStart = ordersTotalElements === 0 ? 0 : (safePage - 1) * ORDERS_PAGE_SIZE + 1;
+  const rangeEnd = Math.min(safePage * ORDERS_PAGE_SIZE, ordersTotalElements);
+
+  const handleFilterChange = (status: string) => {
+    setFilterStatus(status);
+    setCurrentPage(1);
+  };
 
   const handleEditClick = (order: ExtendedOrder) => {
     setEditingOrder(order);
@@ -331,6 +361,15 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
         })
       ).unwrap();
       closeEditModal();
+      // Re-fetch por si el cambio de estado saca el pedido del filtro actual.
+      dispatch(
+        fetchOrdersPage({
+          getToken,
+          page: safePage - 1,
+          size: ORDERS_PAGE_SIZE,
+          status: filterStatus,
+        })
+      );
     } catch (error: unknown) {
       console.error('Update failed:', error);
     }
@@ -339,10 +378,27 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
   const handleDelete = async (orderId: number) => {
     if (!window.confirm('¿Está seguro de eliminar este pedido? Esta acción no se puede deshacer.'))
       return;
-    dispatch(deleteOrder({ orderId, getToken }));
+    try {
+      await dispatch(deleteOrder({ orderId, getToken })).unwrap();
+      // Si se elimina el último de la página (y no es la primera), retroceder.
+      if (paginatedOrders.length <= 1 && safePage > 1) {
+        setCurrentPage(safePage - 1);
+      } else {
+        dispatch(
+          fetchOrdersPage({
+            getToken,
+            page: safePage - 1,
+            size: ORDERS_PAGE_SIZE,
+            status: filterStatus,
+          })
+        );
+      }
+    } catch (error: unknown) {
+      console.error('Delete failed:', error);
+    }
   };
 
-  if (loading && !editingOrder && !viewingOrderItems) {
+  if (loading && paginatedOrders.length === 0 && !editingOrder && !viewingOrderItems) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="flex flex-col items-center gap-3">
@@ -363,7 +419,7 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
           </label>
           <select
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
+            onChange={(e) => handleFilterChange(e.target.value)}
             className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-[#254642] focus:ring-2 focus:ring-[#254642] focus:outline-none md:w-auto"
           >
             {ORDER_STATUSES.map((status) => (
@@ -421,8 +477,8 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
-              {filteredOrders.length > 0 ? (
-                filteredOrders.map((order) => (
+              {paginatedOrders.length > 0 ? (
+                paginatedOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-gray-900">
                       #{order.id}
@@ -542,8 +598,8 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
 
       {/* Vista Mobile */}
       <div className="space-y-3 md:hidden">
-        {filteredOrders.length > 0 ? (
-          filteredOrders.map((order) => (
+        {paginatedOrders.length > 0 ? (
+          paginatedOrders.map((order) => (
             <div
               key={order.id}
               className="space-y-3 rounded-xl border border-gray-100 bg-white p-4"
@@ -601,6 +657,36 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
           </div>
         )}
       </div>
+
+      {/* Paginación server-side: 10 pedidos por página, fondo de la página */}
+      {ordersTotalElements > 0 && (
+        <div className="flex flex-col items-center justify-between gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 sm:flex-row">
+          <p className="text-xs text-gray-500 sm:text-sm">
+            Mostrando {rangeStart}–{rangeEnd} de {ordersTotalElements} pedidos
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(safePage - 1)}
+              disabled={safePage <= 1}
+              aria-label="Página anterior"
+              className="rounded-lg border border-gray-200 p-2 text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="min-w-24 text-center text-xs font-medium text-gray-700 sm:text-sm">
+              Página {safePage} de {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(safePage + 1)}
+              disabled={safePage >= totalPages}
+              aria-label="Página siguiente"
+              className="rounded-lg border border-gray-200 p-2 text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* View Items Modal */}
       {viewingOrderItems && (
