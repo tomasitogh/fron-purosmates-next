@@ -53,8 +53,9 @@ async function getCategories() {
       return SAMPLE_CATEGORIES;
     }
     const data = await res.json();
-    if (Array.isArray(data) && data.length > 0) {
-      return data;
+    const items = Array.isArray(data) ? data : Array.isArray(data?.content) ? data.content : [];
+    if (items.length > 0) {
+      return items;
     }
     return SAMPLE_CATEGORIES;
   } catch (error) {

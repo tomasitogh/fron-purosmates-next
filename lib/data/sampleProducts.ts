@@ -1,9 +1,9 @@
 import type { Product } from '@/components/ProductModal';
 
 export const SAMPLE_CATEGORIES = [
-  { id: 1, description: 'Mates', active: true },
-  { id: 2, description: 'Bombillas', active: true },
-  { id: 3, description: 'Accesorios', active: true },
+  { id: 2, description: 'Mates', active: true },
+  { id: 1, description: 'Bombillas', active: true },
+  { id: 6, description: 'Accesorios', active: true },
 ];
 
 export const SAMPLE_PRODUCTS: Product[] = [
@@ -18,7 +18,7 @@ export const SAMPLE_PRODUCTS: Product[] = [
       'Mate Imperial seleccionado a mano. Confeccionado en calabaza brasilera de paredes gruesas, forrado en cuero vacuno legítimo de primera calidad y terminado con virola de alpaca cincelada artesanalmente. Apto para grabado láser personalizado.',
     isCustomizable: true,
     customizationCost: 5000,
-    category: { id: 1, description: 'Mates' },
+    category: { id: 2, description: 'Mates' },
     images: [{ url: '/categories/mate.jpg' }],
     variants: [
       {
@@ -50,7 +50,7 @@ export const SAMPLE_PRODUCTS: Product[] = [
       'El clásico mate camionero uruguayo. Base reforzada de 4 patas, boca ancha ideal para cebar y no mojar la yerba. Virola de acero inoxidable pulido espejo lista para personalizar con tu frase o escudo.',
     isCustomizable: true,
     customizationCost: 4500,
-    category: { id: 1, description: 'Mates' },
+    category: { id: 2, description: 'Mates' },
     images: [{ url: '/categories/mate.jpg' }],
     variants: [
       {
@@ -81,7 +81,7 @@ export const SAMPLE_PRODUCTS: Product[] = [
     description:
       'Bombilla tradicional pico de loro elaborada en alpaca maciza. Caño grueso de excelente tiraje, filtro de pala ranurada que no se tapa con ningún tipo de yerba mate.',
     isCustomizable: false,
-    category: { id: 2, description: 'Bombillas' },
+    category: { id: 1, description: 'Bombillas' },
     images: [{ url: '/categories/bombilla.jpg' }],
     variants: [
       {
@@ -104,7 +104,7 @@ export const SAMPLE_PRODUCTS: Product[] = [
     description:
       'Termo de acero inoxidable de doble capa térmica. Conserva agua caliente por más de 24 horas. Pico matero de precisión con flujo continuo y manija rebatible ergonómica.',
     isCustomizable: false,
-    category: { id: 3, description: 'Accesorios' },
+    category: { id: 6, description: 'Accesorios' },
     images: [{ url: '/categories/accesorios.jpg' }],
     variants: [
       {

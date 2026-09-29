@@ -36,47 +36,72 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [sidebarCategoryIds, setSidebarCategoryIds] = useState<number[]>([]);
 
+  const normalizeText = (text: string) => {
+    return (text || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  };
+
   const activeCategories = useMemo(() => {
-    return initialCategories
-      .filter((c: any) => c.active)
-      .map((c: any) => ({ id: c.id, description: c.description, active: c.active }));
+    const list = (initialCategories || [])
+      .filter((c: any) => c.active !== false)
+      .map((c: any) => ({ id: Number(c.id), description: c.description, active: true }));
+
+    // Orden estándar: Mates primero, luego Bombillas, luego Accesorios
+    const priority = ['mate', 'bombilla', 'accesorio'];
+    return list.sort((a, b) => {
+      const aIdx = priority.findIndex((p) => normalizeText(a.description).includes(p));
+      const bIdx = priority.findIndex((p) => normalizeText(b.description).includes(p));
+      if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+      if (aIdx !== -1) return -1;
+      if (bIdx !== -1) return 1;
+      return a.id - b.id;
+    });
   }, [initialCategories]);
 
   const categoriesParam = useMemo(() => {
-    return (searchParams.get('categories') || '').trim().toLowerCase();
+    return (searchParams.get('categories') || '').trim();
   }, [searchParams]);
 
   const categoryParam = useMemo(() => {
-    return (searchParams.get('category') || '').trim().toLowerCase();
+    return (searchParams.get('category') || '').trim();
   }, [searchParams]);
 
-  const normalizeText = (text: string) => {
-    return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  };
-
   const findCategoryBySlug = (slug: string) => {
+    const cleanSlug = normalizeText(slug);
+    if (!cleanSlug) return undefined;
+
     return activeCategories.find((c: any) => {
-      const catDesc = c.description?.toLowerCase().trim();
-      return normalizeText(catDesc) === slug || catDesc === slug;
+      // Coincidencia por ID numérico (ej: ?category=2)
+      if (String(c.id) === cleanSlug) return true;
+
+      const catDesc = normalizeText(c.description || '');
+      // Coincidencia exacta o slugificada
+      if (catDesc === cleanSlug || slugify(catDesc) === cleanSlug) return true;
+
+      // Coincidencia singular/plural en español (ej: "mate" vs "mates", "bombilla" vs "bombillas", "accesorio" vs "accesorios")
+      if (cleanSlug + 's' === catDesc || catDesc + 's' === cleanSlug) return true;
+      if (cleanSlug + 'es' === catDesc || catDesc + 'es' === cleanSlug) return true;
+
+      return false;
     });
   };
 
   const urlCategoryIds = useMemo(() => {
-    if (categoriesParam) {
-      const slugs = categoriesParam
+    const rawParam = categoriesParam || categoryParam;
+    if (rawParam) {
+      const slugs = rawParam
         .split(',')
         .map((s) => s.trim())
         .filter(Boolean);
       const ids: number[] = [];
       for (const slug of slugs) {
         const matched = findCategoryBySlug(slug);
-        if (matched) ids.push(matched.id);
+        if (matched && !ids.includes(matched.id)) ids.push(matched.id);
       }
       return ids;
-    }
-    if (categoryParam) {
-      const matched = findCategoryBySlug(categoryParam);
-      return matched ? [matched.id] : [];
     }
     return [];
   }, [categoriesParam, categoryParam, activeCategories]);
@@ -119,7 +144,9 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
     let list = [...products];
 
     if (selectedCategoryIds.length > 0) {
-      list = list.filter((p) => p.category?.id && selectedCategoryIds.includes(p.category.id));
+      list = list.filter(
+        (p) => p.category?.id != null && selectedCategoryIds.includes(Number(p.category.id))
+      );
     }
 
     if (searchText) {
@@ -163,17 +190,27 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
     setSidebarCategoryIds(ids);
   };
 
+  const currentTitle = useMemo(() => {
+    if (searchText) return `Resultados para "${searchText}"`;
+    if (selectedCategoryIds.length === 1) {
+      const cat = activeCategories.find((c: any) => c.id === selectedCategoryIds[0]);
+      if (cat) return cat.description;
+    }
+    if (selectedCategoryIds.length > 1) {
+      return 'Productos filtrados';
+    }
+    return 'Todos los Productos';
+  }, [searchText, selectedCategoryIds, activeCategories]);
+
   const handleApplyFilters = (categoryIds: number[]) => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete('category'); // eliminar param viejo para evitar duplicados
     if (categoryIds.length > 0) {
       const catSlugs = categoryIds
-        .map((id) =>
-          activeCategories
-            .find((c: any) => c.id === id)
-            ?.description?.toLowerCase()
-            .trim()
-        )
+        .map((id) => {
+          const cat = activeCategories.find((c: any) => c.id === id);
+          return cat?.description ? slugify(cat.description) : null;
+        })
         .filter(Boolean);
       params.set('categories', catSlugs.join(','));
     } else {
@@ -248,14 +285,7 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
             {/* Header with sort - desktop */}
             <div className="mb-6 hidden justify-between gap-4 sm:flex sm:items-center">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {searchText
-                    ? `Resultados para "${searchText}"`
-                    : categoryParam
-                      ? activeCategories.find((c: any) => selectedCategoryIds.includes(c.id))
-                          ?.description || 'Productos'
-                      : 'Todos los Productos'}
-                </h1>
+                <h1 className="text-2xl font-bold text-gray-900">{currentTitle}</h1>
                 <p className="mt-1 text-gray-600">{filteredProducts.length} productos</p>
               </div>
               <div className="flex items-center gap-2">
@@ -286,14 +316,7 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
 
             {/* Mobile header */}
             <div className="mb-4 sm:hidden">
-              <p className="text-xl font-bold text-gray-900">
-                {searchText
-                  ? `Resultados para "${searchText}"`
-                  : categoryParam
-                    ? activeCategories.find((c: any) => selectedCategoryIds.includes(c.id))
-                        ?.description || 'Productos'
-                    : 'Todos los Productos'}
-              </p>
+              <p className="text-xl font-bold text-gray-900">{currentTitle}</p>
               <p className="text-sm text-gray-600">{filteredProducts.length} productos</p>
             </div>
 
