@@ -6,10 +6,22 @@ import toast from 'react-hot-toast';
 import {
   downloadReceipt,
   getReceiptFilename,
-  getReceiptProxyUrl,
   getReceiptViewUrl,
   isReceiptPdf,
 } from '@/lib/receipts';
+
+/** Toast específico cuando Cloudinary rechaza un comprobante viejo (401). */
+function toastDownloadError(err: unknown) {
+  const msg = err instanceof Error ? err.message : '';
+  if (msg.startsWith('CLOUDINARY_401')) {
+    toast.error(
+      'Cloudinary no autorizó este comprobante viejo (401). Subí el PDF de nuevo para probar el flujo actual.',
+      { duration: 6000 }
+    );
+  } else {
+    toast.error('No se pudo descargar el comprobante');
+  }
+}
 
 /* ------------------------------------------------------------------ */
 /* Modal de vista previa: el comprobante se ve DENTRO de la app, sin   */
@@ -27,18 +39,17 @@ export function ReceiptPreviewModal({
   const [downloading, setDownloading] = useState(false);
   const filename = getReceiptFilename(orderId, receiptUrl);
   const isPdf = isReceiptPdf(receiptUrl);
-  // Imágenes: directo a Cloudinary (rápido, cacheado). PDFs: proxy inline
-  // same-origin para que el visor de iOS/Safari los abra con su chrome.
-  const previewSrc = isPdf
-    ? getReceiptProxyUrl(receiptUrl, { filename })
-    : getReceiptViewUrl(receiptUrl);
+  // Vista previa con la URL directa de Cloudinary (el navegador manda el
+  // Referer real). No pasamos por el proxy para ver: así un 401 del proxy
+  // nunca te deja sin preview, y el modal evita la página negra de iOS.
+  const previewSrc = getReceiptViewUrl(receiptUrl);
 
   const handleDownload = async () => {
     setDownloading(true);
     try {
       await downloadReceipt(receiptUrl, filename);
-    } catch {
-      toast.error('No se pudo descargar el comprobante');
+    } catch (err) {
+      toastDownloadError(err);
     } finally {
       setDownloading(false);
     }
@@ -138,8 +149,8 @@ export function ReceiptTableActions({
     setDownloading(true);
     try {
       await downloadReceipt(receiptUrl, filename);
-    } catch {
-      toast.error('No se pudo descargar el comprobante');
+    } catch (err) {
+      toastDownloadError(err);
     } finally {
       setDownloading(false);
     }
@@ -199,8 +210,8 @@ export function ReceiptDetailCard({
     setDownloading(true);
     try {
       await downloadReceipt(receiptUrl, filename);
-    } catch {
-      toast.error('No se pudo descargar el comprobante');
+    } catch (err) {
+      toastDownloadError(err);
     } finally {
       setDownloading(false);
     }

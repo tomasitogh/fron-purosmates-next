@@ -11,8 +11,9 @@
  *   devuelve el archivo crudo → página en negro sin forma de volver/descargar.
  *
  * Solución:
- * - Separar "ver" (URL original, preview inline en un modal dentro de la app)
- *   de "descargar" (vía proxy same-origin `/api/receipt-proxy` + descarga blob,
+ * - Separar "ver" (URL original directa, preview inline en un modal dentro de
+ *   la app — el navegador manda su Referer real) de "descargar" (fetch directo
+ *   primero, luego proxy same-origin `/api/receipt-proxy` + descarga blob,
  *   que sí funciona en iOS standalone).
  */
 
@@ -100,24 +101,27 @@ export function getReceiptProxyUrl(
 
 /**
  * Descarga un comprobante funcionando en desktop y en iOS standalone:
- * 1. Intenta fetch (al proxy same-origin) → blob → objectURL → click.
- * 2. Si el fetch falla (CORS/red), abre el proxy en pestaña nueva como fallback.
- * Devuelve 'downloaded' | 'opened' para logging/telemetría opcional.
+ * 1. Fetch directo a Cloudinary desde el navegador (manda Referer real, pasa
+ *    un eventual hotlink-protection; funciona si Cloudinary habilita CORS).
+ * 2. Fetch al proxy same-origin (evita CORS, manda Referer del sitio).
+ * 3. Fallback: abre la URL directa en pestaña nueva — nunca la del proxy con
+ *    JSON de error, para no mostrar `{"error":...}` al usuario.
+ * Si Cloudinary devuelve 401 en ambos intentos, lanza CLOUDINARY_401 para que
+ * la UI explique que es un archivo viejo y conviene resubirlo.
  */
 export async function downloadReceipt(
   receiptUrl: string,
   filename: string
 ): Promise<'downloaded' | 'opened'> {
+  const viewUrl = getReceiptViewUrl(receiptUrl);
   const proxyDownload = getReceiptProxyUrl(receiptUrl, { filename, download: true });
+  let directStatus: number | null = null;
+  let proxyStatus: number | null = null;
 
-  try {
-    const res = await fetch(proxyDownload);
-    if (!res.ok) throw new Error(`Proxy respondió ${res.status}`);
-    const blob = await res.blob();
+  const saveBlob = (blob: Blob) => {
     const objectUrl = URL.createObjectURL(blob);
-
-    // iOS Safari <13 / algunos standalone ignoran el click programático si no
-    // está el anchor en el DOM, por eso lo agregamos temporalmente.
+    // iOS Safari / standalone ignora el click programático si el anchor no está
+    // en el DOM, por eso lo agregamos temporalmente.
     const anchor = document.createElement('a');
     anchor.href = objectUrl;
     anchor.download = filename;
@@ -125,14 +129,59 @@ export async function downloadReceipt(
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-
-    // Liberamos después de un margen para que iOS alcance a tomar el archivo.
+    // Margen para que iOS alcance a tomar el archivo antes de revocar.
     setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
+  };
+
+  // 1. Intento directo (mejor Referer posible: el del navegador).
+  try {
+    const res = await fetch(viewUrl, { mode: 'cors', credentials: 'omit' });
+    directStatus = res.status;
+    if (!res.ok) throw new Error(`Directo respondió ${res.status}`);
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) throw new Error('Respuesta JSON inesperada');
+    saveBlob(await res.blob());
     return 'downloaded';
   } catch {
-    // Fallback: abrir el proxy (inline→attachment según backend) en pestaña nueva.
-    // Al ser same-origin, Safari/iOS muestra su visor con botón Compartir/Guardar.
-    window.open(proxyDownload, '_blank', 'noopener,noreferrer');
-    return 'opened';
+    // seguimos al proxy
+  }
+
+  // 2. Intento vía proxy same-origin (sin problemas de CORS).
+  try {
+    const res = await fetch(proxyDownload);
+    proxyStatus = res.status;
+    if (!res.ok) {
+      // El proxy devuelve JSON con detalle; lo leemos para el mensaje final.
+      let detail = '';
+      try {
+        const body = await res.clone().json();
+        detail = body?.error || '';
+      } catch {
+        /* cuerpo no-JSON, ignoramos */
+      }
+      const err = new Error(detail || `Proxy respondió ${res.status}`);
+      (err as Error & { proxyStatus?: number }).proxyStatus = res.status;
+      throw err;
+    }
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) throw new Error('Respuesta JSON inesperada');
+    saveBlob(await res.blob());
+    return 'downloaded';
+  } catch (err) {
+    // 3. Fallback: abrir la URL DIRECTA (no el proxy con JSON de error).
+    window.open(viewUrl, '_blank', 'noopener,noreferrer');
+    if (directStatus === 401 || directStatus === 403 || proxyStatus === 502) {
+      const friendly = new Error(
+        'CLOUDINARY_401: Cloudinary no autorizó este comprobante. Si es un archivo viejo, subilo de nuevo para probar el flujo actual.'
+      );
+      (
+        friendly as Error & { directStatus?: number | null; proxyStatus?: number | null }
+      ).directStatus = directStatus;
+      (
+        friendly as Error & { directStatus?: number | null; proxyStatus?: number | null }
+      ).proxyStatus = proxyStatus;
+      throw friendly;
+    }
+    throw err;
   }
 }
