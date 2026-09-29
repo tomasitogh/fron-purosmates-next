@@ -14,6 +14,7 @@ export interface UnsubscribeTokenParams {
 }
 
 export interface SendNotificationParams {
+  tokens?: string[];
   title: string;
   body: string;
   url?: string;
@@ -85,17 +86,22 @@ export async function unsubscribeAdminToken({ token, userId }: UnsubscribeTokenP
  * Obtiene todos los tokens FCM activos de administradores
  */
 export async function getActiveAdminTokens(): Promise<string[]> {
-  const records = await prisma.adminFCMToken.findMany({
-    where: { isActive: true },
-    select: { token: true },
-  });
-  return records.map((r) => r.token);
+  try {
+    const records = await prisma.adminFCMToken.findMany({
+      where: { isActive: true },
+      select: { token: true },
+    });
+    return records.map((r) => r.token);
+  } catch {
+    return [];
+  }
 }
 
 /**
  * Envía una notificación push a todos los administradores registrados
  */
 export async function sendMulticastNotification({
+  tokens,
   title,
   body,
   url = '/admin',
@@ -115,43 +121,38 @@ export async function sendMulticastNotification({
 
   // Control de deduplicación para órdenes
   if (orderId && type === 'new_order') {
-    const existingLog = await prisma.notificationLog.findFirst({
-      where: {
-        type: 'new_order',
-        orderId: BigInt(orderId),
-        status: 'SENT',
-        createdAt: {
-          gte: new Date(Date.now() - 5 * 60 * 1000), // últimos 5 minutos
+    try {
+      const existingLog = await prisma.notificationLog.findFirst({
+        where: {
+          type: 'new_order',
+          orderId: BigInt(orderId),
+          status: 'SENT',
+          createdAt: {
+            gte: new Date(Date.now() - 5 * 60 * 1000), // últimos 5 minutos
+          },
         },
-      },
-    });
+      });
 
-    if (existingLog) {
-      console.log(`[Notifications] Notificación de orden #${orderId} omitida por deduplicación.`);
-      return { success: true, deduplicated: true, recipientCount: 0 };
+      if (existingLog) {
+        console.log(`[Notifications] Notificación de orden #${orderId} omitida por deduplicación.`);
+        return { success: true, deduplicated: true, recipientCount: 0 };
+      }
+    } catch {
+      // Ignorar si Prisma o BD no están disponibles
     }
   }
 
-  const tokens = await getActiveAdminTokens();
-  if (tokens.length === 0) {
+  const targetTokens =
+    tokens && tokens.length > 0 ? tokens : await getActiveAdminTokens().catch(() => []);
+
+  if (targetTokens.length === 0) {
     console.warn('[Notifications] No hay tokens de administradores activos registrados.');
-    await prisma.notificationLog.create({
-      data: {
-        type,
-        title,
-        body,
-        orderId: orderId ? BigInt(orderId) : null,
-        recipientId,
-        status: 'FAILED',
-        errorMsg: 'No active admin tokens in database',
-      },
-    });
     return { success: false, recipientCount: 0, message: 'No hay dispositivos registrados' };
   }
 
   try {
     const response = await messaging.sendEachForMulticast({
-      tokens,
+      tokens: targetTokens,
       notification: {
         title,
         body,
@@ -187,52 +188,32 @@ export async function sendMulticastNotification({
           errCode === 'messaging/registration-token-not-registered' ||
           errCode === 'messaging/invalid-registration-token'
         ) {
-          tokensToDeactivate.push(tokens[idx]);
+          tokensToDeactivate.push(targetTokens[idx]);
         }
       }
     });
 
     if (tokensToDeactivate.length > 0) {
-      console.log(`[Notifications] Desactivando ${tokensToDeactivate.length} tokens inválidos.`);
-      await prisma.adminFCMToken.updateMany({
-        where: { token: { in: tokensToDeactivate } },
-        data: { isActive: false },
-      });
+      console.log(`[Notifications] Tokens inválidos detectados: ${tokensToDeactivate.length}.`);
+      // Intentar desactivar en BD si está disponible
+      try {
+        await prisma.adminFCMToken.updateMany({
+          where: { token: { in: tokensToDeactivate } },
+          data: { isActive: false },
+        });
+      } catch {
+        // Ignorar si Prisma no está conectado a MySQL
+      }
     }
-
-    await prisma.notificationLog.create({
-      data: {
-        type,
-        title,
-        body,
-        orderId: orderId ? BigInt(orderId) : null,
-        recipientId,
-        status: response.successCount > 0 ? 'SENT' : 'FAILED',
-        errorMsg:
-          response.failureCount > 0
-            ? `${response.failureCount} de ${tokens.length} envíos fallaron`
-            : null,
-      },
-    });
 
     return {
       success: response.successCount > 0,
       recipientCount: response.successCount,
       failureCount: response.failureCount,
+      invalidTokens: tokensToDeactivate,
     };
   } catch (error: any) {
     console.error('[Notifications] Error al enviar notificación multicast:', error);
-    await prisma.notificationLog.create({
-      data: {
-        type,
-        title,
-        body,
-        orderId: orderId ? BigInt(orderId) : null,
-        recipientId,
-        status: 'FAILED',
-        errorMsg: error.message || 'Unknown error',
-      },
-    });
     throw error;
   }
 }

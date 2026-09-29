@@ -32,13 +32,14 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { title, body: content, url, type, orderId } = body;
+    const { tokens, title, body: content, url, type, orderId } = body;
 
     if (!title || !content) {
       return NextResponse.json({ error: 'Título y contenido son requeridos' }, { status: 400 });
     }
 
     const result = await sendMulticastNotification({
+      tokens: Array.isArray(tokens) ? tokens : undefined,
       title,
       body: content,
       url: url || '/admin',

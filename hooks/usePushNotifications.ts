@@ -148,20 +148,32 @@ export function usePushNotifications() {
         throw new Error('No se pudo generar el token FCM.');
       }
 
-      // 4. Enviar token a la base de datos
-      const res = await fetch('/api/notifications/subscribe', {
+      // 4. Enviar token al backend de Spring Boot (MySQL privado en Railway) y a Next.js
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+      const tokenBackend = await (window as any).Clerk?.session?.getToken?.();
+      const authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (tokenBackend) {
+        authHeaders['Authorization'] = `Bearer ${tokenBackend}`;
+      }
+
+      await fetch(`${baseUrl}/api/v1/admin/fcm-token`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({
+          token,
+          deviceInfo: getDeviceInfo(),
+        }),
+      }).catch((e) => console.warn('Error guardando token en Spring Boot:', e));
+
+      // Guardar también en Next.js (si Prisma está conectado)
+      await fetch('/api/notifications/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token,
           deviceInfo: getDeviceInfo(),
         }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Error al guardar el token en el servidor.');
-      }
+      }).catch((e) => console.warn('Error guardando token en Next.js:', e));
 
       localStorage.setItem('fcm_admin_token', token);
       setIsSubscribed(true);
@@ -183,6 +195,19 @@ export function usePushNotifications() {
       const savedToken = localStorage.getItem('fcm_admin_token');
 
       if (savedToken) {
+        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+        const tokenBackend = await (window as any).Clerk?.session?.getToken?.();
+        const authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (tokenBackend) {
+          authHeaders['Authorization'] = `Bearer ${tokenBackend}`;
+        }
+
+        await fetch(`${baseUrl}/api/v1/admin/fcm-token`, {
+          method: 'DELETE',
+          headers: authHeaders,
+          body: JSON.stringify({ token: savedToken }),
+        }).catch((e) => console.warn('Error eliminando token en Spring Boot:', e));
+
         await fetch('/api/notifications/unsubscribe', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

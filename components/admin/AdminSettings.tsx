@@ -323,25 +323,60 @@ export default function AdminSettings({ getToken }: AdminSettingsProps) {
   const handleSendTestNotification = async () => {
     setSendingTestNotification(true);
     try {
-      const res = await fetch('/api/notifications/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'test',
-          title: 'Notificación de prueba 🔔',
-          body: '¡Las notificaciones para administradores están funcionando correctamente!',
-          url: '/admin',
-        }),
-      });
+      const localToken =
+        typeof window !== 'undefined' ? localStorage.getItem('fcm_admin_token') : null;
+      let sentCount = 0;
 
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || data.message || `Error ${res.status}`);
+      // 1. Intentar llamar al backend Spring Boot (notifica a TODOS los dispositivos registrados en Railway MySQL)
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+      const tokenBackend = await (window as any).Clerk?.session?.getToken?.();
+
+      let springBootSuccess = false;
+      if (tokenBackend) {
+        try {
+          const resBackend = await fetch(`${baseUrl}/api/v1/admin/test-notification`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${tokenBackend}`,
+            },
+          });
+          if (resBackend.ok) {
+            springBootSuccess = true;
+          }
+        } catch (e) {
+          console.warn('No se pudo invocar Spring Boot test-notification:', e);
+        }
       }
 
-      toast.success(`¡Notificación enviada a ${data.recipientCount ?? 1} dispositivo(s) admin!`);
+      // 2. Si Spring Boot no respondió, despachar directo a través de Next.js
+      if (!springBootSuccess) {
+        const res = await fetch('/api/notifications/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            type: 'test',
+            title: 'Notificación de prueba 🔔',
+            body: '¡Las notificaciones para administradores están funcionando correctamente!',
+            url: '/admin',
+            tokens: localToken ? [localToken] : undefined,
+          }),
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || data.message || `Error ${res.status}`);
+        }
+        sentCount = data.recipientCount ?? 1;
+      }
+
+      toast.success(
+        sentCount > 0
+          ? `¡Notificación enviada a ${sentCount} dispositivo(s) admin!`
+          : '¡Notificación de prueba enviada con éxito!'
+      );
     } catch (err: any) {
       console.error('Error al enviar notificación de prueba:', err);
       toast.error('Error al enviar prueba: ' + (err.message || 'Error del servidor'));
