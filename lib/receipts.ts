@@ -69,6 +69,25 @@ export function getReceiptViewUrl(url?: string): string {
 }
 
 /**
+ * URL para la vista previa.
+ * - Imágenes: la URL directa.
+ * - PDFs subidos como `image`: el .pdf ORIGINAL está bloqueado para delivery
+ *   en cuentas Free ("deny or ACL failure" — Cloudinary bloquea PDFs/ZIPs por
+ *   seguridad salvo que se habilite "Allow delivery of PDF and ZIP files" en
+ *   Console → Settings → Security). Pero la página 1 convertida a JPG sí se
+ *   entrega sin restricciones, así que el preview usa esa variante.
+ *   La descarga del PDF completo sí requiere habilitar ese ajuste.
+ */
+export function getReceiptPreviewUrl(url?: string, width = 1200): string {
+  if (!url) return '';
+  if (isReceiptPdf(url) && url.includes('/image/upload/')) {
+    const withTransform = url.replace('/image/upload/', `/image/upload/pg_1,f_jpg,w_${width}/`);
+    return withTransform.replace(/\.pdf([?#]|$)/i, '.jpg$1');
+  }
+  return getReceiptViewUrl(url);
+}
+
+/**
  * URL de descarga directa contra Cloudinary (plan B si el proxy falla).
  * Inserta `fl_attachment:<filename>` preservando transformaciones existentes.
  */
@@ -106,8 +125,13 @@ export function getReceiptProxyUrl(
  * 2. Fetch al proxy same-origin (evita CORS, manda Referer del sitio).
  * 3. Fallback: abre la URL directa en pestaña nueva — nunca la del proxy con
  *    JSON de error, para no mostrar `{"error":...}` al usuario.
- * Si Cloudinary devuelve 401 en ambos intentos, lanza CLOUDINARY_401 para que
- * la UI explique que es un archivo viejo y conviene resubirlo.
+ *
+ * Caso especial PDFs en cuentas Free: Cloudinary bloquea la entrega del .pdf
+ * original (401 + `x-cld-error: deny or ACL failure`) salvo que se habilite
+ * "Allow delivery of PDF and ZIP files" en Console → Settings → Security.
+ * En ese caso se lanza CLOUDINARY_BLOCKED_PDF para que la UI muestre el
+ * ajuste exacto en lugar de un error genérico. Re-subir el archivo NO lo
+ * soluciona; es un ajuste de la cuenta.
  */
 export async function downloadReceipt(
   receiptUrl: string,
@@ -115,8 +139,7 @@ export async function downloadReceipt(
 ): Promise<'downloaded' | 'opened'> {
   const viewUrl = getReceiptViewUrl(receiptUrl);
   const proxyDownload = getReceiptProxyUrl(receiptUrl, { filename, download: true });
-  let directStatus: number | null = null;
-  let proxyStatus: number | null = null;
+  let blockedByCloudinary = false;
 
   const saveBlob = (blob: Blob) => {
     const objectUrl = URL.createObjectURL(blob);
@@ -133,11 +156,24 @@ export async function downloadReceipt(
     setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
   };
 
+  const isDenyError = (res: Response): boolean => {
+    if (res.status !== 401 && res.status !== 403) return false;
+    try {
+      // Cloudinary expone X-Cld-Error por CORS en los 401 ("deny or ACL failure").
+      const header = res.headers.get('x-cld-error') || '';
+      return /deny|acl/i.test(header) || isReceiptPdf(receiptUrl);
+    } catch {
+      return isReceiptPdf(receiptUrl);
+    }
+  };
+
   // 1. Intento directo (mejor Referer posible: el del navegador).
   try {
     const res = await fetch(viewUrl, { mode: 'cors', credentials: 'omit' });
-    directStatus = res.status;
-    if (!res.ok) throw new Error(`Directo respondió ${res.status}`);
+    if (!res.ok) {
+      if (isDenyError(res)) blockedByCloudinary = true;
+      throw new Error(`Directo respondió ${res.status}`);
+    }
     const contentType = res.headers.get('content-type') || '';
     if (contentType.includes('application/json')) throw new Error('Respuesta JSON inesperada');
     saveBlob(await res.blob());
@@ -149,19 +185,19 @@ export async function downloadReceipt(
   // 2. Intento vía proxy same-origin (sin problemas de CORS).
   try {
     const res = await fetch(proxyDownload);
-    proxyStatus = res.status;
     if (!res.ok) {
       // El proxy devuelve JSON con detalle; lo leemos para el mensaje final.
-      let detail = '';
+      let upstreamStatus: number | null = null;
       try {
         const body = await res.clone().json();
-        detail = body?.error || '';
+        upstreamStatus = body?.upstreamStatus ?? null;
       } catch {
         /* cuerpo no-JSON, ignoramos */
       }
-      const err = new Error(detail || `Proxy respondió ${res.status}`);
-      (err as Error & { proxyStatus?: number }).proxyStatus = res.status;
-      throw err;
+      if (upstreamStatus === 401 || (res.status === 502 && isReceiptPdf(receiptUrl))) {
+        blockedByCloudinary = true;
+      }
+      throw new Error(`Proxy respondió ${res.status}`);
     }
     const contentType = res.headers.get('content-type') || '';
     if (contentType.includes('application/json')) throw new Error('Respuesta JSON inesperada');
@@ -170,17 +206,11 @@ export async function downloadReceipt(
   } catch (err) {
     // 3. Fallback: abrir la URL DIRECTA (no el proxy con JSON de error).
     window.open(viewUrl, '_blank', 'noopener,noreferrer');
-    if (directStatus === 401 || directStatus === 403 || proxyStatus === 502) {
-      const friendly = new Error(
-        'CLOUDINARY_401: Cloudinary no autorizó este comprobante. Si es un archivo viejo, subilo de nuevo para probar el flujo actual.'
+    if (blockedByCloudinary) {
+      throw new Error(
+        'CLOUDINARY_BLOCKED_PDF: Cloudinary bloquea la entrega de este PDF. ' +
+          'Habilitá "Allow delivery of PDF and ZIP files" en Console → Settings → Security.'
       );
-      (
-        friendly as Error & { directStatus?: number | null; proxyStatus?: number | null }
-      ).directStatus = directStatus;
-      (
-        friendly as Error & { directStatus?: number | null; proxyStatus?: number | null }
-      ).proxyStatus = proxyStatus;
-      throw friendly;
     }
     throw err;
   }

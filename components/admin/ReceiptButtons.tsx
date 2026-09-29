@@ -6,17 +6,17 @@ import toast from 'react-hot-toast';
 import {
   downloadReceipt,
   getReceiptFilename,
-  getReceiptViewUrl,
+  getReceiptPreviewUrl,
   isReceiptPdf,
 } from '@/lib/receipts';
 
-/** Toast específico cuando Cloudinary rechaza un comprobante viejo (401). */
+/** Toast específico cuando Cloudinary bloquea la entrega del PDF (cuenta Free). */
 function toastDownloadError(err: unknown) {
   const msg = err instanceof Error ? err.message : '';
-  if (msg.startsWith('CLOUDINARY_401')) {
+  if (msg.startsWith('CLOUDINARY_BLOCKED_PDF')) {
     toast.error(
-      'Cloudinary no autorizó este comprobante viejo (401). Subí el PDF de nuevo para probar el flujo actual.',
-      { duration: 6000 }
+      'Cloudinary bloquea la descarga de PDFs. Habilitá "Allow delivery of PDF and ZIP files" en Console → Settings → Security.',
+      { duration: 8000 }
     );
   } else {
     toast.error('No se pudo descargar el comprobante');
@@ -40,9 +40,10 @@ export function ReceiptPreviewModal({
   const filename = getReceiptFilename(orderId, receiptUrl);
   const isPdf = isReceiptPdf(receiptUrl);
   // Vista previa con la URL directa de Cloudinary (el navegador manda el
-  // Referer real). No pasamos por el proxy para ver: así un 401 del proxy
-  // nunca te deja sin preview, y el modal evita la página negra de iOS.
-  const previewSrc = getReceiptViewUrl(receiptUrl);
+  // Referer real). Los PDFs se previsualizan como JPG de la página 1 porque
+  // Cloudinary bloquea la entrega del .pdf en cuentas Free. El modal evita
+  // la página negra de iOS al no navegar fuera de la app.
+  const previewSrc = getReceiptPreviewUrl(receiptUrl);
 
   const handleDownload = async () => {
     setDownloading(true);
@@ -83,20 +84,19 @@ export function ReceiptPreviewModal({
         </div>
 
         <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-gray-100 p-4">
-          {isPdf ? (
-            <iframe
-              src={previewSrc}
-              title={`Comprobante pedido ${orderId}`}
-              className="h-[60vh] w-full rounded-lg border border-gray-200 bg-white"
-            />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
+          <div className="flex flex-col items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={previewSrc}
               alt={`Comprobante del pedido ${orderId}`}
               className="max-h-[60vh] w-auto max-w-full rounded-lg border border-gray-200 object-contain shadow-sm"
             />
-          )}
+            {isPdf && (
+              <p className="text-xs text-gray-500">
+                Vista previa · página 1 — descargá el PDF para verlo completo
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-col gap-2 border-t px-4 py-3 sm:flex-row sm:justify-end sm:px-5">
@@ -202,9 +202,12 @@ export function ReceiptDetailCard({
 }) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [thumbFailed, setThumbFailed] = useState(false);
   const filename = getReceiptFilename(orderId, receiptUrl);
   const isPdf = isReceiptPdf(receiptUrl);
-  const thumbSrc = isPdf ? null : getReceiptViewUrl(receiptUrl);
+  // Miniatura: imágenes directo, PDFs como JPG de la página 1 (el .pdf está
+  // bloqueado para delivery en cuentas Free). Si falla, icono genérico.
+  const thumbSrc = thumbFailed ? null : getReceiptPreviewUrl(receiptUrl, 300);
 
   const handleDownload = async () => {
     setDownloading(true);
@@ -236,6 +239,7 @@ export function ReceiptDetailCard({
                 alt={`Comprobante del pedido ${orderId}`}
                 className="h-full w-full object-cover"
                 loading="lazy"
+                onError={() => setThumbFailed(true)}
               />
             </button>
           ) : (

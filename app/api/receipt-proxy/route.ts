@@ -98,9 +98,13 @@ export async function GET(req: Request) {
       console.error(
         `receipt-proxy: Cloudinary respondió ${upstream.status} para ${target.toString()}`
       );
+      const isPdf = target.toString().toLowerCase().includes('.pdf');
       return NextResponse.json(
         {
-          error: `Cloudinary respondió ${upstream.status}. Si es un comprobante viejo, probá subirlo de nuevo; si es nuevo, revisá que la URL sea pública (resource_type auto, type upload).`,
+          error:
+            upstream.status === 401 && isPdf
+              ? 'Cloudinary bloquea la entrega de PDFs en cuentas Free ("deny or ACL failure"). Habilitá "Allow delivery of PDF and ZIP files" en Console → Settings → Security.'
+              : `Cloudinary respondió ${upstream.status}. Si es un comprobante viejo con otro resource_type, probá subirlo de nuevo.`,
           upstreamStatus: upstream.status,
         },
         { status: 502 }
