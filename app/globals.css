@@ -85,6 +85,17 @@
       background-color: transparent;
     }
   }
+
+  /* Prevenir zoom automático no deseado en mobile (iOS Safari / WebKit) al enfocar campos de texto */
+  @media screen and (max-width: 768px) {
+    input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='button']):not(
+        [type='submit']
+      ):not([type='reset']),
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
 }
 
 /* Price Filter Styles */

@@ -208,14 +208,14 @@ export default function Navbar() {
                 </button>
               </form>
 
-              {/* Botón lupa para abrir buscador en móviles */}
+              {/* Botón lupa para abrir/cerrar buscador en móviles */}
               <button
                 type="button"
                 onClick={() => setIsSearchOpenMobile(!isSearchOpenMobile)}
                 className="flex items-center justify-center rounded-xl bg-transparent p-2 text-[#F5F5DC] transition hover:bg-white/10 focus:outline-none md:hidden"
-                aria-label="Buscar"
+                aria-label={isSearchOpenMobile ? 'Cerrar buscador' : 'Abrir buscador'}
               >
-                <Search className="h-5 w-5" />
+                {isSearchOpenMobile ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
               </button>
 
               {/* Botón de cuenta/perfil en Desktop */}
@@ -283,21 +283,26 @@ export default function Navbar() {
             <div className="border-t border-white/10 bg-[#1f3b38] px-4 py-2.5 md:hidden">
               <form
                 onSubmit={onSearchSubmit}
-                className="flex items-center overflow-hidden rounded-xl border border-white/40 bg-white/10"
+                className="flex items-center overflow-hidden rounded-xl border border-white/40 bg-white/10 focus-within:border-[#D4AF37] focus-within:ring-2 focus-within:ring-[#D4AF37]/30"
               >
                 <input
+                  ref={searchInputRef}
                   type="search"
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="Buscar mates, bombillas..."
                   autoFocus
-                  className="w-full bg-transparent px-3 py-2 text-sm text-white placeholder-white/60 outline-none [&::-webkit-search-cancel-button]:appearance-none"
+                  className="w-full bg-transparent px-3 py-2 text-base text-white placeholder-white/60 outline-none [&::-webkit-search-cancel-button]:appearance-none"
                 />
                 {q && (
                   <button
                     type="button"
-                    onClick={() => setQ('')}
+                    onClick={() => {
+                      setQ('');
+                      searchInputRef.current?.focus();
+                    }}
                     className="p-1.5 text-white/50 hover:text-white"
+                    aria-label="Limpiar búsqueda"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -305,6 +310,7 @@ export default function Navbar() {
                 <button
                   type="submit"
                   className="p-2 text-[#D4AF37] transition-colors hover:text-white"
+                  aria-label="Buscar"
                 >
                   <Search className="h-5 w-5" />
                 </button>

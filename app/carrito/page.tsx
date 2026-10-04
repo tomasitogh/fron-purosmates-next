@@ -387,7 +387,7 @@ export default function Carrito() {
 
                   {/* Controles: cantidad, personalizar, eliminar */}
                   <div className="mt-2 flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-1 rounded-md border border-gray-200">
+                    <div className="flex items-center rounded-md border border-gray-200">
                       <button
                         onClick={() =>
                           dispatch(
@@ -397,12 +397,14 @@ export default function Carrito() {
                             })
                           )
                         }
-                        className="rounded-l-md p-1.5 transition hover:bg-gray-100"
+                        className="flex h-8 w-8 items-center justify-center rounded-l-md transition hover:bg-gray-100 active:bg-gray-200"
                         aria-label="Disminuir cantidad"
                       >
                         <Minus className="h-3.5 w-3.5" />
                       </button>
-                      <span className="px-2 text-sm font-medium text-gray-800">{item.qty}</span>
+                      <span className="min-w-[28px] px-1 text-center text-sm font-medium text-gray-800">
+                        {item.qty}
+                      </span>
                       <button
                         onClick={async () => {
                           const result = await dispatch(addToCart(item));
@@ -411,7 +413,7 @@ export default function Carrito() {
                           }
                         }}
                         disabled={item.qty >= item.variantStock}
-                        className="rounded-r-md p-1.5 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex h-8 w-8 items-center justify-center rounded-r-md transition hover:bg-gray-100 active:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
                         aria-label="Aumentar cantidad"
                       >
                         <Plus className="h-3.5 w-3.5" />
@@ -448,7 +450,7 @@ export default function Carrito() {
                           })
                         )
                       }
-                      className="ml-auto flex items-center gap-1 text-xs text-red-600 transition hover:text-red-800"
+                      className="ml-auto flex items-center gap-1 py-1 text-xs text-red-600 transition hover:text-red-800"
                       aria-label="Eliminar del carrito"
                     >
                       <Trash2 className="h-3.5 w-3.5" /> Eliminar
@@ -529,7 +531,7 @@ export default function Carrito() {
       {showCheckout && (
         <div
           id="checkout-section"
-          className="mx-auto mt-8 max-w-4xl rounded-lg bg-white p-6 shadow-md"
+          className="mx-auto mt-8 max-w-4xl scroll-mt-20 rounded-lg bg-white p-6 shadow-md"
         >
           <h2 className="mb-6 text-2xl font-bold text-gray-800">Finalizar Compra</h2>
 

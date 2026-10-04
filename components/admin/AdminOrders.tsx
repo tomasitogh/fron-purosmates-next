@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchOrdersPage,
@@ -319,7 +319,18 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
     }
   }, [successMessage, adminError, dispatch]);
 
-  const paginatedOrders = (orders as ExtendedOrder[]) || [];
+  // Ordenamiento por defecto: más recientes a más viejos (por createdAt desc, desempate por id desc)
+  const paginatedOrders = useMemo(() => {
+    if (!orders || orders.length === 0) return [];
+    return [...(orders as ExtendedOrder[])].sort((a, b) => {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      const validTimeA = Number.isNaN(timeA) ? 0 : timeA;
+      const validTimeB = Number.isNaN(timeB) ? 0 : timeB;
+      if (validTimeB !== validTimeA) return validTimeB - validTimeA;
+      return (b.id || 0) - (a.id || 0);
+    });
+  }, [orders]);
 
   // El backend ya filtra, ordena (id desc) y pagina. Solo se deriva el rango
   // visible para el texto "Mostrando X–Y de Z".

@@ -207,7 +207,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Breadcrumb visible */}
         <nav className="mb-6 text-sm text-gray-500" aria-label="Breadcrumb">
-          <ol className="flex items-center gap-1">
+          <ol className="flex flex-wrap items-center gap-1">
             <li>
               <Link href="/" className="transition hover:text-[#254642]">
                 Inicio

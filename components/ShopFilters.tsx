@@ -107,7 +107,7 @@ export default function ShopFilters({
                 onChange={(e) =>
                   setPendingPriceRange([Number(e.target.value), pendingPriceRange[1]])
                 }
-                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-base sm:text-sm"
                 placeholder="0"
               />
             </div>
@@ -119,7 +119,7 @@ export default function ShopFilters({
                 onChange={(e) =>
                   setPendingPriceRange([pendingPriceRange[0], Number(e.target.value)])
                 }
-                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-base sm:text-sm"
                 placeholder={priceRange[1].toString()}
               />
             </div>
@@ -172,13 +172,13 @@ export default function ShopFilters({
           {/* Header */}
           <div className="flex items-center justify-between border-b p-4">
             <h2 className="text-lg font-bold">Filtrar y Ordenar</h2>
-            <button onClick={onCloseMobile} className="p-2">
+            <button onClick={onCloseMobile} className="p-2" aria-label="Cerrar filtros">
               <X size={24} />
             </button>
           </div>
 
           {/* Content */}
-          <div className="p-4">{content}</div>
+          <div className="p-4 pb-20">{content}</div>
         </div>
       </div>
     );
