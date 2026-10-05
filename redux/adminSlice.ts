@@ -511,6 +511,11 @@ const adminSlice = createSlice({
       .addCase(fetchAllOrders.fulfilled, (state, action) => {
         state.loading = false;
         state.orders = action.payload;
+        state.ordersTotalElements = action.payload?.length || 0;
+        state.ordersTotalPages = Math.max(
+          1,
+          Math.ceil((action.payload?.length || 0) / state.ordersPageSize)
+        );
       })
       .addCase(fetchAllOrders.rejected, (state, action) => {
         state.loading = false;

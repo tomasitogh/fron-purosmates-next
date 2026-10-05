@@ -4,7 +4,7 @@ import Image from 'next/image';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-  fetchOrdersPage,
+  fetchAllOrders,
   updateOrder,
   deleteOrder,
   createManualOrder,
@@ -80,8 +80,6 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
   const dispatch = useDispatch<AppDispatch>();
   const {
     orders,
-    ordersTotalElements,
-    ordersTotalPages,
     loading,
     successMessage,
     error: adminError,
@@ -280,14 +278,7 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
         paymentMethod: 'cash',
         sendEmail: false,
       });
-      dispatch(
-        fetchOrdersPage({
-          getToken,
-          page: currentPage - 1,
-          size: ORDERS_PAGE_SIZE,
-          status: filterStatus,
-        })
-      );
+      dispatch(fetchAllOrders(getToken));
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'Error al crear pedido manual';
       toast.error(errorMsg);
@@ -296,17 +287,9 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
     }
   };
 
-  // Paginado server-side: el backend filtra por status y ordena por id desc.
   useEffect(() => {
-    dispatch(
-      fetchOrdersPage({
-        getToken,
-        page: currentPage - 1,
-        size: ORDERS_PAGE_SIZE,
-        status: filterStatus,
-      })
-    );
-  }, [dispatch, getToken, currentPage, filterStatus]);
+    dispatch(fetchAllOrders(getToken));
+  }, [dispatch, getToken]);
 
   useEffect(() => {
     if (successMessage) {
@@ -319,10 +302,13 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
     }
   }, [successMessage, adminError, dispatch]);
 
-  // Ordenamiento por defecto: más recientes a más viejos (por createdAt desc, desempate por id desc)
-  const paginatedOrders = useMemo(() => {
-    if (!orders || orders.length === 0) return [];
-    return [...(orders as ExtendedOrder[])].sort((a, b) => {
+  // Filtrar y ordenar de más recientes a más viejos (por createdAt desc, desempate por id desc)
+  const sortedAndFilteredOrders = useMemo(() => {
+    const list = (orders as ExtendedOrder[]) || [];
+    const filtered =
+      filterStatus === 'ALL' ? list : list.filter((order) => order.status === filterStatus);
+
+    return [...filtered].sort((a, b) => {
       const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
       const validTimeA = Number.isNaN(timeA) ? 0 : timeA;
@@ -330,14 +316,17 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
       if (validTimeB !== validTimeA) return validTimeB - validTimeA;
       return (b.id || 0) - (a.id || 0);
     });
-  }, [orders]);
+  }, [orders, filterStatus]);
 
-  // El backend ya filtra, ordena (id desc) y pagina. Solo se deriva el rango
-  // visible para el texto "Mostrando X–Y de Z".
-  const totalPages = Math.max(1, ordersTotalPages);
+  const totalElements = sortedAndFilteredOrders.length;
+  const totalPages = Math.max(1, Math.ceil(totalElements / ORDERS_PAGE_SIZE));
   const safePage = Math.min(Math.max(1, currentPage), totalPages);
-  const rangeStart = ordersTotalElements === 0 ? 0 : (safePage - 1) * ORDERS_PAGE_SIZE + 1;
-  const rangeEnd = Math.min(safePage * ORDERS_PAGE_SIZE, ordersTotalElements);
+  const rangeStart = totalElements === 0 ? 0 : (safePage - 1) * ORDERS_PAGE_SIZE + 1;
+  const rangeEnd = Math.min(safePage * ORDERS_PAGE_SIZE, totalElements);
+  const paginatedOrders = sortedAndFilteredOrders.slice(
+    (safePage - 1) * ORDERS_PAGE_SIZE,
+    safePage * ORDERS_PAGE_SIZE
+  );
 
   const handleFilterChange = (status: string) => {
     setFilterStatus(status);
@@ -372,15 +361,7 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
         })
       ).unwrap();
       closeEditModal();
-      // Re-fetch por si el cambio de estado saca el pedido del filtro actual.
-      dispatch(
-        fetchOrdersPage({
-          getToken,
-          page: safePage - 1,
-          size: ORDERS_PAGE_SIZE,
-          status: filterStatus,
-        })
-      );
+      dispatch(fetchAllOrders(getToken));
     } catch (error: unknown) {
       console.error('Update failed:', error);
     }
@@ -391,19 +372,10 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
       return;
     try {
       await dispatch(deleteOrder({ orderId, getToken })).unwrap();
-      // Si se elimina el último de la página (y no es la primera), retroceder.
       if (paginatedOrders.length <= 1 && safePage > 1) {
         setCurrentPage(safePage - 1);
-      } else {
-        dispatch(
-          fetchOrdersPage({
-            getToken,
-            page: safePage - 1,
-            size: ORDERS_PAGE_SIZE,
-            status: filterStatus,
-          })
-        );
       }
+      dispatch(fetchAllOrders(getToken));
     } catch (error: unknown) {
       console.error('Delete failed:', error);
     }
@@ -669,11 +641,11 @@ export default function AdminOrders({ getToken }: AdminOrdersProps) {
         )}
       </div>
 
-      {/* Paginación server-side: 10 pedidos por página, fondo de la página */}
-      {ordersTotalElements > 0 && (
+      {/* Paginación: 10 pedidos por página, fondo de la página */}
+      {totalElements > 0 && (
         <div className="flex flex-col items-center justify-between gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 sm:flex-row">
           <p className="text-xs text-gray-500 sm:text-sm">
-            Mostrando {rangeStart}–{rangeEnd} de {ordersTotalElements} pedidos
+            Mostrando {rangeStart}–{rangeEnd} de {totalElements} pedidos
           </p>
           <div className="flex items-center gap-2">
             <button
