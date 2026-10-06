@@ -69,16 +69,38 @@ const SUPPLIERS_STORAGE_KEY = 'pm-admin-suppliers-v1';
 // Proveedores preestablecidos
 const DEFAULT_SUPPLIERS = ['Argentino al Límite', 'Aquiles Rosas', 'Ponele H'];
 
-// Colores habituales en Puros Mates
-const PUROS_COLORS = [
-  'Negro',
-  'Marrón',
-  'Suela',
-  'Chocolate',
-  'Crudo / Natural',
-  'Bordó',
-  'Blanco',
-  'Verde',
+// Colores oficiales de los productos de Puros Mates (solo los publicados)
+const PUROS_COLORS = ['Negro', 'Marrón', 'Suela', 'Chocolate', 'Algarrobo', 'Blanco'];
+
+// Catálogo oficial de productos de Puros Mates (activos e inactivos, disponibles siempre)
+const OFFICIAL_PUROS_PRODUCTS: { id: number; name: string; price: number; active: boolean }[] = [
+  { id: 201, name: 'Mate Camionero Cuero Vacuno', price: 36000, active: true },
+  { id: 202, name: 'Mate Camionero de Algarrobo', price: 34000, active: true },
+  { id: 203, name: 'Mate Camionero Uruguayo', price: 38000, active: true },
+  { id: 204, name: 'Mate Camionero Cincelado', price: 42000, active: true },
+  { id: 205, name: 'Mate Camionero Premium', price: 39000, active: true },
+  { id: 206, name: 'Mate Camionero', price: 35000, active: true },
+  { id: 101, name: 'Mate Imperial Premium de Calabaza', price: 42000, active: true },
+  { id: 102, name: 'Mate Imperial Cincelado', price: 46000, active: true },
+  { id: 103, name: 'Mate Imperial de Algarrobo', price: 40000, active: true },
+  { id: 104, name: 'Mate Imperial Cuero Liso', price: 43000, active: true },
+  { id: 105, name: 'Mate Imperial Deluxe', price: 48000, active: true },
+  { id: 106, name: 'Mate Imperial', price: 41000, active: true },
+  { id: 301, name: 'Mate Torpedo Deluxe', price: 35000, active: true },
+  { id: 302, name: 'Mate Torpedo Cincelado', price: 39000, active: true },
+  { id: 303, name: 'Mate Torpedo', price: 33000, active: true },
+  { id: 401, name: 'Mate Criollo', price: 28000, active: true },
+  { id: 402, name: 'Mate Muu', price: 31000, active: true },
+  { id: 403, name: 'Mate Ranchero', price: 29000, active: true },
+  { id: 501, name: 'Bombilla Pico de Loro Alpaca Maciza', price: 14500, active: true },
+  { id: 502, name: 'Bombillón de Alpaca', price: 18500, active: true },
+  { id: 503, name: 'Bombilla de Acero Inox', price: 9500, active: true },
+  { id: 601, name: 'Termo Media Manija Acero 1L', price: 48000, active: true },
+  { id: 701, name: 'Canasta Matera', price: 35000, active: true },
+  { id: 702, name: 'Yerbero de Cuero', price: 16000, active: true },
+  { id: 703, name: 'Tapa Mate', price: 6500, active: true },
+  { id: 704, name: 'Luz de Mate', price: 8500, active: true },
+  { id: 705, name: 'Base de Cuero', price: 12000, active: true },
 ];
 
 // Datos iniciales de demostración
@@ -156,6 +178,30 @@ interface AdminExpensesProps {
 export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
   const dispatch = useDispatch<AppDispatch>();
   const { items: products } = useSelector((state: RootState) => state.products);
+
+  // Lista unificada de productos: backend (activos e inactivos) + catálogo oficial de Puros Mates
+  const allAvailableProducts = useMemo(() => {
+    const map = new Map<string, { id: number; name: string; price: number; active: boolean }>();
+
+    // 1. Catálogo oficial de la tienda
+    OFFICIAL_PUROS_PRODUCTS.forEach((p) => {
+      map.set(p.name.toLowerCase().trim(), p);
+    });
+
+    // 2. Si Redux tiene productos cargados (activos o inactivos), se actualizan o agregan
+    if (products && products.length > 0) {
+      products.forEach((p) => {
+        map.set(p.name.toLowerCase().trim(), {
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          active: p.active,
+        });
+      });
+    }
+
+    return Array.from(map.values());
+  }, [products]);
 
   // Pestañas (Hojas de Excel): 'gastos' | 'precios' | 'resumen'
   const [activeSheet, setActiveSheet] = useState<'gastos' | 'precios' | 'resumen'>('gastos');
@@ -849,13 +895,6 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      {/* Lista de colores preestablecidos para datalist nativo */}
-      <datalist id="puros-colors-list">
-        {PUROS_COLORS.map((col) => (
-          <option key={col} value={col} />
-        ))}
-      </datalist>
-
       {/* ===================================================================== */}
       {/* HOJA 1: GASTOS (DISEÑO MINIMALISTA DEL BOCETO DE LULITA)              */}
       {/* ===================================================================== */}
@@ -1734,8 +1773,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                       Productos incluidos en este pedido *
                     </label>
                     <p className="text-[11px] text-gray-500">
-                      Escribí para buscar (ej: &ldquo;camionero&rdquo;) y elegí de la lista. Color y
-                      total opcionales.
+                      Cargá los productos de este pedido con sus cantidades y costos.
                     </p>
                   </div>
                   <button
@@ -1757,9 +1795,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                         <div className="flex flex-wrap items-start gap-2">
                           {/* Buscador de Producto al escribir */}
                           <div className="relative min-w-[190px] flex-1">
-                            <span className="text-[10px] font-bold text-gray-700">
-                              Producto * (escribí para buscar)
-                            </span>
+                            <span className="text-[10px] font-bold text-gray-700">Producto *</span>
                             <input
                               type="text"
                               required
@@ -1781,7 +1817,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                               item.name.trim().length > 0 &&
                               (() => {
                                 const query = item.name.trim().toLowerCase();
-                                const matches = products.filter((p) =>
+                                const matches = allAvailableProducts.filter((p) =>
                                   p.name.toLowerCase().includes(query)
                                 );
 
@@ -1830,23 +1866,28 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                               })()}
                           </div>
 
-                          {/* Campo Color (Opcional con datalist de Puros) */}
+                          {/* Campo Color (solo colores publicados de Puros Mates) */}
                           <div className="w-28 sm:w-32">
-                            <span className="text-[10px] font-medium text-gray-600">
-                              Color (opcional)
-                            </span>
-                            <input
-                              type="text"
-                              list="puros-colors-list"
+                            <span className="text-[10px] font-bold text-gray-700">Color</span>
+                            <select
                               value={item.color || ''}
                               onChange={(e) => {
                                 const updated = [...orderFormItems];
                                 updated[index].color = e.target.value;
                                 setOrderFormItems(updated);
                               }}
-                              placeholder="Elegir o escribir"
-                              className="w-full rounded border border-gray-300 bg-white p-1.5 text-xs text-gray-800 focus:border-[#D4AF37] focus:outline-none"
-                            />
+                              className="w-full rounded border border-gray-300 bg-white p-1.5 text-xs font-medium text-gray-800 focus:border-[#D4AF37] focus:outline-none"
+                            >
+                              <option value="">Sin color</option>
+                              {PUROS_COLORS.map((col) => (
+                                <option key={col} value={col}>
+                                  {col}
+                                </option>
+                              ))}
+                              {item.color && !PUROS_COLORS.includes(item.color) && (
+                                <option value={item.color}>{item.color}</option>
+                              )}
+                            </select>
                           </div>
 
                           {/* Cantidad */}
