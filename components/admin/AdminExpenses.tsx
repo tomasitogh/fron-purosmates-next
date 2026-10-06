@@ -69,7 +69,7 @@ const STORAGE_KEY = 'pm-admin-expenses-data-v1';
 const SUPPLIERS_STORAGE_KEY = 'pm-admin-suppliers-v1';
 
 // Proveedores preestablecidos
-const DEFAULT_SUPPLIERS = ['Argentino al Límite', 'Aquiles Rosas', 'H'];
+const DEFAULT_SUPPLIERS = ['Argentino al Límite', 'Aquiles Rosas', 'Ponele H'];
 
 // Datos iniciales de demostración
 const DEFAULT_ORDERS: SupplierOrder[] = [
@@ -172,7 +172,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
 
   // Formulario Packaging / Tarjetas
   const [cardFormDate, setCardFormDate] = useState(new Date().toISOString().split('T')[0]);
-  const [cardFormTitle, setCardFormTitle] = useState('Tarjetas de agradecimiento / packaging');
+  const [cardFormTitle, setCardFormTitle] = useState('');
   const [cardFormQty, setCardFormQty] = useState<number | ''>('');
   const [cardFormUnitPrice, setCardFormUnitPrice] = useState<number | ''>('');
   const [cardFormTotalPrice, setCardFormTotalPrice] = useState<number | ''>('');
@@ -884,7 +884,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                   type="button"
                   onClick={() => {
                     setCardFormDate(new Date().toISOString().split('T')[0]);
-                    setCardFormTitle('Tarjetas de agradecimiento / packaging');
+                    setCardFormTitle('');
                     setCardFormQty('');
                     setCardFormUnitPrice('');
                     setCardFormTotalPrice('');
@@ -1746,7 +1746,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
             <form onSubmit={handleSaveCard} className="mt-4 space-y-3">
               <div>
                 <label className="mb-1 block text-xs font-semibold text-gray-700">
-                  Descripción / Detalle *
+                  Descripción *
                 </label>
                 <input
                   type="text"
