@@ -71,7 +71,7 @@ export default function AdminPanel() {
       {activeTab === 'products' && <AdminProducts getToken={getToken} />}
       {activeTab === 'orders' && <AdminOrders getToken={getToken} />}
       {activeTab === 'stock' && <AdminStock getToken={getToken} />}
-      {activeTab === 'expenses' && <AdminExpenses />}
+      {activeTab === 'expenses' && <AdminExpenses getToken={getToken} />}
       {activeTab === 'mayorista' && <AdminMayorista getToken={getToken} />}
       {activeTab === 'calendar' && <AdminCalendar getToken={getToken} />}
       {activeTab === 'settings' && <AdminSettings getToken={getToken} />}
