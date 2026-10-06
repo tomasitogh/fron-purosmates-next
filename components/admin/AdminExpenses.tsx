@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { AppDispatch, RootState } from '@/redux/store';
-import { fetchAllProductsAdmin, fetchProducts } from '@/redux/productSlice';
+import { fetchAllProductsAdmin, fetchProducts, Product } from '@/redux/productSlice';
 import { TokenGetter } from '@/lib/apiClient';
 
 // Modelos de datos
@@ -32,6 +32,7 @@ export interface OrderProductItem {
   quantity: number;
   unitPrice: number;
   productId?: number;
+  color?: string;
 }
 
 export interface SupplierOrder {
@@ -68,6 +69,18 @@ const SUPPLIERS_STORAGE_KEY = 'pm-admin-suppliers-v1';
 // Proveedores preestablecidos
 const DEFAULT_SUPPLIERS = ['Argentino al Límite', 'Aquiles Rosas', 'Ponele H'];
 
+// Colores habituales en Puros Mates
+const PUROS_COLORS = [
+  'Negro',
+  'Marrón',
+  'Suela',
+  'Chocolate',
+  'Crudo / Natural',
+  'Bordó',
+  'Blanco',
+  'Verde',
+];
+
 // Datos iniciales de demostración
 const DEFAULT_ORDERS: SupplierOrder[] = [
   {
@@ -76,8 +89,20 @@ const DEFAULT_ORDERS: SupplierOrder[] = [
     title: 'Argentino al Límite - Mates Imperiales y Camioneros',
     supplier: 'Argentino al Límite',
     items: [
-      { id: 'it-1', name: 'Mate Imperial Premium Calabaza', quantity: 10, unitPrice: 18000 },
-      { id: 'it-2', name: 'Mate Camionero Cuero Vacuno', quantity: 10, unitPrice: 15000 },
+      {
+        id: 'it-1',
+        name: 'Mate Imperial Premium Calabaza',
+        color: 'Negro',
+        quantity: 10,
+        unitPrice: 18000,
+      },
+      {
+        id: 'it-2',
+        name: 'Mate Camionero Cuero Vacuno',
+        color: 'Suela',
+        quantity: 10,
+        unitPrice: 15000,
+      },
     ],
     shippingCost: 3500,
     notes: 'Envío por encomienda de fábrica',
@@ -118,6 +143,7 @@ interface OrderFormItemState {
   id: string;
   productId?: number;
   name: string;
+  color?: string;
   quantity: number | '';
   unitPrice: number | '';
   totalPrice: number | '';
@@ -161,6 +187,9 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [editingOtherId, setEditingOtherId] = useState<string | null>(null);
 
+  // Estado para autocompletado interactivo al escribir en filas de pedido
+  const [activeSearchIndex, setActiveSearchIndex] = useState<number | null>(null);
+
   // Formulario Pedido
   const [orderFormSupplier, setOrderFormSupplier] = useState<string>('Argentino al Límite');
   const [isAddingNewSupplier, setIsAddingNewSupplier] = useState(false);
@@ -170,7 +199,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
   const [orderFormShipping, setOrderFormShipping] = useState<number | ''>('');
   const [orderFormNotes, setOrderFormNotes] = useState('');
   const [orderFormItems, setOrderFormItems] = useState<OrderFormItemState[]>([
-    { id: '1', name: '', quantity: 1, unitPrice: '', totalPrice: '' },
+    { id: '1', name: '', color: '', quantity: 1, unitPrice: '', totalPrice: '' },
   ]);
 
   // Formulario Packaging / Tarjetas
@@ -297,7 +326,9 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
     setOrderFormDate(new Date().toISOString().split('T')[0]);
     setOrderFormShipping('');
     setOrderFormNotes('');
-    setOrderFormItems([{ id: '1', name: '', quantity: 1, unitPrice: '', totalPrice: '' }]);
+    setOrderFormItems([
+      { id: '1', name: '', color: '', quantity: 1, unitPrice: '', totalPrice: '' },
+    ]);
     setShowOrderModal(true);
   };
 
@@ -321,6 +352,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
         id: it.id,
         productId: it.productId,
         name: it.name,
+        color: it.color || '',
         quantity: it.quantity,
         unitPrice: it.unitPrice,
         totalPrice: it.quantity * it.unitPrice,
@@ -381,7 +413,14 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
   const handleAddOrderItemRow = () => {
     setOrderFormItems([
       ...orderFormItems,
-      { id: Date.now().toString(), name: '', quantity: 1, unitPrice: '', totalPrice: '' },
+      {
+        id: Date.now().toString(),
+        name: '',
+        color: '',
+        quantity: 1,
+        unitPrice: '',
+        totalPrice: '',
+      },
     ]);
   };
 
@@ -424,21 +463,6 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
     if (t !== '') {
       updated[index].unitPrice = Math.round((Number(t) / q) * 100) / 100;
       if (updated[index].quantity === '') updated[index].quantity = 1;
-    }
-    setOrderFormItems(updated);
-  };
-
-  const handleSelectStoreProduct = (index: number, selectedIdOrValue: string) => {
-    const updated = [...orderFormItems];
-    if (selectedIdOrValue === '__manual__' || selectedIdOrValue === '') {
-      updated[index].productId = undefined;
-      setOrderFormItems(updated);
-      return;
-    }
-    const found = products.find((p) => p.id === Number(selectedIdOrValue));
-    if (found) {
-      updated[index].name = found.name;
-      updated[index].productId = found.id;
     }
     setOrderFormItems(updated);
   };
@@ -507,6 +531,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
           id: it.id,
           productId: it.productId,
           name: it.name.trim(),
+          color: it.color?.trim() || undefined,
           quantity: qty,
           unitPrice,
         };
@@ -545,7 +570,9 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
       setNewSupplierName('');
       setOrderFormShipping('');
       setOrderFormNotes('');
-      setOrderFormItems([{ id: '1', name: '', quantity: 1, unitPrice: '', totalPrice: '' }]);
+      setOrderFormItems([
+        { id: '1', name: '', color: '', quantity: 1, unitPrice: '', totalPrice: '' },
+      ]);
       toast.success('¡Pedido modificado con éxito!');
       return;
     }
@@ -568,7 +595,9 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
     setNewSupplierName('');
     setOrderFormShipping('');
     setOrderFormNotes('');
-    setOrderFormItems([{ id: '1', name: '', quantity: 1, unitPrice: '', totalPrice: '' }]);
+    setOrderFormItems([
+      { id: '1', name: '', color: '', quantity: 1, unitPrice: '', totalPrice: '' },
+    ]);
     toast.success('¡Pedido guardado con éxito!');
   };
 
@@ -738,7 +767,16 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
   // Exportar a CSV
   const handleExportCSV = () => {
     const rows = [
-      ['Tipo', 'Proveedor / Concepto', 'Detalle', 'Fecha', 'Cantidad', 'Precio Unitario', 'Total'],
+      [
+        'Tipo',
+        'Proveedor / Concepto',
+        'Detalle',
+        'Color',
+        'Fecha',
+        'Cantidad',
+        'Precio Unitario',
+        'Total',
+      ],
     ];
 
     orders.forEach((ord) => {
@@ -747,6 +785,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
           'Pedido',
           ord.supplier || 'Proveedor',
           `${ord.title} - ${it.name}`,
+          it.color || '-',
           ord.date,
           it.quantity.toString(),
           it.unitPrice.toString(),
@@ -758,6 +797,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
           'Envío de Pedido',
           ord.supplier || 'Flete',
           `Flete de ${ord.title}`,
+          '-',
           ord.date,
           '1',
           ord.shippingCost.toString(),
@@ -771,6 +811,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
         'Packaging',
         'Packaging & Envíos',
         c.title,
+        '-',
         c.date,
         c.quantity.toString(),
         c.unitPrice.toString(),
@@ -783,6 +824,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
         'Otro Gasto',
         'General',
         o.concept,
+        '-',
         o.date,
         o.quantity.toString(),
         o.unitPrice.toString(),
@@ -807,6 +849,13 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
+      {/* Lista de colores preestablecidos para datalist nativo */}
+      <datalist id="puros-colors-list">
+        {PUROS_COLORS.map((col) => (
+          <option key={col} value={col} />
+        ))}
+      </datalist>
+
       {/* ===================================================================== */}
       {/* HOJA 1: GASTOS (DISEÑO MINIMALISTA DEL BOCETO DE LULITA)              */}
       {/* ===================================================================== */}
@@ -1295,9 +1344,16 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
 
                       return (
                         <tr key={`${ord.id}-${it.id}`} className="hover:bg-stone-50/50">
-                          {/* Nombre */}
+                          {/* Nombre y Color */}
                           <td className="px-4 py-3">
-                            <p className="font-bold text-gray-900">{it.name}</p>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <p className="font-bold text-gray-900">{it.name}</p>
+                              {it.color && (
+                                <span className="inline-flex items-center rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-900">
+                                  {it.color}
+                                </span>
+                              )}
+                            </div>
                             <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
                               {ord.supplier && (
                                 <span className="font-medium text-gray-600">{ord.supplier}</span>
@@ -1574,6 +1630,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                 onClick={() => {
                   setShowOrderModal(false);
                   setEditingOrderId(null);
+                  setActiveSearchIndex(null);
                 }}
                 className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
               >
@@ -1669,7 +1726,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                 />
               </div>
 
-              {/* Lista de Productos del Pedido */}
+              {/* Lista de Productos del Pedido con Buscador Interactivo y Color */}
               <div>
                 <div className="mb-2 flex items-center justify-between">
                   <div>
@@ -1677,7 +1734,8 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                       Productos incluidos en este pedido *
                     </label>
                     <p className="text-[11px] text-gray-500">
-                      Elegí de la web o escribí a mano. Podés cargar el total directo o el unitario.
+                      Escribí para buscar (ej: &ldquo;camionero&rdquo;) y elegí de la lista. Color y
+                      total opcionales.
                     </p>
                   </div>
                   <button
@@ -1694,57 +1752,106 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                     return (
                       <div
                         key={item.id}
-                        className="space-y-2 rounded-xl border border-gray-200 bg-gray-50/80 p-3"
+                        className="relative space-y-2 rounded-xl border border-gray-200 bg-gray-50/80 p-3"
                       >
-                        {/* Selector de Producto de la Tienda Web */}
-                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
-                          <div className="flex-1">
-                            <span className="block text-[10px] font-bold text-gray-600">
-                              Elegir de la Web (activos e inactivos) o escribir manual:
+                        <div className="flex flex-wrap items-start gap-2">
+                          {/* Buscador de Producto al escribir */}
+                          <div className="relative min-w-[190px] flex-1">
+                            <span className="text-[10px] font-bold text-gray-700">
+                              Producto * (escribí para buscar)
                             </span>
-                            <select
-                              value={item.productId ? item.productId.toString() : '__manual__'}
-                              onChange={(e) => handleSelectStoreProduct(index, e.target.value)}
-                              className="w-full rounded border border-gray-300 bg-white p-1.5 text-xs text-gray-800 focus:border-[#D4AF37] focus:outline-none"
-                            >
-                              <option value="__manual__">
-                                ✏️ Escribir producto personalizado...
-                              </option>
-                              {products.length > 0 && (
-                                <optgroup label="Productos en la Tienda Web">
-                                  {products.map((p) => (
-                                    <option key={p.id} value={p.id}>
-                                      {p.name} {p.active ? '🟢 (Activo)' : '⚪ (Pausado)'} - Web: $
-                                      {p.price.toLocaleString('es-AR')}
-                                    </option>
-                                  ))}
-                                </optgroup>
-                              )}
-                            </select>
-                          </div>
-                        </div>
-
-                        {/* Nombre del Producto y Precios */}
-                        <div className="flex flex-wrap items-center gap-2">
-                          <div className="min-w-[170px] flex-1">
-                            <span className="text-[10px] text-gray-500">Nombre del producto</span>
                             <input
                               type="text"
                               required
                               value={item.name}
+                              onFocus={() => setActiveSearchIndex(index)}
+                              onBlur={() => setTimeout(() => setActiveSearchIndex(null), 250)}
                               onChange={(e) => {
                                 const updated = [...orderFormItems];
                                 updated[index].name = e.target.value;
                                 setOrderFormItems(updated);
+                                setActiveSearchIndex(index);
                               }}
-                              placeholder="Ej: Mate Imperial Calabaza"
+                              placeholder="Ej: Camionero, Imperial, Bombilla..."
                               className="w-full rounded border border-gray-300 bg-white p-1.5 text-xs font-medium text-gray-800 focus:border-[#D4AF37] focus:outline-none"
+                            />
+
+                            {/* Dropdown flotante con coincidencias de la tienda */}
+                            {activeSearchIndex === index &&
+                              item.name.trim().length > 0 &&
+                              (() => {
+                                const query = item.name.trim().toLowerCase();
+                                const matches = products.filter((p) =>
+                                  p.name.toLowerCase().includes(query)
+                                );
+
+                                if (matches.length === 0) return null;
+
+                                return (
+                                  <div className="absolute top-full right-0 left-0 z-40 mt-1 max-h-56 overflow-y-auto rounded-xl border border-gray-300 bg-white p-1 shadow-2xl">
+                                    <div className="border-b border-gray-100 bg-stone-50 px-2 py-1 text-[10px] font-bold text-gray-500 uppercase">
+                                      Productos en la web ({matches.length})
+                                    </div>
+                                    {matches.map((p) => (
+                                      <button
+                                        key={p.id}
+                                        type="button"
+                                        onMouseDown={(e) => {
+                                          e.preventDefault();
+                                          const updated = [...orderFormItems];
+                                          updated[index].name = p.name;
+                                          updated[index].productId = p.id;
+                                          setOrderFormItems(updated);
+                                          setActiveSearchIndex(null);
+                                        }}
+                                        className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-xs transition hover:bg-stone-100"
+                                      >
+                                        <div className="flex items-center gap-1.5 truncate">
+                                          <span className="truncate font-semibold text-gray-900">
+                                            {p.name}
+                                          </span>
+                                          <span
+                                            className={`py-0.2 inline-flex items-center rounded px-1.5 text-[9px] font-bold ${
+                                              p.active
+                                                ? 'bg-emerald-100 text-emerald-800'
+                                                : 'bg-gray-100 text-gray-600'
+                                            }`}
+                                          >
+                                            {p.active ? 'Activo' : 'Pausado'}
+                                          </span>
+                                        </div>
+                                        <span className="shrink-0 font-mono text-xs font-bold text-indigo-950">
+                                          ${p.price.toLocaleString('es-AR')}
+                                        </span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                );
+                              })()}
+                          </div>
+
+                          {/* Campo Color (Opcional con datalist de Puros) */}
+                          <div className="w-28 sm:w-32">
+                            <span className="text-[10px] font-medium text-gray-600">
+                              Color (opcional)
+                            </span>
+                            <input
+                              type="text"
+                              list="puros-colors-list"
+                              value={item.color || ''}
+                              onChange={(e) => {
+                                const updated = [...orderFormItems];
+                                updated[index].color = e.target.value;
+                                setOrderFormItems(updated);
+                              }}
+                              placeholder="Elegir o escribir"
+                              className="w-full rounded border border-gray-300 bg-white p-1.5 text-xs text-gray-800 focus:border-[#D4AF37] focus:outline-none"
                             />
                           </div>
 
                           {/* Cantidad */}
-                          <div className="w-20">
-                            <span className="text-[10px] text-gray-500">Cantidad (u.)</span>
+                          <div className="w-18 sm:w-20">
+                            <span className="text-[10px] text-gray-500">Cantidad</span>
                             <input
                               type="number"
                               min={1}
@@ -1756,7 +1863,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                           </div>
 
                           {/* Precio Unitario */}
-                          <div className="w-28">
+                          <div className="w-24 sm:w-28">
                             <span className="text-[10px] text-gray-500">Precio Unit. ($)</span>
                             <input
                               type="number"
@@ -1770,7 +1877,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                           </div>
 
                           {/* Precio Total (DIRECTO) */}
-                          <div className="w-28">
+                          <div className="w-24 sm:w-28">
                             <span className="text-[10px] font-bold text-[#254642]">
                               Precio Total ($)
                             </span>
@@ -1789,7 +1896,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                             <button
                               type="button"
                               onClick={() => handleRemoveOrderItemRow(index)}
-                              className="mt-4 text-gray-400 hover:text-red-600"
+                              className="mt-5 text-gray-400 hover:text-red-600"
                               title="Quitar fila"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -1849,6 +1956,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                   onClick={() => {
                     setShowOrderModal(false);
                     setEditingOrderId(null);
+                    setActiveSearchIndex(null);
                   }}
                   className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
                 >
@@ -1947,7 +2055,16 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                     const shippingPerUnit = totalQty > 0 ? viewingOrder.shippingCost / totalQty : 0;
                     return (
                       <tr key={it.id}>
-                        <td className="px-3 py-2.5 font-medium text-gray-800">{it.name}</td>
+                        <td className="px-3 py-2.5 font-medium text-gray-800">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span>{it.name}</span>
+                            {it.color && (
+                              <span className="inline-flex items-center rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-900">
+                                🎨 {it.color}
+                              </span>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-3 py-2.5 text-center font-bold text-gray-700">
                           {it.quantity} u.
                         </td>
