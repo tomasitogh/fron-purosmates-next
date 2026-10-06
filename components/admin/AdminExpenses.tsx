@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   FileSpreadsheet,
   Plus,
@@ -16,8 +17,16 @@ import {
   Package,
   ArrowLeft,
   ChevronRight,
+  Calendar,
+  Building2,
+  Globe,
+  Tag,
+  Check,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { AppDispatch, RootState } from '@/redux/store';
+import { fetchAllProductsAdmin, fetchProducts, Product } from '@/redux/productSlice';
+import { TokenGetter } from '@/lib/apiClient';
 
 // Modelos de datos
 export interface OrderProductItem {
@@ -25,12 +34,14 @@ export interface OrderProductItem {
   name: string;
   quantity: number;
   unitPrice: number;
+  productId?: number;
 }
 
 export interface SupplierOrder {
   id: string;
   date: string;
   title: string;
+  supplier?: string;
   items: OrderProductItem[];
   shippingCost: number;
   notes?: string;
@@ -55,13 +66,18 @@ export interface OtherExpense {
 }
 
 const STORAGE_KEY = 'pm-admin-expenses-data-v1';
+const SUPPLIERS_STORAGE_KEY = 'pm-admin-suppliers-v1';
+
+// Proveedores preestablecidos
+const DEFAULT_SUPPLIERS = ['Argentino al Límite', 'Aquiles Rosas', 'H'];
 
 // Datos iniciales de demostración
 const DEFAULT_ORDERS: SupplierOrder[] = [
   {
     id: 'ord-1',
     date: new Date().toISOString().split('T')[0],
-    title: 'Pedido Mates Imperiales y Camioneros',
+    title: 'Argentino al Límite - Mates Imperiales y Camioneros',
+    supplier: 'Argentino al Límite',
     items: [
       { id: 'it-1', name: 'Mate Imperial Premium Calabaza', quantity: 10, unitPrice: 18000 },
       { id: 'it-2', name: 'Mate Camionero Cuero Vacuno', quantity: 10, unitPrice: 15000 },
@@ -101,7 +117,23 @@ const DEFAULT_OTHERS: OtherExpense[] = [
   },
 ];
 
-export default function AdminExpenses() {
+interface OrderFormItemState {
+  id: string;
+  productId?: number;
+  name: string;
+  quantity: number | '';
+  unitPrice: number | '';
+  totalPrice: number | '';
+}
+
+interface AdminExpensesProps {
+  getToken?: TokenGetter;
+}
+
+export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
+  const dispatch = useDispatch<AppDispatch>();
+  const { items: products } = useSelector((state: RootState) => state.products);
+
   // Pestañas (Hojas de Excel): 'gastos' | 'precios' | 'resumen'
   const [activeSheet, setActiveSheet] = useState<'gastos' | 'precios' | 'resumen'>('gastos');
 
@@ -115,6 +147,9 @@ export default function AdminExpenses() {
   const [cards, setCards] = useState<CardExpense[]>([]);
   const [otherExpenses, setOtherExpenses] = useState<OtherExpense[]>([]);
 
+  // Lista de Proveedores
+  const [suppliers, setSuppliers] = useState<string[]>(DEFAULT_SUPPLIERS);
+
   // Margen deseado: 100% sobre el precio neto (costo x 2)
   const [marginPercent, setMarginPercent] = useState<number>(100);
 
@@ -124,24 +159,40 @@ export default function AdminExpenses() {
   const [showOtherModal, setShowOtherModal] = useState(false);
 
   // Formulario Pedido
-  const [orderFormTitle, setOrderFormTitle] = useState('');
+  const [orderFormSupplier, setOrderFormSupplier] = useState<string>('Argentino al Límite');
+  const [isAddingNewSupplier, setIsAddingNewSupplier] = useState(false);
+  const [newSupplierName, setNewSupplierName] = useState('');
+  const [orderFormRef, setOrderFormRef] = useState('');
+  const [orderFormDate, setOrderFormDate] = useState(new Date().toISOString().split('T')[0]);
   const [orderFormShipping, setOrderFormShipping] = useState<number | ''>('');
   const [orderFormNotes, setOrderFormNotes] = useState('');
-  const [orderFormItems, setOrderFormItems] = useState<
-    { id: string; name: string; quantity: number | ''; unitPrice: number | '' }[]
-  >([{ id: '1', name: '', quantity: '', unitPrice: '' }]);
+  const [orderFormItems, setOrderFormItems] = useState<OrderFormItemState[]>([
+    { id: '1', name: '', quantity: 1, unitPrice: '', totalPrice: '' },
+  ]);
 
   // Formulario Packaging / Tarjetas
+  const [cardFormDate, setCardFormDate] = useState(new Date().toISOString().split('T')[0]);
   const [cardFormTitle, setCardFormTitle] = useState('Tarjetas de agradecimiento / packaging');
   const [cardFormQty, setCardFormQty] = useState<number | ''>('');
   const [cardFormUnitPrice, setCardFormUnitPrice] = useState<number | ''>('');
+  const [cardFormTotalPrice, setCardFormTotalPrice] = useState<number | ''>('');
   const [cardFormNotes, setCardFormNotes] = useState('');
 
   // Formulario Otros
+  const [otherFormDate, setOtherFormDate] = useState(new Date().toISOString().split('T')[0]);
   const [otherFormConcept, setOtherFormConcept] = useState('');
   const [otherFormQty, setOtherFormQty] = useState<number | ''>(1);
   const [otherFormUnitPrice, setOtherFormUnitPrice] = useState<number | ''>('');
   const [otherFormNotes, setOtherFormNotes] = useState('');
+
+  // Cargar productos de la tienda (activos e inactivos si hay token admin)
+  useEffect(() => {
+    if (getToken) {
+      dispatch(fetchAllProductsAdmin(getToken));
+    } else {
+      dispatch(fetchProducts());
+    }
+  }, [dispatch, getToken]);
 
   // Cargar desde localStorage
   useEffect(() => {
@@ -166,6 +217,19 @@ export default function AdminExpenses() {
       setOrders(DEFAULT_ORDERS);
       setCards(DEFAULT_CARDS);
       setOtherExpenses(DEFAULT_OTHERS);
+    }
+
+    try {
+      const savedSuppliers = localStorage.getItem(SUPPLIERS_STORAGE_KEY);
+      if (savedSuppliers) {
+        const parsedSuppliers = JSON.parse(savedSuppliers);
+        if (Array.isArray(parsedSuppliers) && parsedSuppliers.length > 0) {
+          const merged = Array.from(new Set([...DEFAULT_SUPPLIERS, ...parsedSuppliers]));
+          setSuppliers(merged);
+        }
+      }
+    } catch {
+      // Ignorar errores
     }
   }, []);
 
@@ -217,13 +281,33 @@ export default function AdminExpenses() {
   const grandTotalCost = totalOrdersCost + totalCardsCost + totalOtherCost;
 
   // ==========================================
-  // MANEJADORES
+  // MANEJADORES DE FECHA EN VIVO (EDICIÓN DIRECTA)
   // ==========================================
+  const handleUpdateOrderDate = (orderId: string, newDate: string) => {
+    if (!newDate) return;
+    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, date: newDate } : o)));
+    toast.success('Fecha de pedido actualizada');
+  };
 
+  const handleUpdateCardDate = (cardId: string, newDate: string) => {
+    if (!newDate) return;
+    setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, date: newDate } : c)));
+    toast.success('Fecha de packaging actualizada');
+  };
+
+  const handleUpdateOtherDate = (otherId: string, newDate: string) => {
+    if (!newDate) return;
+    setOtherExpenses((prev) => prev.map((o) => (o.id === otherId ? { ...o, date: newDate } : o)));
+    toast.success('Fecha de gasto actualizada');
+  };
+
+  // ==========================================
+  // MANEJADORES DE FILAS EN PEDIDO
+  // ==========================================
   const handleAddOrderItemRow = () => {
     setOrderFormItems([
       ...orderFormItems,
-      { id: Date.now().toString(), name: '', quantity: '', unitPrice: '' },
+      { id: Date.now().toString(), name: '', quantity: 1, unitPrice: '', totalPrice: '' },
     ]);
   };
 
@@ -232,31 +316,142 @@ export default function AdminExpenses() {
     setOrderFormItems(orderFormItems.filter((_, idx) => idx !== index));
   };
 
+  // Sincronización inteligente de precios en Pedido
+  const handleItemQtyChange = (index: number, val: string) => {
+    const updated = [...orderFormItems];
+    const q = val === '' ? '' : Number(val);
+    updated[index].quantity = q;
+    const numQ = Number(q) > 0 ? Number(q) : 1;
+    if (updated[index].totalPrice !== '') {
+      updated[index].unitPrice = Math.round((Number(updated[index].totalPrice) / numQ) * 100) / 100;
+    } else if (updated[index].unitPrice !== '') {
+      updated[index].totalPrice = Math.round(Number(updated[index].unitPrice) * numQ);
+    }
+    setOrderFormItems(updated);
+  };
+
+  const handleItemUnitChange = (index: number, val: string) => {
+    const updated = [...orderFormItems];
+    const u = val === '' ? '' : Number(val);
+    updated[index].unitPrice = u;
+    const q = Number(updated[index].quantity) > 0 ? Number(updated[index].quantity) : 1;
+    if (u !== '') {
+      updated[index].totalPrice = Math.round(Number(u) * q);
+      if (updated[index].quantity === '') updated[index].quantity = 1;
+    }
+    setOrderFormItems(updated);
+  };
+
+  const handleItemTotalChange = (index: number, val: string) => {
+    const updated = [...orderFormItems];
+    const t = val === '' ? '' : Number(val);
+    updated[index].totalPrice = t;
+    const q = Number(updated[index].quantity) > 0 ? Number(updated[index].quantity) : 1;
+    if (t !== '') {
+      updated[index].unitPrice = Math.round((Number(t) / q) * 100) / 100;
+      if (updated[index].quantity === '') updated[index].quantity = 1;
+    }
+    setOrderFormItems(updated);
+  };
+
+  const handleSelectStoreProduct = (index: number, selectedIdOrValue: string) => {
+    const updated = [...orderFormItems];
+    if (selectedIdOrValue === '__manual__' || selectedIdOrValue === '') {
+      updated[index].productId = undefined;
+      setOrderFormItems(updated);
+      return;
+    }
+    const found = products.find((p) => p.id === Number(selectedIdOrValue));
+    if (found) {
+      updated[index].name = found.name;
+      updated[index].productId = found.id;
+    }
+    setOrderFormItems(updated);
+  };
+
+  // Guardar nuevo proveedor en la lista
+  const handleSaveNewSupplier = () => {
+    const trimmed = newSupplierName.trim();
+    if (!trimmed) {
+      toast.error('Ingresá el nombre del nuevo proveedor');
+      return;
+    }
+    if (!suppliers.includes(trimmed)) {
+      const updated = [...suppliers, trimmed];
+      setSuppliers(updated);
+      try {
+        localStorage.setItem(SUPPLIERS_STORAGE_KEY, JSON.stringify(updated));
+      } catch {
+        // Ignorar
+      }
+    }
+    setOrderFormSupplier(trimmed);
+    setNewSupplierName('');
+    setIsAddingNewSupplier(false);
+    toast.success(`Proveedor "${trimmed}" agregado`);
+  };
+
+  // Guardar Pedido
   const handleSaveOrder = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!orderFormTitle.trim()) {
-      toast.error('Ingresá una referencia para el pedido');
+
+    let finalSupplier = orderFormSupplier;
+    if (isAddingNewSupplier) {
+      if (!newSupplierName.trim()) {
+        toast.error('Ingresá el nombre del nuevo proveedor');
+        return;
+      }
+      finalSupplier = newSupplierName.trim();
+      if (!suppliers.includes(finalSupplier)) {
+        const updated = [...suppliers, finalSupplier];
+        setSuppliers(updated);
+        try {
+          localStorage.setItem(SUPPLIERS_STORAGE_KEY, JSON.stringify(updated));
+        } catch {
+          // Ignorar
+        }
+      }
+    }
+
+    if (!finalSupplier) {
+      toast.error('Seleccioná o ingresá un proveedor');
       return;
     }
 
     const validItems = orderFormItems
-      .filter((it) => it.name.trim() && Number(it.quantity) > 0 && Number(it.unitPrice) > 0)
-      .map((it) => ({
-        id: it.id,
-        name: it.name.trim(),
-        quantity: Number(it.quantity),
-        unitPrice: Number(it.unitPrice),
-      }));
+      .filter((it) => it.name.trim() && (Number(it.unitPrice) > 0 || Number(it.totalPrice) > 0))
+      .map((it) => {
+        const qty = Number(it.quantity) > 0 ? Number(it.quantity) : 1;
+        const unitPrice =
+          Number(it.unitPrice) > 0
+            ? Number(it.unitPrice)
+            : Number(it.totalPrice) > 0
+              ? Number(it.totalPrice) / qty
+              : 0;
+
+        return {
+          id: it.id,
+          productId: it.productId,
+          name: it.name.trim(),
+          quantity: qty,
+          unitPrice,
+        };
+      });
 
     if (validItems.length === 0) {
-      toast.error('Agregá al menos un producto con cantidad y precio válidos');
+      toast.error('Agregá al menos un producto con nombre y precio (total o unitario)');
       return;
     }
 
+    const orderTitle = orderFormRef.trim()
+      ? `${finalSupplier} - ${orderFormRef.trim()}`
+      : `${finalSupplier}`;
+
     const newOrder: SupplierOrder = {
       id: 'ord-' + Date.now(),
-      date: new Date().toISOString().split('T')[0],
-      title: orderFormTitle.trim(),
+      date: orderFormDate || new Date().toISOString().split('T')[0],
+      title: orderTitle,
+      supplier: finalSupplier,
       items: validItems,
       shippingCost: Number(orderFormShipping) || 0,
       notes: orderFormNotes.trim() || undefined,
@@ -264,26 +459,72 @@ export default function AdminExpenses() {
 
     setOrders([newOrder, ...orders]);
     setShowOrderModal(false);
-    setOrderFormTitle('');
+    setOrderFormRef('');
+    setIsAddingNewSupplier(false);
+    setNewSupplierName('');
     setOrderFormShipping('');
     setOrderFormNotes('');
-    setOrderFormItems([{ id: '1', name: '', quantity: '', unitPrice: '' }]);
-    toast.success('¡Pedido guardado!');
+    setOrderFormItems([{ id: '1', name: '', quantity: 1, unitPrice: '', totalPrice: '' }]);
+    toast.success('¡Pedido guardado con éxito!');
+  };
+
+  // ==========================================
+  // MANEJADORES DE PACKAGING
+  // ==========================================
+  const handleCardQtyChange = (val: string) => {
+    const q = val === '' ? '' : Number(val);
+    setCardFormQty(q);
+    const numQ = Number(q) > 0 ? Number(q) : 1;
+    if (cardFormTotalPrice !== '') {
+      setCardFormUnitPrice(Math.round((Number(cardFormTotalPrice) / numQ) * 100) / 100);
+    } else if (cardFormUnitPrice !== '') {
+      setCardFormTotalPrice(Math.round(Number(cardFormUnitPrice) * numQ));
+    }
+  };
+
+  const handleCardUnitChange = (val: string) => {
+    const u = val === '' ? '' : Number(val);
+    setCardFormUnitPrice(u);
+    const q = Number(cardFormQty) > 0 ? Number(cardFormQty) : 1;
+    if (u !== '') {
+      setCardFormTotalPrice(Math.round(Number(u) * q));
+      if (cardFormQty === '') setCardFormQty(1);
+    }
+  };
+
+  const handleCardTotalChange = (val: string) => {
+    const t = val === '' ? '' : Number(val);
+    setCardFormTotalPrice(t);
+    const q = Number(cardFormQty) > 0 ? Number(cardFormQty) : 1;
+    if (t !== '') {
+      setCardFormUnitPrice(Math.round((Number(t) / q) * 100) / 100);
+      if (cardFormQty === '') setCardFormQty(1);
+    }
   };
 
   const handleSaveCard = (e: React.FormEvent) => {
     e.preventDefault();
-    const qty = Number(cardFormQty);
-    const unitPrice = Number(cardFormUnitPrice);
+    if (!cardFormTitle.trim()) {
+      toast.error('Ingresá una descripción para el packaging');
+      return;
+    }
 
-    if (!qty || qty <= 0 || !unitPrice || unitPrice <= 0) {
-      toast.error('Ingresá una cantidad y precio unitario válidos');
+    const qty = Number(cardFormQty) > 0 ? Number(cardFormQty) : 1;
+    const unitPrice =
+      Number(cardFormUnitPrice) > 0
+        ? Number(cardFormUnitPrice)
+        : Number(cardFormTotalPrice) > 0
+          ? Number(cardFormTotalPrice) / qty
+          : 0;
+
+    if (!unitPrice || unitPrice <= 0) {
+      toast.error('Ingresá el precio total o unitario del packaging');
       return;
     }
 
     const newCard: CardExpense = {
       id: 'card-' + Date.now(),
-      date: new Date().toISOString().split('T')[0],
+      date: cardFormDate || new Date().toISOString().split('T')[0],
       title: cardFormTitle.trim() || 'Packaging / Tarjetas',
       quantity: qty,
       unitPrice,
@@ -294,10 +535,14 @@ export default function AdminExpenses() {
     setShowCardModal(false);
     setCardFormQty('');
     setCardFormUnitPrice('');
+    setCardFormTotalPrice('');
     setCardFormNotes('');
     toast.success('¡Gasto en packaging guardado!');
   };
 
+  // ==========================================
+  // MANEJADOR DE OTROS GASTOS
+  // ==========================================
   const handleSaveOther = (e: React.FormEvent) => {
     e.preventDefault();
     if (!otherFormConcept.trim()) {
@@ -314,7 +559,7 @@ export default function AdminExpenses() {
 
     const newOther: OtherExpense = {
       id: 'oth-' + Date.now(),
-      date: new Date().toISOString().split('T')[0],
+      date: otherFormDate || new Date().toISOString().split('T')[0],
       concept: otherFormConcept.trim(),
       quantity: qty,
       unitPrice,
@@ -330,15 +575,17 @@ export default function AdminExpenses() {
     toast.success('¡Gasto guardado!');
   };
 
+  // Exportar a CSV
   const handleExportCSV = () => {
     const rows = [
-      ['Tipo', 'Descripción / Concepto', 'Fecha', 'Cantidad', 'Precio Unitario', 'Total'],
+      ['Tipo', 'Proveedor / Concepto', 'Detalle', 'Fecha', 'Cantidad', 'Precio Unitario', 'Total'],
     ];
 
     orders.forEach((ord) => {
       ord.items.forEach((it) => {
         rows.push([
           'Pedido',
+          ord.supplier || 'Proveedor',
           `${ord.title} - ${it.name}`,
           ord.date,
           it.quantity.toString(),
@@ -349,6 +596,7 @@ export default function AdminExpenses() {
       if (ord.shippingCost > 0) {
         rows.push([
           'Envío de Pedido',
+          ord.supplier || 'Flete',
           `Flete de ${ord.title}`,
           ord.date,
           '1',
@@ -361,6 +609,7 @@ export default function AdminExpenses() {
     cards.forEach((c) => {
       rows.push([
         'Packaging',
+        'Packaging & Envíos',
         c.title,
         c.date,
         c.quantity.toString(),
@@ -372,6 +621,7 @@ export default function AdminExpenses() {
     otherExpenses.forEach((o) => {
       rows.push([
         'Otro Gasto',
+        'General',
         o.concept,
         o.date,
         o.quantity.toString(),
@@ -473,7 +723,16 @@ export default function AdminExpenses() {
 
                 <button
                   type="button"
-                  onClick={() => setShowOrderModal(true)}
+                  onClick={() => {
+                    setOrderFormSupplier(suppliers[0] || 'Argentino al Límite');
+                    setIsAddingNewSupplier(false);
+                    setNewSupplierName('');
+                    setOrderFormDate(new Date().toISOString().split('T')[0]);
+                    setOrderFormItems([
+                      { id: '1', name: '', quantity: 1, unitPrice: '', totalPrice: '' },
+                    ]);
+                    setShowOrderModal(true);
+                  }}
                   className="inline-flex items-center gap-2 rounded-xl border-2 border-[#254642] bg-[#254642] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#1a3330]"
                 >
                   <Plus className="h-4 w-4" />+ NUEVO PEDIDO
@@ -502,13 +761,28 @@ export default function AdminExpenses() {
                         key={ord.id}
                         className="rounded-xl border border-gray-200 bg-stone-50/40 p-4 transition hover:bg-white"
                       >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div>
-                            <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              {ord.supplier && (
+                                <span className="inline-flex items-center gap-1 rounded-md bg-[#254642] px-2 py-0.5 text-xs font-bold text-white">
+                                  <Building2 className="h-3 w-3" />
+                                  {ord.supplier}
+                                </span>
+                              )}
                               <h5 className="font-bold text-gray-900">{ord.title}</h5>
-                              <span className="rounded bg-gray-200 px-2 py-0.5 text-[11px] font-medium text-gray-700">
-                                {ord.date}
-                              </span>
+
+                              {/* Selector editable de Fecha */}
+                              <div className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-700 shadow-2xs">
+                                <Calendar className="h-3.5 w-3.5 text-gray-500" />
+                                <input
+                                  type="date"
+                                  value={ord.date}
+                                  onChange={(e) => handleUpdateOrderDate(ord.id, e.target.value)}
+                                  className="border-none bg-transparent p-0 text-xs font-medium text-gray-700 focus:outline-none"
+                                  title="Hacé clic para cambiar la fecha de este pedido"
+                                />
+                              </div>
                             </div>
                             {ord.notes && <p className="text-xs text-gray-500">{ord.notes}</p>}
                           </div>
@@ -608,7 +882,15 @@ export default function AdminExpenses() {
 
                 <button
                   type="button"
-                  onClick={() => setShowCardModal(true)}
+                  onClick={() => {
+                    setCardFormDate(new Date().toISOString().split('T')[0]);
+                    setCardFormTitle('Tarjetas de agradecimiento / packaging');
+                    setCardFormQty('');
+                    setCardFormUnitPrice('');
+                    setCardFormTotalPrice('');
+                    setCardFormNotes('');
+                    setShowCardModal(true);
+                  }}
                   className="inline-flex items-center gap-2 rounded-xl border-2 border-amber-600 bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-amber-700"
                 >
                   <Plus className="h-4 w-4" />+ NUEVO GASTO
@@ -640,7 +922,19 @@ export default function AdminExpenses() {
                             {c.title}
                             {c.notes && <p className="text-[11px] text-gray-400">{c.notes}</p>}
                           </td>
-                          <td className="px-4 py-3 text-gray-500">{c.date}</td>
+                          <td className="px-4 py-3 text-gray-500">
+                            {/* Fecha editable inline */}
+                            <div className="inline-flex items-center gap-1 rounded border border-gray-200 bg-white px-2 py-0.5">
+                              <Calendar className="h-3 w-3 text-gray-400" />
+                              <input
+                                type="date"
+                                value={c.date}
+                                onChange={(e) => handleUpdateCardDate(c.id, e.target.value)}
+                                className="border-none bg-transparent p-0 text-xs text-gray-700 focus:outline-none"
+                                title="Hacé clic para cambiar la fecha"
+                              />
+                            </div>
+                          </td>
                           <td className="px-4 py-3 text-center font-bold text-gray-700">
                             {c.quantity.toLocaleString('es-AR')} u.
                           </td>
@@ -693,7 +987,14 @@ export default function AdminExpenses() {
 
                 <button
                   type="button"
-                  onClick={() => setShowOtherModal(true)}
+                  onClick={() => {
+                    setOtherFormDate(new Date().toISOString().split('T')[0]);
+                    setOtherFormConcept('');
+                    setOtherFormQty(1);
+                    setOtherFormUnitPrice('');
+                    setOtherFormNotes('');
+                    setShowOtherModal(true);
+                  }}
                   className="inline-flex items-center gap-2 rounded-xl border-2 border-purple-700 bg-purple-700 px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-purple-800"
                 >
                   <Plus className="h-4 w-4" />+ NUEVO GASTO
@@ -725,7 +1026,19 @@ export default function AdminExpenses() {
                             {o.concept}
                             {o.notes && <p className="text-[11px] text-gray-400">{o.notes}</p>}
                           </td>
-                          <td className="px-4 py-3 text-gray-500">{o.date}</td>
+                          <td className="px-4 py-3 text-gray-500">
+                            {/* Fecha editable inline */}
+                            <div className="inline-flex items-center gap-1 rounded border border-gray-200 bg-white px-2 py-0.5">
+                              <Calendar className="h-3 w-3 text-gray-400" />
+                              <input
+                                type="date"
+                                value={o.date}
+                                onChange={(e) => handleUpdateOtherDate(o.id, e.target.value)}
+                                className="border-none bg-transparent p-0 text-xs text-gray-700 focus:outline-none"
+                                title="Hacé clic para cambiar la fecha"
+                              />
+                            </div>
+                          </td>
                           <td className="px-4 py-3 text-center font-bold text-gray-700">
                             {o.quantity} u.
                           </td>
@@ -771,7 +1084,8 @@ export default function AdminExpenses() {
                 PRECIOS RECOMENDADOS PARA LA WEB
               </h3>
               <p className="mt-0.5 text-xs text-gray-500">
-                Basado en el costo neto a proveedor + envío + extras + margen del {marginPercent}%
+                Compará el costo proveedor + extras con el precio actual en la web y los precios
+                sugeridos.
               </p>
             </div>
 
@@ -801,13 +1115,16 @@ export default function AdminExpenses() {
                 <thead>
                   <tr className="border-b bg-gray-50 text-gray-600">
                     <th className="px-4 py-3 font-bold">Producto</th>
-                    <th className="px-4 py-3 text-right font-bold">Precio Unit. Proveedor</th>
+                    <th className="px-4 py-3 text-right font-bold">Precio Proveedor</th>
                     <th className="px-4 py-3 text-right font-bold text-blue-700">Gastos Extras</th>
                     <th className="px-4 py-3 text-right font-bold text-gray-900">
                       Costo Real Base
                     </th>
+                    <th className="px-4 py-3 text-center font-bold text-indigo-900">
+                      Precio Actual en Web
+                    </th>
                     <th className="px-4 py-3 text-center font-bold text-[#254642]">
-                      Intervalo Sugerido Web
+                      Precios Sugeridos ({marginPercent}%)
                     </th>
                     <th className="px-4 py-3 text-right font-bold text-green-700">
                       Ganancia Estimada
@@ -825,24 +1142,34 @@ export default function AdminExpenses() {
                         shippingPerUnit + cardCostPerUnit + otherCostPerProductUnit;
                       const realCost = it.unitPrice + totalExtras;
 
-                      // 1. Mínimo (Piso donde no pierde un peso, cubre 100% de costos + 10% colchón)
-                      const minPrice = Math.ceil((realCost * 1.1) / 100) * 100;
-
-                      // 2. Recomendado: 100% sobre costo neto (Costo x 2)
+                      // Sugerido Web: 100% sobre costo neto (Costo x 2)
                       const recommendedPrice =
                         Math.ceil((realCost * (1 + marginPercent / 100)) / 100) * 100;
 
-                      // 3. Máximo Ubicado: precio premium de mercado
+                      // Máximo Ubicado: precio premium de mercado
                       const maxPrice = Math.ceil((realCost * 2.3) / 100) * 100;
 
                       const profit = recommendedPrice - realCost;
+
+                      // Buscar producto en la tienda web (activo o inactivo)
+                      const webProduct = products.find(
+                        (p) =>
+                          (it.productId && p.id === it.productId) ||
+                          p.name.trim().toLowerCase() === it.name.trim().toLowerCase()
+                      );
 
                       return (
                         <tr key={`${ord.id}-${it.id}`} className="hover:bg-stone-50/50">
                           {/* Nombre */}
                           <td className="px-4 py-3">
                             <p className="font-bold text-gray-900">{it.name}</p>
-                            <span className="text-[10px] text-gray-400">Pedido: {ord.title}</span>
+                            <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
+                              {ord.supplier && (
+                                <span className="font-medium text-gray-600">{ord.supplier}</span>
+                              )}
+                              <span>•</span>
+                              <span>{ord.date}</span>
+                            </div>
                           </td>
 
                           {/* Precio Unitario Proveedor */}
@@ -869,22 +1196,45 @@ export default function AdminExpenses() {
                             <span className="block text-[10px] text-gray-400">Piso real</span>
                           </td>
 
-                          {/* Intervalo Recomendado */}
+                          {/* Precio Actual en la Web (NUEVO) */}
+                          <td className="px-4 py-3 text-center">
+                            {webProduct ? (
+                              <div className="inline-flex flex-col items-center">
+                                <span className="font-mono text-sm font-black text-indigo-950">
+                                  ${webProduct.price.toLocaleString('es-AR')}
+                                </span>
+                                <span
+                                  className={`mt-0.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                    webProduct.active
+                                      ? 'bg-emerald-100 text-emerald-800'
+                                      : 'bg-gray-100 text-gray-600'
+                                  }`}
+                                >
+                                  <span
+                                    className={`h-1.5 w-1.5 rounded-full ${
+                                      webProduct.active ? 'bg-emerald-500' : 'bg-gray-400'
+                                    }`}
+                                  />
+                                  {webProduct.active ? 'Activo en web' : 'Pausado'}
+                                </span>
+                                {webProduct.price < realCost && (
+                                  <span className="mt-0.5 text-[9px] font-bold text-red-600">
+                                    ⚠️ Menor al costo
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="text-center text-gray-400">
+                                <span className="font-mono text-xs">—</span>
+                                <span className="block text-[10px]">No en web</span>
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Precios Sugeridos: Sugerido Web y Máximo (Sin Mínimo) */}
                           <td className="px-4 py-3">
                             <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-                              {/* Mínimo */}
-                              <div className="rounded-md border border-gray-200 bg-gray-50 px-2 py-1 text-center">
-                                <span className="block text-[9px] tracking-wider text-gray-500 uppercase">
-                                  Mínimo
-                                </span>
-                                <span className="font-mono font-bold text-gray-700">
-                                  ${minPrice.toLocaleString('es-AR')}
-                                </span>
-                              </div>
-
-                              <span className="text-gray-300">→</span>
-
-                              {/* Recomendado (100%) */}
+                              {/* Sugerido Web (100%) */}
                               <div className="rounded-md border-2 border-[#D4AF37] bg-amber-50/70 px-2.5 py-1 text-center shadow-xs">
                                 <span className="block text-[9px] font-bold tracking-wider text-[#254642] uppercase">
                                   Sugerido Web ({marginPercent}%)
@@ -1092,25 +1442,104 @@ export default function AdminExpenses() {
             </div>
 
             <form onSubmit={handleSaveOrder} className="mt-4 space-y-4">
+              {/* Sección Proveedor y Fecha */}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {/* Desplegable de Proveedor */}
+                <div>
+                  <label className="mb-1 block text-xs font-bold text-gray-800">Proveedor *</label>
+                  {!isAddingNewSupplier ? (
+                    <select
+                      value={orderFormSupplier}
+                      onChange={(e) => {
+                        if (e.target.value === '__new__') {
+                          setIsAddingNewSupplier(true);
+                        } else {
+                          setOrderFormSupplier(e.target.value);
+                        }
+                      }}
+                      className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm font-medium text-gray-800 focus:border-[#D4AF37] focus:outline-none"
+                    >
+                      {suppliers.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                      <option value="__new__">➕ Agregar nuevo proveedor...</option>
+                    </select>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          required
+                          value={newSupplierName}
+                          onChange={(e) => setNewSupplierName(e.target.value)}
+                          placeholder="Nombre del nuevo proveedor"
+                          className="w-full rounded-lg border border-[#254642] p-2 text-sm focus:border-[#D4AF37] focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleSaveNewSupplier}
+                          className="rounded-lg bg-[#254642] px-3 py-2 text-xs font-bold text-white hover:bg-[#1a3330]"
+                          title="Confirmar proveedor"
+                        >
+                          <Check className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAddingNewSupplier(false);
+                          setNewSupplierName('');
+                        }}
+                        className="text-[11px] text-gray-500 underline hover:text-gray-700"
+                      >
+                        Cancelar y elegir de la lista
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Fecha del Pedido */}
+                <div>
+                  <label className="mb-1 block text-xs font-bold text-gray-800">
+                    Fecha del Pedido *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={orderFormDate}
+                    onChange={(e) => setOrderFormDate(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 p-2 text-sm text-gray-800 focus:border-[#D4AF37] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Referencia opcional */}
               <div>
                 <label className="mb-1 block text-xs font-semibold text-gray-700">
-                  Nombre o Referencia del Pedido *
+                  Referencia o Detalle del Pedido (Opcional)
                 </label>
                 <input
                   type="text"
-                  required
-                  value={orderFormTitle}
-                  onChange={(e) => setOrderFormTitle(e.target.value)}
-                  placeholder="Ej: Pedido Mayorista Mates Mayo"
+                  value={orderFormRef}
+                  onChange={(e) => setOrderFormRef(e.target.value)}
+                  placeholder="Ej: Lote Mates Imperiales Mayo"
                   className="w-full rounded-lg border border-gray-300 p-2 text-sm focus:border-[#D4AF37] focus:outline-none"
                 />
               </div>
 
+              {/* Lista de Productos del Pedido */}
               <div>
                 <div className="mb-2 flex items-center justify-between">
-                  <label className="text-xs font-semibold text-gray-700">
-                    Productos incluidos en este pedido *
-                  </label>
+                  <div>
+                    <label className="text-xs font-bold text-gray-800">
+                      Productos incluidos en este pedido *
+                    </label>
+                    <p className="text-[11px] text-gray-500">
+                      Elegí de la web o escribí a mano. Podés cargar el total directo o el unitario.
+                    </p>
+                  </div>
                   <button
                     type="button"
                     onClick={handleAddOrderItemRow}
@@ -1120,84 +1549,113 @@ export default function AdminExpenses() {
                   </button>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {orderFormItems.map((item, index) => {
-                    const rowSubtotal = Number(item.quantity || 0) * Number(item.unitPrice || 0);
-
                     return (
                       <div
                         key={item.id}
-                        className="flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-gray-50/60 p-2.5"
+                        className="space-y-2 rounded-xl border border-gray-200 bg-gray-50/80 p-3"
                       >
-                        <div className="min-w-[160px] flex-1">
-                          <span className="text-[10px] text-gray-400">Producto</span>
-                          <input
-                            type="text"
-                            required
-                            value={item.name}
-                            onChange={(e) => {
-                              const updated = [...orderFormItems];
-                              updated[index].name = e.target.value;
-                              setOrderFormItems(updated);
-                            }}
-                            placeholder="Nombre del mate o accesorio"
-                            className="w-full rounded border border-gray-300 bg-white p-1.5 text-xs focus:border-[#D4AF37] focus:outline-none"
-                          />
+                        {/* Selector de Producto de la Tienda Web */}
+                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+                          <div className="flex-1">
+                            <span className="block text-[10px] font-bold text-gray-600">
+                              Elegir de la Web (activos e inactivos) o escribir manual:
+                            </span>
+                            <select
+                              value={item.productId ? item.productId.toString() : '__manual__'}
+                              onChange={(e) => handleSelectStoreProduct(index, e.target.value)}
+                              className="w-full rounded border border-gray-300 bg-white p-1.5 text-xs text-gray-800 focus:border-[#D4AF37] focus:outline-none"
+                            >
+                              <option value="__manual__">
+                                ✏️ Escribir producto personalizado...
+                              </option>
+                              {products.length > 0 && (
+                                <optgroup label="Productos en la Tienda Web">
+                                  {products.map((p) => (
+                                    <option key={p.id} value={p.id}>
+                                      {p.name} {p.active ? '🟢 (Activo)' : '⚪ (Pausado)'} - Web: $
+                                      {p.price.toLocaleString('es-AR')}
+                                    </option>
+                                  ))}
+                                </optgroup>
+                              )}
+                            </select>
+                          </div>
                         </div>
 
-                        <div className="w-20">
-                          <span className="text-[10px] text-gray-400">Cantidad</span>
-                          <input
-                            type="number"
-                            required
-                            min={1}
-                            value={item.quantity}
-                            onChange={(e) => {
-                              const updated = [...orderFormItems];
-                              updated[index].quantity =
-                                e.target.value === '' ? '' : Number(e.target.value);
-                              setOrderFormItems(updated);
-                            }}
-                            placeholder="Cant."
-                            className="w-full rounded border border-gray-300 bg-white p-1.5 text-center text-xs focus:border-[#D4AF37] focus:outline-none"
-                          />
-                        </div>
+                        {/* Nombre del Producto y Precios */}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="min-w-[170px] flex-1">
+                            <span className="text-[10px] text-gray-500">Nombre del producto</span>
+                            <input
+                              type="text"
+                              required
+                              value={item.name}
+                              onChange={(e) => {
+                                const updated = [...orderFormItems];
+                                updated[index].name = e.target.value;
+                                setOrderFormItems(updated);
+                              }}
+                              placeholder="Ej: Mate Imperial Calabaza"
+                              className="w-full rounded border border-gray-300 bg-white p-1.5 text-xs font-medium text-gray-800 focus:border-[#D4AF37] focus:outline-none"
+                            />
+                          </div>
 
-                        <div className="w-28">
-                          <span className="text-[10px] text-gray-400">Precio Unit. ($)</span>
-                          <input
-                            type="number"
-                            required
-                            min={1}
-                            value={item.unitPrice}
-                            onChange={(e) => {
-                              const updated = [...orderFormItems];
-                              updated[index].unitPrice =
-                                e.target.value === '' ? '' : Number(e.target.value);
-                              setOrderFormItems(updated);
-                            }}
-                            placeholder="Unitario $"
-                            className="w-full rounded border border-gray-300 bg-white p-1.5 text-right text-xs focus:border-[#D4AF37] focus:outline-none"
-                          />
-                        </div>
+                          {/* Cantidad */}
+                          <div className="w-20">
+                            <span className="text-[10px] text-gray-500">Cantidad (u.)</span>
+                            <input
+                              type="number"
+                              min={1}
+                              value={item.quantity}
+                              onChange={(e) => handleItemQtyChange(index, e.target.value)}
+                              placeholder="Cant."
+                              className="w-full rounded border border-gray-300 bg-white p-1.5 text-center text-xs font-bold text-gray-800 focus:border-[#D4AF37] focus:outline-none"
+                            />
+                          </div>
 
-                        <div className="w-24 text-right">
-                          <span className="text-[10px] text-gray-400">Subtotal</span>
-                          <p className="font-mono text-xs font-bold text-[#254642]">
-                            ${rowSubtotal.toLocaleString('es-AR')}
-                          </p>
-                        </div>
+                          {/* Precio Unitario */}
+                          <div className="w-28">
+                            <span className="text-[10px] text-gray-500">Precio Unit. ($)</span>
+                            <input
+                              type="number"
+                              min={0}
+                              step="any"
+                              value={item.unitPrice}
+                              onChange={(e) => handleItemUnitChange(index, e.target.value)}
+                              placeholder="Unitario $"
+                              className="w-full rounded border border-gray-300 bg-white p-1.5 text-right font-mono text-xs font-semibold text-gray-800 focus:border-[#D4AF37] focus:outline-none"
+                            />
+                          </div>
 
-                        {orderFormItems.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveOrderItemRow(index)}
-                            className="text-gray-400 hover:text-red-600"
-                            title="Quitar fila"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
+                          {/* Precio Total (DIRECTO) */}
+                          <div className="w-28">
+                            <span className="text-[10px] font-bold text-[#254642]">
+                              Precio Total ($)
+                            </span>
+                            <input
+                              type="number"
+                              min={0}
+                              step="any"
+                              value={item.totalPrice}
+                              onChange={(e) => handleItemTotalChange(index, e.target.value)}
+                              placeholder="Total fila $"
+                              className="w-full rounded border-2 border-emerald-600/40 bg-white p-1.5 text-right font-mono text-xs font-bold text-[#254642] focus:border-[#254642] focus:outline-none"
+                            />
+                          </div>
+
+                          {orderFormItems.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveOrderItemRow(index)}
+                              className="mt-4 text-gray-400 hover:text-red-600"
+                              title="Quitar fila"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -1231,6 +1689,7 @@ export default function AdminExpenses() {
                 </div>
               </div>
 
+              {/* Notas opcionales */}
               <div>
                 <label className="mb-1 block text-xs font-semibold text-gray-700">
                   Notas o aclaraciones (Opcional)
@@ -1294,58 +1753,72 @@ export default function AdminExpenses() {
                   required
                   value={cardFormTitle}
                   onChange={(e) => setCardFormTitle(e.target.value)}
-                  placeholder="Ej: Tarjetas de agradecimiento con logo"
+                  placeholder="Ej: Tarjetas de agradecimiento, Bolsas de tela"
                   className="w-full rounded-lg border border-gray-300 p-2 text-xs focus:border-[#D4AF37] focus:outline-none"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-gray-700">
+                  Fecha del Gasto *
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={cardFormDate}
+                  onChange={(e) => setCardFormDate(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 p-2 text-xs focus:border-[#D4AF37] focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-gray-700">
-                    Cantidad *
-                  </label>
+                  <label className="mb-1 block text-xs font-semibold text-gray-700">Cantidad</label>
                   <input
                     type="number"
-                    required
                     min={1}
                     value={cardFormQty}
-                    onChange={(e) =>
-                      setCardFormQty(e.target.value === '' ? '' : Number(e.target.value))
-                    }
-                    placeholder="Ej: 500"
+                    onChange={(e) => handleCardQtyChange(e.target.value)}
+                    placeholder="1"
                     className="w-full rounded-lg border border-gray-300 p-2 text-center text-sm font-bold focus:border-[#D4AF37] focus:outline-none"
                   />
                 </div>
 
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-gray-700">
-                    Precio Unitario ($) *
+                    Precio Unit. ($)
                   </label>
                   <input
                     type="number"
-                    required
-                    min={0.1}
+                    min={0}
                     step="any"
                     value={cardFormUnitPrice}
-                    onChange={(e) =>
-                      setCardFormUnitPrice(e.target.value === '' ? '' : Number(e.target.value))
-                    }
-                    placeholder="Ej: 80"
+                    onChange={(e) => handleCardUnitChange(e.target.value)}
+                    placeholder="Unit. $"
                     className="w-full rounded-lg border border-gray-300 p-2 text-right text-sm font-bold focus:border-[#D4AF37] focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-bold text-amber-900">
+                    Precio Total ($)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    step="any"
+                    value={cardFormTotalPrice}
+                    onChange={(e) => handleCardTotalChange(e.target.value)}
+                    placeholder="Total $"
+                    className="w-full rounded-lg border-2 border-amber-600 bg-amber-50/30 p-2 text-right text-sm font-black text-amber-950 focus:border-amber-700 focus:outline-none"
                   />
                 </div>
               </div>
 
-              <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3 text-right">
-                <span className="text-xs text-amber-800">Total calculado:</span>
-                <p className="font-mono text-base font-black text-amber-950">
-                  $
-                  {(Number(cardFormQty || 0) * Number(cardFormUnitPrice || 0)).toLocaleString(
-                    'es-AR'
-                  )}
-                </p>
-                <span className="text-[10px] text-gray-500">
-                  Se sumará a los costos extras de tus productos.
+              <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-2.5 text-right">
+                <span className="text-[11px] text-amber-800">
+                  Podés ingresar el <strong>Total</strong> directamente o la{' '}
+                  <strong>Cantidad y Unitario</strong>.
                 </span>
               </div>
 
@@ -1413,6 +1886,19 @@ export default function AdminExpenses() {
                   value={otherFormConcept}
                   onChange={(e) => setOtherFormConcept(e.target.value)}
                   placeholder="Ej: Servidor web, Tinta para sellos, Cinta"
+                  className="w-full rounded-lg border border-gray-300 p-2 text-xs focus:border-[#D4AF37] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-gray-700">
+                  Fecha del Gasto *
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={otherFormDate}
+                  onChange={(e) => setOtherFormDate(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 p-2 text-xs focus:border-[#D4AF37] focus:outline-none"
                 />
               </div>
