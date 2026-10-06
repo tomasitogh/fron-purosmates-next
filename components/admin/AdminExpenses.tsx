@@ -1,31 +1,28 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   FileSpreadsheet,
   Plus,
   Trash2,
   Download,
-  DollarSign,
-  Truck,
   CreditCard,
   Layers,
-  TrendingUp,
-  AlertCircle,
   X,
   Package,
   ArrowLeft,
   ChevronRight,
   Calendar,
   Building2,
-  Globe,
-  Tag,
   Check,
+  Eye,
+  Pencil,
+  Truck,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { AppDispatch, RootState } from '@/redux/store';
-import { fetchAllProductsAdmin, fetchProducts, Product } from '@/redux/productSlice';
+import { fetchAllProductsAdmin, fetchProducts } from '@/redux/productSlice';
 import { TokenGetter } from '@/lib/apiClient';
 
 // Modelos de datos
@@ -158,6 +155,12 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
   const [showCardModal, setShowCardModal] = useState(false);
   const [showOtherModal, setShowOtherModal] = useState(false);
 
+  // Estados para Edición y Visor
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+  const [viewingOrder, setViewingOrder] = useState<SupplierOrder | null>(null);
+  const [editingCardId, setEditingCardId] = useState<string | null>(null);
+  const [editingOtherId, setEditingOtherId] = useState<string | null>(null);
+
   // Formulario Pedido
   const [orderFormSupplier, setOrderFormSupplier] = useState<string>('Argentino al Límite');
   const [isAddingNewSupplier, setIsAddingNewSupplier] = useState(false);
@@ -281,24 +284,95 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
   const grandTotalCost = totalOrdersCost + totalCardsCost + totalOtherCost;
 
   // ==========================================
-  // MANEJADORES DE FECHA EN VIVO (EDICIÓN DIRECTA)
+  // MANEJADORES DE APERTURA Y EDICIÓN
   // ==========================================
-  const handleUpdateOrderDate = (orderId: string, newDate: string) => {
-    if (!newDate) return;
-    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, date: newDate } : o)));
-    toast.success('Fecha de pedido actualizada');
+
+  // Abrir nuevo pedido
+  const handleOpenNewOrderModal = () => {
+    setEditingOrderId(null);
+    setOrderFormSupplier(suppliers[0] || 'Argentino al Límite');
+    setIsAddingNewSupplier(false);
+    setNewSupplierName('');
+    setOrderFormRef('');
+    setOrderFormDate(new Date().toISOString().split('T')[0]);
+    setOrderFormShipping('');
+    setOrderFormNotes('');
+    setOrderFormItems([{ id: '1', name: '', quantity: 1, unitPrice: '', totalPrice: '' }]);
+    setShowOrderModal(true);
   };
 
-  const handleUpdateCardDate = (cardId: string, newDate: string) => {
-    if (!newDate) return;
-    setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, date: newDate } : c)));
-    toast.success('Fecha de packaging actualizada');
+  // Modificar pedido existente
+  const handleEditOrder = (ord: SupplierOrder) => {
+    setEditingOrderId(ord.id);
+    setOrderFormSupplier(ord.supplier || ord.title);
+    setIsAddingNewSupplier(false);
+    setNewSupplierName('');
+    if (ord.supplier && ord.title.startsWith(ord.supplier)) {
+      const remaining = ord.title.replace(ord.supplier, '').replace(/^(\s*-\s*)/, '');
+      setOrderFormRef(remaining);
+    } else {
+      setOrderFormRef('');
+    }
+    setOrderFormDate(ord.date);
+    setOrderFormShipping(ord.shippingCost || '');
+    setOrderFormNotes(ord.notes || '');
+    setOrderFormItems(
+      ord.items.map((it) => ({
+        id: it.id,
+        productId: it.productId,
+        name: it.name,
+        quantity: it.quantity,
+        unitPrice: it.unitPrice,
+        totalPrice: it.quantity * it.unitPrice,
+      }))
+    );
+    setShowOrderModal(true);
   };
 
-  const handleUpdateOtherDate = (otherId: string, newDate: string) => {
-    if (!newDate) return;
-    setOtherExpenses((prev) => prev.map((o) => (o.id === otherId ? { ...o, date: newDate } : o)));
-    toast.success('Fecha de gasto actualizada');
+  // Abrir nuevo packaging
+  const handleOpenNewCardModal = () => {
+    setEditingCardId(null);
+    setCardFormDate(new Date().toISOString().split('T')[0]);
+    setCardFormTitle('');
+    setCardFormQty('');
+    setCardFormUnitPrice('');
+    setCardFormTotalPrice('');
+    setCardFormNotes('');
+    setShowCardModal(true);
+  };
+
+  // Modificar packaging existente
+  const handleEditCard = (c: CardExpense) => {
+    setEditingCardId(c.id);
+    setCardFormDate(c.date);
+    setCardFormTitle(c.title);
+    setCardFormQty(c.quantity);
+    setCardFormUnitPrice(c.unitPrice);
+    setCardFormTotalPrice(c.quantity * c.unitPrice);
+    setCardFormNotes(c.notes || '');
+    setShowCardModal(true);
+  };
+
+  // Abrir nuevo otro gasto
+  const handleOpenNewOtherModal = () => {
+    setEditingOtherId(null);
+    setOtherFormDate(new Date().toISOString().split('T')[0]);
+    setOtherFormConcept('');
+    setOtherFormQty(1);
+    setOtherFormUnitPrice('');
+    setOtherFormNotes('');
+    setShowOtherModal(true);
+  };
+
+  // Modificar otro gasto existente
+  const handleEditOther = (o: OtherExpense) => {
+    setEditingOtherId(o.id);
+    setOtherFormDate(o.date);
+    setOtherFormConcept(o.concept);
+    setOtherFormQty(o.quantity);
+    setOtherFormUnitPrice(o.unitPrice);
+    setOtherFormNotes(o.notes || '');
+    setShowOtherModal(true);
   };
 
   // ==========================================
@@ -391,7 +465,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
     toast.success(`Proveedor "${trimmed}" agregado`);
   };
 
-  // Guardar Pedido
+  // Guardar o Actualizar Pedido
   const handleSaveOrder = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -447,6 +521,36 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
       ? `${finalSupplier} - ${orderFormRef.trim()}`
       : `${finalSupplier}`;
 
+    // Si estamos editando un pedido existente
+    if (editingOrderId) {
+      setOrders(
+        orders.map((o) =>
+          o.id === editingOrderId
+            ? {
+                ...o,
+                date: orderFormDate || new Date().toISOString().split('T')[0],
+                title: orderTitle,
+                supplier: finalSupplier,
+                items: validItems,
+                shippingCost: Number(orderFormShipping) || 0,
+                notes: orderFormNotes.trim() || undefined,
+              }
+            : o
+        )
+      );
+      setEditingOrderId(null);
+      setShowOrderModal(false);
+      setOrderFormRef('');
+      setIsAddingNewSupplier(false);
+      setNewSupplierName('');
+      setOrderFormShipping('');
+      setOrderFormNotes('');
+      setOrderFormItems([{ id: '1', name: '', quantity: 1, unitPrice: '', totalPrice: '' }]);
+      toast.success('¡Pedido modificado con éxito!');
+      return;
+    }
+
+    // Si es un pedido nuevo
     const newOrder: SupplierOrder = {
       id: 'ord-' + Date.now(),
       date: orderFormDate || new Date().toISOString().split('T')[0],
@@ -522,10 +626,38 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
       return;
     }
 
+    // Si estamos editando packaging existente
+    if (editingCardId) {
+      setCards(
+        cards.map((c) =>
+          c.id === editingCardId
+            ? {
+                ...c,
+                date: cardFormDate || new Date().toISOString().split('T')[0],
+                title: cardFormTitle.trim(),
+                quantity: qty,
+                unitPrice,
+                notes: cardFormNotes.trim() || undefined,
+              }
+            : c
+        )
+      );
+      setEditingCardId(null);
+      setShowCardModal(false);
+      setCardFormTitle('');
+      setCardFormQty('');
+      setCardFormUnitPrice('');
+      setCardFormTotalPrice('');
+      setCardFormNotes('');
+      toast.success('¡Gasto en packaging modificado!');
+      return;
+    }
+
+    // Nuevo registro de packaging
     const newCard: CardExpense = {
       id: 'card-' + Date.now(),
       date: cardFormDate || new Date().toISOString().split('T')[0],
-      title: cardFormTitle.trim() || 'Packaging / Tarjetas',
+      title: cardFormTitle.trim(),
       quantity: qty,
       unitPrice,
       notes: cardFormNotes.trim() || undefined,
@@ -533,6 +665,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
 
     setCards([newCard, ...cards]);
     setShowCardModal(false);
+    setCardFormTitle('');
     setCardFormQty('');
     setCardFormUnitPrice('');
     setCardFormTotalPrice('');
@@ -557,6 +690,33 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
       return;
     }
 
+    // Si estamos editando un gasto existente
+    if (editingOtherId) {
+      setOtherExpenses(
+        otherExpenses.map((oth) =>
+          oth.id === editingOtherId
+            ? {
+                ...oth,
+                date: otherFormDate || new Date().toISOString().split('T')[0],
+                concept: otherFormConcept.trim(),
+                quantity: qty,
+                unitPrice,
+                notes: otherFormNotes.trim() || undefined,
+              }
+            : oth
+        )
+      );
+      setEditingOtherId(null);
+      setShowOtherModal(false);
+      setOtherFormConcept('');
+      setOtherFormQty(1);
+      setOtherFormUnitPrice('');
+      setOtherFormNotes('');
+      toast.success('¡Gasto modificado!');
+      return;
+    }
+
+    // Nuevo gasto libre
     const newOther: OtherExpense = {
       id: 'oth-' + Date.now(),
       date: otherFormDate || new Date().toISOString().split('T')[0],
@@ -703,7 +863,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
             </div>
           )}
 
-          {/* Sub-vista: PEDIDOS (Boceto Fila 2 Izquierda) */}
+          {/* Sub-vista: PEDIDOS (Diseño Minimalista con Info General) */}
           {expenseSubView === 'pedidos' && (
             <div className="rounded-2xl border border-gray-300 bg-white p-6 shadow-xs">
               <div className="mb-6 flex items-center justify-between border-b pb-4">
@@ -723,77 +883,108 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
 
                 <button
                   type="button"
-                  onClick={() => {
-                    setOrderFormSupplier(suppliers[0] || 'Argentino al Límite');
-                    setIsAddingNewSupplier(false);
-                    setNewSupplierName('');
-                    setOrderFormDate(new Date().toISOString().split('T')[0]);
-                    setOrderFormItems([
-                      { id: '1', name: '', quantity: 1, unitPrice: '', totalPrice: '' },
-                    ]);
-                    setShowOrderModal(true);
-                  }}
+                  onClick={handleOpenNewOrderModal}
                   className="inline-flex items-center gap-2 rounded-xl border-2 border-[#254642] bg-[#254642] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#1a3330]"
                 >
                   <Plus className="h-4 w-4" />+ NUEVO PEDIDO
                 </button>
               </div>
 
-              {/* Lista de Pedidos */}
+              {/* Lista de Pedidos Minimalista */}
               {orders.length === 0 ? (
                 <div className="py-12 text-center text-sm text-gray-400">
                   No tenés pedidos cargados todavía. Tocá en &ldquo;+ NUEVO PEDIDO&rdquo; para
                   cargar el primero.
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {orders.map((ord) => {
                     const orderItemsTotal = ord.items.reduce(
                       (sum, it) => sum + it.quantity * it.unitPrice,
                       0
                     );
                     const orderTotalQty = ord.items.reduce((sum, it) => sum + it.quantity, 0);
-                    const shippingPerUnit =
-                      orderTotalQty > 0 ? ord.shippingCost / orderTotalQty : 0;
+                    const totalOrderWithShipping = orderItemsTotal + ord.shippingCost;
 
                     return (
                       <div
                         key={ord.id}
-                        className="rounded-xl border border-gray-200 bg-stone-50/40 p-4 transition hover:bg-white"
+                        className="group flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-2xs transition hover:border-[#254642]/40 sm:flex-row sm:items-center sm:justify-between"
                       >
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div className="space-y-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              {ord.supplier && (
-                                <span className="inline-flex items-center gap-1 rounded-md bg-[#254642] px-2 py-0.5 text-xs font-bold text-white">
-                                  <Building2 className="h-3 w-3" />
-                                  {ord.supplier}
-                                </span>
-                              )}
-                              <h5 className="font-bold text-gray-900">{ord.title}</h5>
-
-                              {/* Selector editable de Fecha */}
-                              <div className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-700 shadow-2xs">
-                                <Calendar className="h-3.5 w-3.5 text-gray-500" />
-                                <input
-                                  type="date"
-                                  value={ord.date}
-                                  onChange={(e) => handleUpdateOrderDate(ord.id, e.target.value)}
-                                  className="border-none bg-transparent p-0 text-xs font-medium text-gray-700 focus:outline-none"
-                                  title="Hacé clic para cambiar la fecha de este pedido"
-                                />
-                              </div>
-                            </div>
-                            {ord.notes && <p className="text-xs text-gray-500">{ord.notes}</p>}
+                        {/* Lado Izquierdo: Nombre del proveedor, fecha e info general */}
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#254642] px-2.5 py-1 text-xs font-bold text-white shadow-2xs">
+                              <Building2 className="h-3.5 w-3.5 text-[#D4AF37]" />
+                              {ord.supplier || ord.title}
+                            </span>
+                            <span className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-stone-50 px-2 py-0.5 text-xs font-semibold text-gray-600">
+                              <Calendar className="h-3 w-3 text-gray-400" />
+                              {ord.date}
+                            </span>
                           </div>
 
-                          <div className="flex items-center gap-4">
-                            <div className="text-right">
-                              <span className="text-[11px] text-gray-500">Total con envío:</span>
-                              <p className="font-mono text-base font-bold text-[#254642]">
-                                ${(orderItemsTotal + ord.shippingCost).toLocaleString('es-AR')}
-                              </p>
-                            </div>
+                          {/* Info general del pedido */}
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                            <span className="font-medium text-gray-700">
+                              {ord.items.length} producto{ord.items.length > 1 ? 's' : ''} (
+                              {orderTotalQty} u.)
+                            </span>
+                            {ord.shippingCost > 0 && (
+                              <>
+                                <span>•</span>
+                                <span className="font-medium text-blue-700">
+                                  Envío: ${ord.shippingCost.toLocaleString('es-AR')}
+                                </span>
+                              </>
+                            )}
+                            {ord.notes && (
+                              <>
+                                <span>•</span>
+                                <span
+                                  className="max-w-[200px] truncate text-gray-400 italic"
+                                  title={ord.notes}
+                                >
+                                  &ldquo;{ord.notes}&rdquo;
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Lado Derecho: Total general + Acciones (Ojo, Lápiz, Tacho) */}
+                        <div className="flex items-center justify-between gap-4 border-t border-gray-100 pt-2 sm:border-0 sm:pt-0">
+                          <div className="text-right">
+                            <span className="block text-[10px] font-bold tracking-wider text-gray-400 uppercase">
+                              Total Pedido
+                            </span>
+                            <span className="font-mono text-base font-extrabold text-[#254642]">
+                              ${totalOrderWithShipping.toLocaleString('es-AR')}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            {/* 1. OJO: Ver pedido entero */}
+                            <button
+                              type="button"
+                              onClick={() => setViewingOrder(ord)}
+                              className="rounded-lg p-2 text-gray-500 transition hover:bg-emerald-50 hover:text-emerald-700"
+                              title="Ver pedido entero"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+
+                            {/* 2. LÁPIZ: Modificar pedido */}
+                            <button
+                              type="button"
+                              onClick={() => handleEditOrder(ord)}
+                              className="rounded-lg p-2 text-gray-500 transition hover:bg-stone-100 hover:text-[#254642]"
+                              title="Modificar pedido"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+
+                            {/* 3. TACHO: Eliminar pedido */}
                             <button
                               type="button"
                               onClick={() => {
@@ -802,57 +993,12 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                                   toast.success('Pedido eliminado');
                                 }
                               }}
-                              className="rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                              className="rounded-lg p-2 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
                               title="Eliminar pedido"
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
                           </div>
-                        </div>
-
-                        <div className="mt-3 overflow-x-auto rounded-lg border border-gray-200 bg-white p-3">
-                          <table className="w-full text-left text-xs">
-                            <thead>
-                              <tr className="border-b text-gray-400">
-                                <th className="pb-1 font-medium">Producto</th>
-                                <th className="pb-1 text-center font-medium">Cantidad</th>
-                                <th className="pb-1 text-right font-medium">Precio Proveedor</th>
-                                <th className="pb-1 text-right font-medium">Subtotal</th>
-                                <th className="pb-1 text-right font-medium text-blue-600">
-                                  Envío x Unidad
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                              {ord.items.map((it) => (
-                                <tr key={it.id}>
-                                  <td className="py-2 font-medium text-gray-800">{it.name}</td>
-                                  <td className="py-2 text-center font-semibold text-gray-700">
-                                    {it.quantity} u.
-                                  </td>
-                                  <td className="py-2 text-right font-mono text-gray-700">
-                                    ${it.unitPrice.toLocaleString('es-AR')}
-                                  </td>
-                                  <td className="py-2 text-right font-mono font-bold text-gray-900">
-                                    ${(it.quantity * it.unitPrice).toLocaleString('es-AR')}
-                                  </td>
-                                  <td className="py-2 text-right font-mono font-semibold text-blue-600">
-                                    +${shippingPerUnit.toFixed(1)}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                            <tfoot>
-                              <tr className="border-t border-gray-200 text-gray-500">
-                                <td colSpan={3} className="pt-2 font-medium">
-                                  Costo de envío / flete del pedido:
-                                </td>
-                                <td colSpan={2} className="pt-2 text-right font-bold text-blue-600">
-                                  ${ord.shippingCost.toLocaleString('es-AR')}
-                                </td>
-                              </tr>
-                            </tfoot>
-                          </table>
                         </div>
                       </div>
                     );
@@ -882,15 +1028,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
 
                 <button
                   type="button"
-                  onClick={() => {
-                    setCardFormDate(new Date().toISOString().split('T')[0]);
-                    setCardFormTitle('');
-                    setCardFormQty('');
-                    setCardFormUnitPrice('');
-                    setCardFormTotalPrice('');
-                    setCardFormNotes('');
-                    setShowCardModal(true);
-                  }}
+                  onClick={handleOpenNewCardModal}
                   className="inline-flex items-center gap-2 rounded-xl border-2 border-amber-600 bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-amber-700"
                 >
                   <Plus className="h-4 w-4" />+ NUEVO GASTO
@@ -922,19 +1060,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                             {c.title}
                             {c.notes && <p className="text-[11px] text-gray-400">{c.notes}</p>}
                           </td>
-                          <td className="px-4 py-3 text-gray-500">
-                            {/* Fecha editable inline */}
-                            <div className="inline-flex items-center gap-1 rounded border border-gray-200 bg-white px-2 py-0.5">
-                              <Calendar className="h-3 w-3 text-gray-400" />
-                              <input
-                                type="date"
-                                value={c.date}
-                                onChange={(e) => handleUpdateCardDate(c.id, e.target.value)}
-                                className="border-none bg-transparent p-0 text-xs text-gray-700 focus:outline-none"
-                                title="Hacé clic para cambiar la fecha"
-                              />
-                            </div>
-                          </td>
+                          <td className="px-4 py-3 text-gray-500">{c.date}</td>
                           <td className="px-4 py-3 text-center font-bold text-gray-700">
                             {c.quantity.toLocaleString('es-AR')} u.
                           </td>
@@ -945,18 +1071,31 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                             ${(c.quantity * c.unitPrice).toLocaleString('es-AR')}
                           </td>
                           <td className="px-4 py-3 text-center">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (confirm('¿Eliminar este registro?')) {
-                                  setCards(cards.filter((card) => card.id !== c.id));
-                                  toast.success('Eliminado');
-                                }
-                              }}
-                              className="text-gray-400 hover:text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            <div className="flex items-center justify-center gap-1">
+                              {/* Modificar gasto */}
+                              <button
+                                type="button"
+                                onClick={() => handleEditCard(c)}
+                                className="rounded-md p-1.5 text-gray-400 transition hover:bg-amber-50 hover:text-amber-700"
+                                title="Modificar gasto"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                              {/* Eliminar gasto */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (confirm('¿Eliminar este registro?')) {
+                                    setCards(cards.filter((card) => card.id !== c.id));
+                                    toast.success('Eliminado');
+                                  }
+                                }}
+                                className="rounded-md p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+                                title="Eliminar gasto"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -987,14 +1126,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
 
                 <button
                   type="button"
-                  onClick={() => {
-                    setOtherFormDate(new Date().toISOString().split('T')[0]);
-                    setOtherFormConcept('');
-                    setOtherFormQty(1);
-                    setOtherFormUnitPrice('');
-                    setOtherFormNotes('');
-                    setShowOtherModal(true);
-                  }}
+                  onClick={handleOpenNewOtherModal}
                   className="inline-flex items-center gap-2 rounded-xl border-2 border-purple-700 bg-purple-700 px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-purple-800"
                 >
                   <Plus className="h-4 w-4" />+ NUEVO GASTO
@@ -1026,19 +1158,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                             {o.concept}
                             {o.notes && <p className="text-[11px] text-gray-400">{o.notes}</p>}
                           </td>
-                          <td className="px-4 py-3 text-gray-500">
-                            {/* Fecha editable inline */}
-                            <div className="inline-flex items-center gap-1 rounded border border-gray-200 bg-white px-2 py-0.5">
-                              <Calendar className="h-3 w-3 text-gray-400" />
-                              <input
-                                type="date"
-                                value={o.date}
-                                onChange={(e) => handleUpdateOtherDate(o.id, e.target.value)}
-                                className="border-none bg-transparent p-0 text-xs text-gray-700 focus:outline-none"
-                                title="Hacé clic para cambiar la fecha"
-                              />
-                            </div>
-                          </td>
+                          <td className="px-4 py-3 text-gray-500">{o.date}</td>
                           <td className="px-4 py-3 text-center font-bold text-gray-700">
                             {o.quantity} u.
                           </td>
@@ -1049,18 +1169,33 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                             ${(o.quantity * o.unitPrice).toLocaleString('es-AR')}
                           </td>
                           <td className="px-4 py-3 text-center">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (confirm('¿Eliminar este gasto?')) {
-                                  setOtherExpenses(otherExpenses.filter((oth) => oth.id !== o.id));
-                                  toast.success('Eliminado');
-                                }
-                              }}
-                              className="text-gray-400 hover:text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            <div className="flex items-center justify-center gap-1">
+                              {/* Modificar otro gasto */}
+                              <button
+                                type="button"
+                                onClick={() => handleEditOther(o)}
+                                className="rounded-md p-1.5 text-gray-400 transition hover:bg-purple-50 hover:text-purple-700"
+                                title="Modificar gasto"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                              {/* Eliminar otro gasto */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (confirm('¿Eliminar este gasto?')) {
+                                    setOtherExpenses(
+                                      otherExpenses.filter((oth) => oth.id !== o.id)
+                                    );
+                                    toast.success('Eliminado');
+                                  }
+                                }}
+                                className="rounded-md p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+                                title="Eliminar gasto"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1196,7 +1331,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                             <span className="block text-[10px] text-gray-400">Piso real</span>
                           </td>
 
-                          {/* Precio Actual en la Web (NUEVO) */}
+                          {/* Precio Actual en la Web */}
                           <td className="px-4 py-3 text-center">
                             {webProduct ? (
                               <div className="inline-flex flex-col items-center">
@@ -1422,7 +1557,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
       </div>
 
       {/* ===================================================================== */}
-      {/* MODAL 1: NUEVO PEDIDO                                                 */}
+      {/* MODAL 1: NUEVO O MODIFICAR PEDIDO                                     */}
       {/* ===================================================================== */}
       {showOrderModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
@@ -1430,11 +1565,16 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
             <div className="flex items-center justify-between border-b pb-3">
               <div className="flex items-center gap-2">
                 <Package className="h-5 w-5 text-[#254642]" />
-                <h3 className="text-lg font-bold text-[#254642]">Cargar Nuevo Pedido</h3>
+                <h3 className="text-lg font-bold text-[#254642]">
+                  {editingOrderId ? 'Modificar Pedido' : 'Cargar Nuevo Pedido'}
+                </h3>
               </div>
               <button
                 type="button"
-                onClick={() => setShowOrderModal(false)}
+                onClick={() => {
+                  setShowOrderModal(false);
+                  setEditingOrderId(null);
+                }}
                 className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
               >
                 <X className="h-5 w-5" />
@@ -1706,7 +1846,10 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
               <div className="flex justify-end gap-3 border-t pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowOrderModal(false)}
+                  onClick={() => {
+                    setShowOrderModal(false);
+                    setEditingOrderId(null);
+                  }}
                   className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
                 >
                   Cancelar
@@ -1715,7 +1858,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                   type="submit"
                   className="rounded-lg bg-[#254642] px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#1a3330]"
                 >
-                  Guardar Pedido
+                  {editingOrderId ? 'Guardar Cambios' : 'Guardar Pedido'}
                 </button>
               </div>
             </form>
@@ -1724,7 +1867,139 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
       )}
 
       {/* ===================================================================== */}
-      {/* MODAL 2: NUEVO PACKAGING                                              */}
+      {/* MODAL EMERGENTE: VER PEDIDO COMPLETO (EL OJO 👁️)                     */}
+      {/* ===================================================================== */}
+      {viewingOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg bg-[#254642] p-1.5 text-white">
+                  <Package className="h-5 w-5 text-[#D4AF37]" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">
+                    {viewingOrder.supplier || viewingOrder.title}
+                  </h3>
+                  <span className="text-xs text-gray-500">
+                    Fecha del pedido: {viewingOrder.date}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewingOrder(null)}
+                className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Resumen rápido del pedido */}
+            <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-stone-50 p-3 text-center">
+              <div>
+                <span className="block text-[10px] font-bold text-gray-400 uppercase">
+                  Productos
+                </span>
+                <span className="font-mono text-sm font-bold text-gray-800">
+                  {viewingOrder.items.reduce((s, it) => s + it.quantity, 0)} u.
+                </span>
+              </div>
+              <div>
+                <span className="block text-[10px] font-bold text-blue-500 uppercase">
+                  Flete / Envío
+                </span>
+                <span className="font-mono text-sm font-bold text-blue-900">
+                  ${viewingOrder.shippingCost.toLocaleString('es-AR')}
+                </span>
+              </div>
+              <div>
+                <span className="block text-[10px] font-bold text-[#254642] uppercase">
+                  Total Pedido
+                </span>
+                <span className="font-mono text-sm font-black text-[#254642]">
+                  $
+                  {(
+                    viewingOrder.items.reduce((s, it) => s + it.quantity * it.unitPrice, 0) +
+                    viewingOrder.shippingCost
+                  ).toLocaleString('es-AR')}
+                </span>
+              </div>
+            </div>
+
+            {/* Detalle de productos */}
+            <div className="mt-4 overflow-x-auto rounded-xl border border-gray-200">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b bg-gray-50 text-gray-500">
+                    <th className="px-3 py-2 font-medium">Producto</th>
+                    <th className="px-3 py-2 text-center font-medium">Cantidad</th>
+                    <th className="px-3 py-2 text-right font-medium">Precio Proveedor</th>
+                    <th className="px-3 py-2 text-right font-medium">Subtotal</th>
+                    <th className="px-3 py-2 text-right font-medium text-blue-600">
+                      Envío x Unidad
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {viewingOrder.items.map((it) => {
+                    const totalQty = viewingOrder.items.reduce((s, x) => s + x.quantity, 0);
+                    const shippingPerUnit = totalQty > 0 ? viewingOrder.shippingCost / totalQty : 0;
+                    return (
+                      <tr key={it.id}>
+                        <td className="px-3 py-2.5 font-medium text-gray-800">{it.name}</td>
+                        <td className="px-3 py-2.5 text-center font-bold text-gray-700">
+                          {it.quantity} u.
+                        </td>
+                        <td className="px-3 py-2.5 text-right font-mono text-gray-700">
+                          ${it.unitPrice.toLocaleString('es-AR')}
+                        </td>
+                        <td className="px-3 py-2.5 text-right font-mono font-bold text-gray-900">
+                          ${(it.quantity * it.unitPrice).toLocaleString('es-AR')}
+                        </td>
+                        <td className="px-3 py-2.5 text-right font-mono font-semibold text-blue-600">
+                          +${shippingPerUnit.toFixed(1)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {viewingOrder.notes && (
+              <div className="mt-3 rounded-lg bg-gray-50 p-2.5 text-xs text-gray-600">
+                <span className="font-bold text-gray-700">Notas: </span>
+                {viewingOrder.notes}
+              </div>
+            )}
+
+            <div className="mt-5 flex justify-end gap-2 border-t pt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  const ordToEdit = viewingOrder;
+                  setViewingOrder(null);
+                  handleEditOrder(ordToEdit);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Modificar este pedido
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewingOrder(null)}
+                className="rounded-lg bg-[#254642] px-4 py-1.5 text-xs font-bold text-white hover:bg-[#1a3330]"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* MODAL 2: NUEVO O MODIFICAR PACKAGING                                  */}
       {/* ===================================================================== */}
       {showCardModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
@@ -1732,11 +2007,16 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
             <div className="flex items-center justify-between border-b pb-3">
               <div className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5 text-amber-600" />
-                <h3 className="text-lg font-bold text-gray-800">Cargar Packaging / Tarjetas</h3>
+                <h3 className="text-lg font-bold text-gray-800">
+                  {editingCardId ? 'Modificar Packaging / Tarjetas' : 'Cargar Packaging / Tarjetas'}
+                </h3>
               </div>
               <button
                 type="button"
-                onClick={() => setShowCardModal(false)}
+                onClick={() => {
+                  setShowCardModal(false);
+                  setEditingCardId(null);
+                }}
                 className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
               >
                 <X className="h-5 w-5" />
@@ -1838,7 +2118,10 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
               <div className="flex justify-end gap-3 border-t pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowCardModal(false)}
+                  onClick={() => {
+                    setShowCardModal(false);
+                    setEditingCardId(null);
+                  }}
                   className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
                 >
                   Cancelar
@@ -1847,7 +2130,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                   type="submit"
                   className="rounded-lg bg-amber-700 px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-800"
                 >
-                  Guardar
+                  {editingCardId ? 'Guardar Cambios' : 'Guardar'}
                 </button>
               </div>
             </form>
@@ -1856,7 +2139,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
       )}
 
       {/* ===================================================================== */}
-      {/* MODAL 3: NUEVO OTRO GASTO                                             */}
+      {/* MODAL 3: NUEVO O MODIFICAR OTRO GASTO                                 */}
       {/* ===================================================================== */}
       {showOtherModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
@@ -1864,11 +2147,16 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
             <div className="flex items-center justify-between border-b pb-3">
               <div className="flex items-center gap-2">
                 <Layers className="h-5 w-5 text-purple-700" />
-                <h3 className="text-lg font-bold text-gray-800">Cargar Otro Gasto</h3>
+                <h3 className="text-lg font-bold text-gray-800">
+                  {editingOtherId ? 'Modificar Gasto' : 'Cargar Otro Gasto'}
+                </h3>
               </div>
               <button
                 type="button"
-                onClick={() => setShowOtherModal(false)}
+                onClick={() => {
+                  setShowOtherModal(false);
+                  setEditingOtherId(null);
+                }}
                 className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
               >
                 <X className="h-5 w-5" />
@@ -1968,7 +2256,10 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
               <div className="flex justify-end gap-3 border-t pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowOtherModal(false)}
+                  onClick={() => {
+                    setShowOtherModal(false);
+                    setEditingOtherId(null);
+                  }}
                   className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
                 >
                   Cancelar
@@ -1977,7 +2268,7 @@ export default function AdminExpenses({ getToken }: AdminExpensesProps = {}) {
                   type="submit"
                   className="rounded-lg bg-purple-800 px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-purple-900"
                 >
-                  Guardar Gasto
+                  {editingOtherId ? 'Guardar Cambios' : 'Guardar Gasto'}
                 </button>
               </div>
             </form>
