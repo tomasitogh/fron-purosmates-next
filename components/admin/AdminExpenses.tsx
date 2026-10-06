@@ -70,7 +70,7 @@ const SUPPLIERS_STORAGE_KEY = 'pm-admin-suppliers-v1';
 const DEFAULT_SUPPLIERS = ['Argentino al Límite', 'Aquiles Rosas', 'Ponele H'];
 
 // Colores oficiales de los productos de Puros Mates (solo los publicados)
-const PUROS_COLORS = ['Negro', 'Marrón', 'Suela', 'Chocolate', 'Algarrobo', 'Blanco'];
+const PUROS_COLORS = ['Negro', 'Marrón', 'Suela', 'Chocolate', 'Algarrobo'];
 
 // Catálogo oficial de productos de Puros Mates (activos e inactivos, disponibles siempre)
 const OFFICIAL_PUROS_PRODUCTS: { id: number; name: string; price: number; active: boolean }[] = [
