@@ -125,7 +125,7 @@ export function virolaArcPath(spanDeg = 38, radius = TEXT_RADIUS): string {
   const y1 = Number((-radius * (1 - Math.cos(halfRad))).toFixed(2));
   const x2 = Number((radius * Math.sin(halfRad)).toFixed(2));
   const y2 = y1;
-  return `M ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2}`;
+  return `M ${x1} ${y1} A ${radius} ${radius} 0 0 0 ${x2} ${y2}`;
 }
 
 export const VIROLA_LINE_ARC_PATH = virolaArcPath(38, TEXT_RADIUS);

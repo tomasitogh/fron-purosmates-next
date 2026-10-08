@@ -98,7 +98,7 @@ describe('constants del customizer (virola + cuero)', () => {
 
   it('VIROLA_LINE_ARC_PATH define un arco curvo concéntrico con la virola (R=155)', () => {
     assert.ok(VIROLA_LINE_ARC_PATH.startsWith('M'));
-    assert.ok(VIROLA_LINE_ARC_PATH.includes(`A ${TEXT_RADIUS} ${TEXT_RADIUS}`));
+    assert.ok(VIROLA_LINE_ARC_PATH.includes(`A ${TEXT_RADIUS} ${TEXT_RADIUS} 0 0 0`));
     assert.equal(DEFAULT_LINE_STROKE_WIDTH, 2.5);
   });
 });
