@@ -6,6 +6,8 @@ import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import {
   AVAILABLE_FONTS,
+  DEFAULT_LINE_STROKE_WIDTH,
+  HEART_PATH,
   LEATHER_BG_COLOR,
   LEATHER_BORDER_COLOR,
   LEATHER_ENGRAVE_COLOR,
@@ -15,6 +17,7 @@ import {
   SEAM_BORDER_COLOR,
   SEAM_THREAD_COLOR,
   SEAM_WIDTH,
+  VIROLA_LINE_ARC_PATH,
   shapePoints,
 } from './constants';
 import type { DesignElement, ShapeElement } from './types';
@@ -26,6 +29,7 @@ export interface ElementPatch {
   scale?: number;
   angle?: number;
   fontSize?: number;
+  strokeWidth?: number;
 }
 
 interface LeatherCanvasProps {
@@ -42,23 +46,28 @@ function shapeNode(el: ShapeElement, common: Record<string, unknown>): React.Rea
     return <Circle key={el.id} {...common} radius={20} fill={LEATHER_ENGRAVE_COLOR} />;
   }
   if (el.shape === 'line') {
+    const strokeWidth = el.strokeWidth ?? DEFAULT_LINE_STROKE_WIDTH;
     return (
-      <Line
+      <Path
         key={el.id}
         {...common}
-        points={[-20, 0, 20, 0]}
+        data={VIROLA_LINE_ARC_PATH}
         stroke={LEATHER_ENGRAVE_COLOR}
-        strokeWidth={LINE_STROKE_WIDTH}
+        strokeWidth={strokeWidth}
         lineCap="round"
-        hitStrokeWidth={24}
+        fillEnabled={false}
+        hitStrokeWidth={Math.max(24, strokeWidth + 16)}
       />
     );
+  }
+  if (el.shape === 'heart') {
+    return <Path key={el.id} {...common} data={HEART_PATH} fill={LEATHER_ENGRAVE_COLOR} />;
   }
   return (
     <Line
       key={el.id}
       {...common}
-      points={shapePoints(el.shape)}
+      points={shapePoints(el.shape as any)}
       closed
       fill={LEATHER_ENGRAVE_COLOR}
     />

@@ -17,6 +17,7 @@ import {
   Home,
   Info,
   Menu,
+  Palette,
   Search,
   ShoppingBag,
   ShoppingCart,
@@ -142,6 +143,16 @@ export default function Navbar() {
                 }`}
               >
                 Tienda
+              </Link>
+              <Link
+                href="/customize"
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold tracking-wide uppercase transition xl:px-4 xl:text-sm ${
+                  pathname === '/customize' || pathname === '/customizer'
+                    ? 'bg-white/15 text-[#D4AF37]'
+                    : 'text-[#F5F5DC] hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                Personalizador
               </Link>
               <Link
                 href="/regalos-empresariales"
@@ -423,7 +434,17 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Opción 3: Mi Carrito */}
+          {/* Opción 3: Personalizador */}
+          <Link
+            href="/customize"
+            onClick={closeMenu}
+            className="flex items-center gap-3 rounded-xl px-4 py-3 font-medium text-[#F5F5DC] transition hover:bg-white/10 hover:text-white"
+          >
+            <Palette className="h-5 w-5 text-[#D4AF37]" />
+            <span>Personalizador</span>
+          </Link>
+
+          {/* Opción 4: Mi Carrito */}
           <Link
             href="/carrito"
             onClick={closeMenu}
@@ -440,7 +461,7 @@ export default function Navbar() {
             )}
           </Link>
 
-          {/* Opción 4: About Us */}
+          {/* Opción 5: About Us */}
           <Link
             href="/nosotros"
             onClick={closeMenu}
@@ -450,7 +471,7 @@ export default function Navbar() {
             <span>About Us</span>
           </Link>
 
-          {/* Opción 5: Regalos Empresariales */}
+          {/* Opción 6: Regalos Empresariales */}
           <Link
             href="/regalos-empresariales"
             onClick={closeMenu}
@@ -460,7 +481,7 @@ export default function Navbar() {
             <span>Regalos Empresariales</span>
           </Link>
 
-          {/* Opción 6: Rincón Matero */}
+          {/* Opción 7: Rincón Matero */}
           <Link
             href="/rincon-matero"
             onClick={closeMenu}

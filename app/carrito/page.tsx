@@ -16,7 +16,7 @@ import {
 } from '@/redux/cartSlice';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 // import PaymentMethodModal from "@/components/PaymentMethodModal"; // [DESHABILITADO] MP — no se usa hasta reactivar
@@ -34,7 +34,12 @@ import {
 } from 'lucide-react';
 import ProductModal, { Product } from '@/components/ProductModal';
 import { generateSvgFromDesign } from '@/lib/customize/svg-generator';
-import { DESIGN_STORAGE_KEY } from '@/components/customize/constants';
+import {
+  ATTACHED_SVG_NAME_KEY,
+  ATTACHED_SVG_STORAGE_KEY,
+  DESIGN_STORAGE_KEY,
+  LEATHER_STORAGE_KEY,
+} from '@/components/customize/constants';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 
@@ -105,26 +110,65 @@ export default function Carrito() {
     }
   }, [isAuthenticated, getToken]);
 
+  const loadDesignFromStorage = useCallback((): boolean => {
+    try {
+      // 1. Prioridad: SVG adjuntado directamente desde el botón "Adjuntar personalizado en el pedido"
+      const attachedSvg = localStorage.getItem(ATTACHED_SVG_STORAGE_KEY);
+      const attachedName = localStorage.getItem(ATTACHED_SVG_NAME_KEY);
+      if (attachedSvg && attachedSvg.includes('<svg')) {
+        setSvgContent(attachedSvg);
+        setSvgPreviewImg(null);
+        setSvgFileName(attachedName || 'Diseño de grabado personalizado');
+        return true;
+      }
+
+      // 2. Fallback: diseño guardado en virola o cuero
+      const virolaRaw = localStorage.getItem(DESIGN_STORAGE_KEY);
+      const leatherRaw = localStorage.getItem(LEATHER_STORAGE_KEY);
+      const raw = virolaRaw || leatherRaw;
+      if (raw) {
+        const design = JSON.parse(raw);
+        if (design.elements && design.elements.length > 0) {
+          generateSvgFromDesign(design)
+            .then((svg) => {
+              setSvgContent(svg);
+              setSvgPreviewImg(null);
+              setSvgFileName(
+                design.surface === 'leather'
+                  ? 'Grabado en Cuero (Personalizador)'
+                  : 'Grabado en Virola (Personalizador)'
+              );
+            })
+            .catch(() => {});
+          return true;
+        }
+      }
+    } catch {
+      // Storage o parse error silencioso
+    }
+    return false;
+  }, []);
+
   useEffect(() => {
     if (!svgContent && items.some((item) => item.hasCustomization)) {
-      try {
-        const raw = localStorage.getItem(DESIGN_STORAGE_KEY);
-        if (raw) {
-          const design = JSON.parse(raw);
-          if (design.elements && design.elements.length > 0) {
-            generateSvgFromDesign(design)
-              .then((svg) => {
-                setSvgContent(svg);
-                setSvgFileName('Diseño del Personalizador');
-              })
-              .catch(() => {});
-          }
-        }
-      } catch {
-        // Storage o parse error silencioso
-      }
+      loadDesignFromStorage();
     }
-  }, [items, svgContent]);
+  }, [items, svgContent, loadDesignFromStorage]);
+
+  // Sincronizar automáticamente si el usuario diseñó en otra pestaña/ventana o volvió al carrito
+  useEffect(() => {
+    const handleSync = () => {
+      if (!svgContent && items.some((item) => item.hasCustomization)) {
+        loadDesignFromStorage();
+      }
+    };
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('focus', handleSync);
+    return () => {
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('focus', handleSync);
+    };
+  }, [svgContent, items, loadDesignFromStorage]);
 
   const handleConfirmCart = () => {
     setShowCheckout(true);
@@ -898,14 +942,14 @@ export default function Carrito() {
 
                 {/* Área de subida de archivo */}
                 {!svgContent ? (
-                  <div>
+                  <div className="space-y-3">
                     <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50/50 p-6 text-center transition hover:border-[#D4AF37] hover:bg-amber-50/20">
                       <Upload className="mb-2 h-8 w-8 text-gray-400" />
                       <span className="text-sm font-semibold text-gray-800">
-                        Subir archivo SVG de grabado
+                        Subir archivo de grabado
                       </span>
                       <span className="mt-1 text-xs text-gray-500">
-                        Hacé clic acá para seleccionar tu archivo SVG
+                        Hacé clic acá para seleccionar tu archivo (.svg, imagen o captura)
                       </span>
                       <input
                         type="file"
@@ -914,10 +958,29 @@ export default function Carrito() {
                         onChange={handleUploadSvgFile}
                       />
                     </label>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const loaded = loadDesignFromStorage();
+                        if (loaded) {
+                          toast.success('¡Diseño del personalizador cargado con éxito!');
+                        } else {
+                          toast(
+                            'No encontramos un diseño guardado aún. Podés diseñarlo haciendo clic en el botón de arriba.',
+                            { icon: '✨' }
+                          );
+                        }
+                      }}
+                      className="flex w-full items-center justify-center gap-2 rounded-lg border border-stone-200 bg-stone-50 py-2.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-100 active:scale-[0.99]"
+                    >
+                      <Sparkles className="h-4 w-4 text-[#D4AF37]" />
+                      <span>Cargar mi diseño guardado del personalizador</span>
+                    </button>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-green-200 bg-green-50/40 p-3">
                       <div className="flex items-center gap-2">
                         <CheckCircle className="h-5 w-5 text-green-600" />
                         <div>
@@ -927,18 +990,26 @@ export default function Carrito() {
                           <p className="text-xs text-green-700">Diseño listo para grabado láser</p>
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (svgPreviewImg) URL.revokeObjectURL(svgPreviewImg);
-                          setSvgContent(null);
-                          setSvgPreviewImg(null);
-                          setSvgFileName(null);
-                        }}
-                        className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-100"
-                      >
-                        Cambiar diseño
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <a
+                          href="/customize"
+                          className="rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 transition hover:bg-stone-50"
+                        >
+                          Editar diseño
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (svgPreviewImg) URL.revokeObjectURL(svgPreviewImg);
+                            setSvgContent(null);
+                            setSvgPreviewImg(null);
+                            setSvgFileName(null);
+                          }}
+                          className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-100"
+                        >
+                          Cambiar archivo
+                        </button>
+                      </div>
                     </div>
 
                     {/* Visor interactivo del diseño sobre fondo neutral */}

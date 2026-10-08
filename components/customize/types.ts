@@ -11,7 +11,7 @@
 
 export type CustomizeSurface = 'virola' | 'leather';
 
-export type ShapeKind = 'line' | 'triangle' | 'square' | 'circle' | 'star';
+export type ShapeKind = 'heart' | 'star' | 'line' | 'triangle' | 'square' | 'circle';
 
 interface ElementBase {
   id: string;
@@ -44,6 +44,8 @@ export interface ShapeElement extends ElementBase {
   y: number;
   /** Escala uniforme (1 = tamaño base definido en constants.ts) */
   scale: number;
+  /** Grosor del trazo para grabado láser (ej: líneas curvas o divisores) */
+  strokeWidth?: number;
 }
 
 /** Imagen del usuario ya vectorizada a un path SVG (via potrace en el servidor). */

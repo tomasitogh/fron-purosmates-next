@@ -1,12 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { vectorizeImage } from '@/app/customize/actions';
 import { generateSvgFromDesign } from '@/lib/customize/svg-generator';
+import { selectCartItems, toggleCustomization } from '@/redux/cartSlice';
+import type { AppDispatch } from '@/redux/store';
 import {
+  ATTACHED_SVG_NAME_KEY,
+  ATTACHED_SVG_STORAGE_KEY,
   AUTOSAVE_DEBOUNCE_MS,
   DEFAULT_FONT_FAMILY,
+  DEFAULT_LINE_STROKE_WIDTH,
   DESIGN_STORAGE_KEY,
   LEATHER_STORAGE_KEY,
   TEXT_RADIUS,
@@ -38,6 +45,10 @@ function loadSavedDesign(key: string): DesignElement[] {
 }
 
 export default function CustomizerShell() {
+  const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
+  const cartItems = useSelector(selectCartItems);
+
   const [surface, setSurface] = useState<CustomizeSurface>('virola');
   const [virolaElements, setVirolaElements] = useState<DesignElement[]>(() =>
     loadSavedDesign(DESIGN_STORAGE_KEY)
@@ -90,14 +101,39 @@ export default function CustomizerShell() {
   };
 
   const handleAddShape = (shape: ShapeKind) => {
+    const isLine = shape === 'line';
+    let x = 0;
+    let y = TEXT_RADIUS;
+    let rotation = 0;
+
+    if (surface === 'leather') {
+      x = 120;
+      y = 0;
+    } else if (isLine) {
+      // Si ya hay una línea en el lateral izquierdo, colocar la siguiente en el lateral derecho
+      const hasLeftLine = elements.some(
+        (e) => e.type === 'shape' && e.shape === 'line' && e.x < -40
+      );
+      if (hasLeftLine) {
+        x = TEXT_RADIUS;
+        y = 0;
+        rotation = 270;
+      } else {
+        x = -TEXT_RADIUS;
+        y = 0;
+        rotation = 90;
+      }
+    }
+
     const el: DesignElement = {
       id: nextId(),
       type: 'shape',
       shape,
-      x: surface === 'leather' ? 120 : 0,
-      y: surface === 'leather' ? 0 : TEXT_RADIUS,
-      rotation: 0,
+      x,
+      y,
+      rotation,
       scale: 1,
+      strokeWidth: isLine ? DEFAULT_LINE_STROKE_WIDTH : undefined,
     };
     setElements((prev) => [...prev, el]);
     setSelectedId(el.id);
@@ -186,8 +222,62 @@ export default function CustomizerShell() {
       return;
     }
     const design: CustomizeDesign = { version: 1, surface, elements };
-    console.log('[customize] Diseño confirmado:', design);
-    toast.success('¡Diseño listo! Podés descargar la matriz SVG con el botón superior.');
+    const storageKey = surface === 'virola' ? DESIGN_STORAGE_KEY : LEATHER_STORAGE_KEY;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(design));
+      toast.success('¡Diseño guardado con éxito!');
+    } catch {
+      toast.error('No se pudo guardar el diseño.');
+    }
+  };
+
+  const handleAttachToOrder = async () => {
+    if (elements.length === 0) {
+      toast.error('Agregá al menos un texto o figura a tu mate antes de adjuntarlo.');
+      return;
+    }
+    const toastId = toast.loading('Adjuntando tu diseño al pedido…');
+    try {
+      const svg = await generateSvgFromDesign({ version: 1, surface, elements });
+      const surfaceName = surface === 'virola' ? 'Virola' : 'Base-Cuero';
+      const fileName = `Grabado-${surfaceName}.svg`;
+
+      const design: CustomizeDesign = { version: 1, surface, elements };
+      const storageKey = surface === 'virola' ? DESIGN_STORAGE_KEY : LEATHER_STORAGE_KEY;
+
+      localStorage.setItem(storageKey, JSON.stringify(design));
+      localStorage.setItem(ATTACHED_SVG_STORAGE_KEY, svg);
+      localStorage.setItem(ATTACHED_SVG_NAME_KEY, fileName);
+      window.dispatchEvent(new Event('storage'));
+
+      // Si el cliente ya tiene un mate en el carrito que puede grabarse, le activamos el grabado automáticamente
+      const customizableItem = cartItems.find((item) => item.isCustomizable);
+      const alreadyHasCustomization = cartItems.some((item) => item.hasCustomization);
+
+      if (customizableItem && !alreadyHasCustomization) {
+        dispatch(
+          toggleCustomization({
+            variantId: customizableItem.variantId,
+            hasCustomization: true,
+          })
+        );
+      }
+
+      toast.success('¡Diseño adjuntado con éxito!', { id: toastId });
+
+      if (cartItems.length > 0) {
+        router.push('/carrito');
+      } else {
+        toast('Elegí el mate que más te guste en la tienda para aplicarlo.', {
+          icon: '🧉',
+          duration: 4000,
+        });
+        router.push('/shop?category=mate');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('No se pudo adjuntar el diseño.', { id: toastId });
+    }
   };
 
   return (
@@ -276,6 +366,7 @@ export default function CustomizerShell() {
           onDeselect={() => setSelectedId(null)}
           onDownloadSvg={handleDownloadSvg}
           onConfirm={handleConfirm}
+          onAttachToOrder={handleAttachToOrder}
         />
       </div>
     </div>

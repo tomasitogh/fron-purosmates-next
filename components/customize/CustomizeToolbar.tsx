@@ -3,18 +3,18 @@
 import { useRef, useState } from 'react';
 import {
   Check,
-  Circle,
   Download,
+  Heart,
   ImagePlus,
   Loader2,
   Minus,
-  Square,
+  Save,
+  ShoppingCart,
   Star,
   Trash2,
-  Triangle,
   Type,
 } from 'lucide-react';
-import { AVAILABLE_FONTS } from './constants';
+import { AVAILABLE_FONTS, DEFAULT_LINE_STROKE_WIDTH, TEXT_RADIUS } from './constants';
 import type { CustomizeSurface, DesignElement, ShapeKind } from './types';
 
 export interface SelectedElementPatch {
@@ -24,6 +24,9 @@ export interface SelectedElementPatch {
   angle?: number;
   rotation?: number;
   scale?: number;
+  strokeWidth?: number;
+  x?: number;
+  y?: number;
 }
 
 interface CustomizeToolbarProps {
@@ -38,21 +41,18 @@ interface CustomizeToolbarProps {
   onDeselect: () => void;
   onDownloadSvg: () => void;
   onConfirm: () => void;
+  onAttachToOrder: () => void;
 }
 
-const SHAPE_BUTTONS: { kind: ShapeKind; label: string; Icon: typeof Minus }[] = [
-  { kind: 'line', label: 'Línea', Icon: Minus },
-  { kind: 'triangle', label: 'Triángulo', Icon: Triangle },
-  { kind: 'square', label: 'Cuadrado', Icon: Square },
-  { kind: 'circle', label: 'Círculo', Icon: Circle },
+const SHAPE_BUTTONS: { kind: ShapeKind; label: string; Icon: typeof Heart }[] = [
+  { kind: 'heart', label: 'Corazón', Icon: Heart },
   { kind: 'star', label: 'Estrella', Icon: Star },
+  { kind: 'line', label: 'Línea', Icon: Minus },
 ];
 
-// Nota: `p-0` es OBLIGATORIO en botones solo-ícono de tamaño fijo.
-// globals.css heredó del template de Vite un `button { padding: 0.6em 1.2em }`
-// en @layer base que, sin p-0, deja ~10px útiles y comprime el ícono.
-const iconBtn =
-  'flex h-12 w-12 shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl border border-stone-200 bg-white p-0 text-stone-700 transition-colors active:bg-stone-100';
+// Nota: `p-2.5` es OBLIGATORIO para sobreescribir el `button { padding: 0.6em 1.2em }` de @layer base.
+const gridBtn =
+  'flex flex-col items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white p-2.5 text-stone-700 shadow-2xs transition hover:border-[#254642]/40 hover:bg-stone-50 active:scale-95 disabled:opacity-50';
 
 /**
  * Panel de controles del personalizador.
@@ -71,9 +71,10 @@ export default function CustomizeToolbar({
   onDeselect,
   onDownloadSvg,
   onConfirm,
+  onAttachToOrder,
 }: CustomizeToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [newText, setNewText] = useState('TU TEXTO');
+  const [newText, setNewText] = useState('');
 
   const editingText = selectedElement?.type === 'text' ? selectedElement : null;
   const editingTransform =
@@ -84,6 +85,25 @@ export default function CustomizeToolbar({
   // dentro de un contenedor de expresión JSX (ReferenceError en runtime).
   const editingTextRotation = editingText ? (editingText.rotation ?? 0) : 0;
   const editingTextAngle = editingText ? (editingText.angle ?? 0) : 0;
+
+  const isEditingLine = editingTransform?.type === 'shape' && editingTransform.shape === 'line';
+  const lineStrokeWidth = isEditingLine
+    ? (editingTransform.strokeWidth ?? DEFAULT_LINE_STROKE_WIDTH)
+    : DEFAULT_LINE_STROKE_WIDTH;
+  const lineRingAngle =
+    isEditingLine && surface === 'virola'
+      ? Math.round(
+          ((Math.atan2(editingTransform.x, editingTransform.y) * 180) / Math.PI + 360) % 360
+        )
+      : 0;
+
+  const handleSetLineAngle = (deg: number) => {
+    const rad = (deg * Math.PI) / 180;
+    const nx = Math.round(TEXT_RADIUS * Math.sin(rad));
+    const ny = Math.round(TEXT_RADIUS * Math.cos(rad));
+    const rot = Math.round((Math.atan2(-nx, ny) * 180) / Math.PI + 360) % 360;
+    onUpdateSelected({ x: nx, y: ny, rotation: rot });
+  };
 
   return (
     <aside className="w-full rounded-2xl border border-stone-200 bg-white p-4 shadow-sm md:w-80">
@@ -195,8 +215,59 @@ export default function CustomizeToolbar({
 
             {editingTransform && (
               <>
+                {isEditingLine && (
+                  <>
+                    <label className="block text-xs font-medium text-stone-500">
+                      Grosor de línea: {lineStrokeWidth.toFixed(1)} px
+                      <input
+                        type="range"
+                        min={1}
+                        max={8}
+                        step={0.5}
+                        value={lineStrokeWidth}
+                        onChange={(e) => onUpdateSelected({ strokeWidth: Number(e.target.value) })}
+                        className="mt-1 w-full accent-stone-800"
+                      />
+                    </label>
+
+                    {surface === 'virola' && (
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-medium text-stone-500">
+                          Posición en la virola: {lineRingAngle}°
+                          <input
+                            type="range"
+                            min={0}
+                            max={360}
+                            step={1}
+                            value={lineRingAngle}
+                            onChange={(e) => handleSetLineAngle(Number(e.target.value))}
+                            className="mt-1 w-full accent-stone-800"
+                          />
+                        </label>
+                        <div className="grid grid-cols-2 gap-1.5 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => handleSetLineAngle(270)}
+                            className="rounded-lg border border-stone-200 bg-stone-50 px-2 py-1.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-100"
+                          >
+                            👈 Lateral izq.
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSetLineAngle(90)}
+                            className="rounded-lg border border-stone-200 bg-stone-50 px-2 py-1.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-100"
+                          >
+                            👉 Lateral der.
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
                 <label className="block text-xs font-medium text-stone-500">
-                  Tamaño: {editingTransform.scale.toFixed(2)}x
+                  {isEditingLine ? 'Largo de la curva' : 'Tamaño'}:{' '}
+                  {editingTransform.scale.toFixed(2)}x
                   <input
                     type="range"
                     min={0.2}
@@ -207,20 +278,26 @@ export default function CustomizeToolbar({
                     className="mt-1 w-full accent-stone-800"
                   />
                 </label>
-                <label className="block text-xs font-medium text-stone-500">
-                  Rotación: {Math.round(editingTransform.rotation)}°
-                  <input
-                    type="range"
-                    min={0}
-                    max={360}
-                    step={1}
-                    value={editingTransform.rotation}
-                    onChange={(e) => onUpdateSelected({ rotation: Number(e.target.value) })}
-                    className="mt-1 w-full accent-stone-800"
-                  />
-                </label>
+
+                {!isEditingLine && (
+                  <label className="block text-xs font-medium text-stone-500">
+                    Rotación: {Math.round(editingTransform.rotation)}°
+                    <input
+                      type="range"
+                      min={0}
+                      max={360}
+                      step={1}
+                      value={editingTransform.rotation}
+                      onChange={(e) => onUpdateSelected({ rotation: Number(e.target.value) })}
+                      className="mt-1 w-full accent-stone-800"
+                    />
+                  </label>
+                )}
+
                 <p className="text-xs text-stone-400">
-                  También podés arrastrarlo y usar los puntos de las esquinas sobre el canvas.
+                  {isEditingLine && surface === 'virola'
+                    ? 'Podés arrastrar la línea por la virola para deslizarla con el dedo o mouse.'
+                    : 'También podés arrastrarlo y usar los puntos de las esquinas sobre el canvas.'}
                 </p>
               </>
             )}
@@ -228,86 +305,115 @@ export default function CustomizeToolbar({
         ) : (
           /* ---- Modo AGREGAR ---- */
           <div className="space-y-4">
-            <div className="flex gap-2">
+            {/* Input de texto y botón dinámico "Agregar texto" */}
+            <div className="space-y-2">
               <input
                 type="text"
                 value={newText}
                 onChange={(e) => setNewText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (newText.trim()) {
+                      onAddText(newText.trim());
+                      setNewText('');
+                    }
+                  }
+                }}
                 maxLength={40}
-                className="min-w-0 flex-1 rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
+                className="w-full rounded-xl border border-stone-300 px-3.5 py-2.5 text-sm transition focus:border-[#254642] focus:ring-1 focus:ring-[#254642] focus:outline-none"
                 placeholder="Escribí tu texto"
               />
-              <button
-                type="button"
-                onClick={() => newText.trim() && onAddText(newText.trim())}
-                className="flex shrink-0 items-center gap-1.5 rounded-lg bg-stone-800 px-3 py-2 text-sm font-medium text-white active:bg-stone-700"
-              >
-                <Type size={16} />
-                Texto
-              </button>
+              {newText.trim().length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (newText.trim()) {
+                      onAddText(newText.trim());
+                      setNewText('');
+                    }
+                  }}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#254642] p-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-[#1a3330] active:scale-[0.99]"
+                >
+                  <Type size={16} />
+                  <span>Agregar texto</span>
+                </button>
+              )}
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            {/* Elementos decorativos (Imagen, Corazón, Estrella, Línea) */}
+            <div>
+              <p className="mb-2 text-xs font-medium text-stone-500">Elementos decorativos</p>
+              <div className="grid grid-cols-4 gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className={gridBtn}
+                  title="Subir imagen"
+                >
+                  {uploading ? (
+                    <Loader2 size={20} className="animate-spin text-[#254642]" />
+                  ) : (
+                    <ImagePlus size={20} className="text-[#254642]" />
+                  )}
+                  <span className="text-[11px] font-medium">Imagen</span>
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/heic,image/heif,.heic,.heif"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) onUploadImage(file);
+                    e.target.value = '';
+                  }}
+                />
+                {SHAPE_BUTTONS.map(({ kind, label, Icon }) => (
+                  <button
+                    key={kind}
+                    type="button"
+                    onClick={() => onAddShape(kind)}
+                    className={gridBtn}
+                    title={label}
+                  >
+                    <Icon size={20} className="text-[#254642]" />
+                    <span className="text-[11px] font-medium">{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* ---- Acciones finales (visibles solo cuando no se está editando un elemento) ---- */}
+            <div className="mt-4 flex flex-col gap-2.5 border-t border-stone-100 pt-4">
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className={iconBtn}
-                title="Subir imagen"
+                onClick={onConfirm}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-stone-200 bg-stone-50 p-2.5 text-xs font-semibold text-stone-700 shadow-2xs transition hover:bg-stone-100 active:scale-[0.99]"
               >
-                {uploading ? (
-                  <Loader2 size={20} className="animate-spin" />
-                ) : (
-                  <ImagePlus size={20} />
-                )}
-                <span className="text-[10px]">Imagen</span>
+                <Save size={15} className="text-stone-500" />
+                Guardar diseño
               </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/heic,image/heif,.heic,.heif"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) onUploadImage(file);
-                  e.target.value = '';
-                }}
-              />
-              {SHAPE_BUTTONS.map(({ kind, label, Icon }) => (
-                <button
-                  key={kind}
-                  type="button"
-                  onClick={() => onAddShape(kind)}
-                  className={iconBtn}
-                  title={label}
-                >
-                  <Icon size={20} />
-                  <span className="text-[10px]">{label}</span>
-                </button>
-              ))}
+              <button
+                type="button"
+                onClick={onAttachToOrder}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#254642] p-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#1a3330] active:scale-[0.99]"
+              >
+                <ShoppingCart size={17} className="text-[#D4AF37]" />
+                Adjuntar personalizado en el pedido
+              </button>
+              <button
+                type="button"
+                onClick={onDownloadSvg}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white p-2.5 text-xs font-semibold text-stone-600 shadow-2xs transition hover:bg-stone-50 active:scale-[0.99]"
+              >
+                <Download size={15} />
+                Descargar SVG
+              </button>
             </div>
           </div>
         )}
-
-        {/* ---- Acciones finales (siempre visibles) ---- */}
-        <div className="mt-4 flex gap-2 border-t border-stone-100 pt-4">
-          <button
-            type="button"
-            onClick={onDownloadSvg}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-stone-300 px-4 py-3 text-sm font-semibold text-stone-700 active:bg-stone-100"
-          >
-            <Download size={16} />
-            Descargar SVG
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-stone-800 px-4 py-3 text-sm font-semibold text-white active:bg-stone-700"
-          >
-            <Check size={16} />
-            Confirmar
-          </button>
-        </div>
       </div>
     </aside>
   );

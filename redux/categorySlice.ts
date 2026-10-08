@@ -36,7 +36,18 @@ export const fetchCategories = createAsyncThunk(
     // but for now keeping consistency with other slices which use direct URL for server actions or full URL
     // If this is client side fetch, ideally we use /api/v1/categories if configured, but let's stick to base url for now
     const { data } = await axios.get(API_URL, config);
-    return (data.content || data) as Category[];
+    const rawItems = ((data.content || data) as Category[]) || [];
+    if (Array.isArray(rawItems)) {
+      const hasPlural = rawItems.some(
+        (c: any) => (c.description || '').trim().toLowerCase() === 'accesorios'
+      );
+      if (hasPlural) {
+        return rawItems.filter(
+          (c: any) => (c.description || '').trim().toLowerCase() !== 'accesorio'
+        );
+      }
+    }
+    return rawItems;
   }
 );
 

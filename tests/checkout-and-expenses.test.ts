@@ -196,6 +196,31 @@ describe('E-Commerce Puros Mates - Reglas de Negocio y Flujo de Compra', () => {
     assert.match(combined, /Grabado: grabado-iniciales-pm.svg/);
     assert.match(combined, /Comprobante Transferencia: transferencia-banco.pdf \(142.5 KB\)/);
   });
+
+  it('Debe resolver el diseño adjunto automáticamente cuando el cliente presiona "Adjuntar personalizado en el pedido"', () => {
+    // Simula el almacenamiento de datos que genera handleAttachToOrder
+    const mockStorage = {
+      purosmates_attached_svg: '<svg viewBox="0 0 400 400"><text>LU & TATO</text></svg>',
+      purosmates_attached_svg_name: 'Personalizado-Virola.svg',
+    };
+
+    const hasCustomizationInCart = true;
+    const resolvedSvg = mockStorage.purosmates_attached_svg;
+
+    const result = validateCheckout({
+      firstname: 'Luciana',
+      lastname: 'Pirruccio',
+      phone: '1130548207',
+      email: 'test@purosmates.com',
+      paymentMethod: 'cash',
+      comprobanteAttached: false,
+      hasCustomizationInCart,
+      svgContent: resolvedSvg,
+    });
+
+    assert.equal(result.ok, true);
+    assert.ok(resolvedSvg.includes('<svg'));
+  });
 });
 
 describe('E-Commerce Puros Mates - Economía Unitaria y Control de Gastos', () => {

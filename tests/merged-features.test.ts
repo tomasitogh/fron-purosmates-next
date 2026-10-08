@@ -1,8 +1,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  DEFAULT_LINE_STROKE_WIDTH,
   DESIGN_SIZE,
   ENGRAVE_COLOR,
+  HEART_PATH,
   INNER_RADIUS,
   LEATHER_HEIGHT,
   LEATHER_WIDTH,
@@ -13,6 +15,7 @@ import {
   TEXT_RADIUS,
   DEFAULT_FONT_FAMILY,
   AVAILABLE_FONTS,
+  VIROLA_LINE_ARC_PATH,
   ringClipPathData,
   ringTextPathData,
   shapePoints,
@@ -92,6 +95,12 @@ describe('constants del customizer (virola + cuero)', () => {
     // La costura central (dos líneas separadas por SEAM_WIDTH) queda dentro del alto
     assert.ok(SEAM_WIDTH / 2 < LEATHER_HEIGHT / 2);
   });
+
+  it('VIROLA_LINE_ARC_PATH define un arco curvo concéntrico con la virola (R=155)', () => {
+    assert.ok(VIROLA_LINE_ARC_PATH.startsWith('M'));
+    assert.ok(VIROLA_LINE_ARC_PATH.includes(`A ${TEXT_RADIUS} ${TEXT_RADIUS} 0 0 0`));
+    assert.equal(DEFAULT_LINE_STROKE_WIDTH, 2.5);
+  });
 });
 
 // =========================================================================
@@ -111,7 +120,7 @@ function escapeXml(value: string): string {
 
 interface ShapeEl {
   type: 'shape';
-  shape: 'circle' | 'line' | 'triangle' | 'square' | 'star';
+  shape: 'circle' | 'line' | 'triangle' | 'square' | 'star' | 'heart';
   x: number;
   y: number;
   rotation: number;
@@ -148,12 +157,16 @@ function shapeToSvg(el: ShapeEl): string {
     return `<circle cx="0" cy="0" r="20" transform="${transform}" fill="${ENGRAVE_COLOR}"/>`;
   }
   if (el.shape === 'line') {
+    const strokeWidth = (el as any).strokeWidth ?? DEFAULT_LINE_STROKE_WIDTH;
     return (
-      `<line x1="-20" y1="0" x2="20" y2="0" transform="${transform}" ` +
-      `stroke="${ENGRAVE_COLOR}" stroke-width="${LINE_STROKE_WIDTH}" stroke-linecap="round"/>`
+      `<path d="${VIROLA_LINE_ARC_PATH}" transform="${transform}" ` +
+      `fill="none" stroke="${ENGRAVE_COLOR}" stroke-width="${strokeWidth}" stroke-linecap="round"/>`
     );
   }
-  const points = shapePoints(el.shape);
+  if (el.shape === 'heart') {
+    return `<path d="${HEART_PATH}" transform="${transform}" fill="${ENGRAVE_COLOR}"/>`;
+  }
+  const points = shapePoints(el.shape as any);
   const pairs: string[] = [];
   for (let i = 0; i < points.length; i += 2) {
     pairs.push(`${points[i]},${points[i + 1]}`);
@@ -277,8 +290,8 @@ describe('generador SVG del customizer', () => {
       rotation: 90,
       scale: 2,
     });
-    assert.ok(line.startsWith('<line x1="-20" y1="0" x2="20" y2="0"'));
-    assert.ok(line.includes(`stroke-width="${LINE_STROKE_WIDTH}"`));
+    assert.ok(line.includes(VIROLA_LINE_ARC_PATH));
+    assert.ok(line.includes(`stroke-width="${DEFAULT_LINE_STROKE_WIDTH}"`));
     assert.ok(line.includes(`rotate(90)`));
 
     const triangle = elementToSvg({
@@ -292,6 +305,19 @@ describe('generador SVG del customizer', () => {
     assert.ok(triangle.startsWith('<polygon points="'));
     assert.ok(triangle.includes('0,-20'));
     assert.ok(triangle.includes(`scale(1.5)`));
+
+    const heart = elementToSvg({
+      type: 'shape',
+      shape: 'heart',
+      x: 10,
+      y: -10,
+      rotation: 0,
+      scale: 1,
+    });
+    assert.ok(heart.startsWith('<path d="'));
+    assert.ok(heart.includes(HEART_PATH));
+    assert.ok(heart.includes(`fill="${ENGRAVE_COLOR}"`));
+    assert.ok(heart.includes('translate(10 -10)'));
   });
 
   it('paths vectorizados usan fill-rule="evenodd" (crítico: huecos internos del trazado)', () => {

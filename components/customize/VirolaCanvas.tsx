@@ -6,12 +6,15 @@ import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import {
   AVAILABLE_FONTS,
+  DEFAULT_LINE_STROKE_WIDTH,
   DESIGN_SIZE,
   ENGRAVE_COLOR,
+  HEART_PATH,
   INNER_RADIUS,
   LINE_STROKE_WIDTH,
   OUTER_RADIUS,
   TEXT_RADIUS,
+  VIROLA_LINE_ARC_PATH,
   ringTextPathData,
   shapePoints,
 } from './constants';
@@ -23,6 +26,7 @@ export interface ElementPatch {
   rotation?: number;
   scale?: number;
   angle?: number;
+  strokeWidth?: number;
 }
 
 interface VirolaCanvasProps {
@@ -138,14 +142,47 @@ interface VirolaShapeElementProps {
 }
 
 function VirolaShapeElement({ element, onSelect, onUpdateElement }: VirolaShapeElementProps) {
+  const isLine = element.shape === 'line';
+
   const common = {
     id: element.id,
     draggable: true,
     onClick: () => onSelect(element.id),
     onTap: () => onSelect(element.id),
     onDragStart: () => onSelect(element.id),
-    onDragEnd: (e: KonvaEventObject<DragEvent>) =>
-      onUpdateElement(element.id, { x: e.target.x(), y: e.target.y() }),
+    onDragMove: (e: KonvaEventObject<DragEvent>) => {
+      if (isLine) {
+        const rawX = e.target.x();
+        const rawY = e.target.y();
+        const dist = Math.hypot(rawX, rawY);
+        if (dist > 10) {
+          const nx = (rawX / dist) * TEXT_RADIUS;
+          const ny = (rawY / dist) * TEXT_RADIUS;
+          const rot = (Math.round((Math.atan2(-nx, ny) * 180) / Math.PI) + 360) % 360;
+          e.target.position({ x: nx, y: ny });
+          e.target.rotation(rot);
+        }
+      }
+    },
+    onDragEnd: (e: KonvaEventObject<DragEvent>) => {
+      if (isLine) {
+        const rawX = e.target.x();
+        const rawY = e.target.y();
+        const dist = Math.hypot(rawX, rawY);
+        if (dist > 10) {
+          const nx = (rawX / dist) * TEXT_RADIUS;
+          const ny = (rawY / dist) * TEXT_RADIUS;
+          const rot = (Math.round((Math.atan2(-nx, ny) * 180) / Math.PI) + 360) % 360;
+          onUpdateElement(element.id, {
+            x: Math.round(nx),
+            y: Math.round(ny),
+            rotation: rot,
+          });
+          return;
+        }
+      }
+      onUpdateElement(element.id, { x: e.target.x(), y: e.target.y() });
+    },
     onTransformEnd: (e: KonvaEventObject<Event>) => {
       const node = e.target;
       onUpdateElement(element.id, {
@@ -166,18 +203,25 @@ function VirolaShapeElement({ element, onSelect, onUpdateElement }: VirolaShapeE
     return <Circle {...common} radius={20} fill={ENGRAVE_COLOR} />;
   }
   if (element.shape === 'line') {
+    const strokeWidth = element.strokeWidth ?? DEFAULT_LINE_STROKE_WIDTH;
     return (
-      <Line
+      <Path
         {...common}
-        points={[-20, 0, 20, 0]}
+        data={VIROLA_LINE_ARC_PATH}
         stroke={ENGRAVE_COLOR}
-        strokeWidth={LINE_STROKE_WIDTH}
+        strokeWidth={strokeWidth}
         lineCap="round"
-        hitStrokeWidth={24}
+        fillEnabled={false}
+        hitStrokeWidth={Math.max(24, strokeWidth + 16)}
       />
     );
   }
-  return <Line {...common} points={shapePoints(element.shape)} closed fill={ENGRAVE_COLOR} />;
+  if (element.shape === 'heart') {
+    return <Path {...common} data={HEART_PATH} fill={ENGRAVE_COLOR} />;
+  }
+  return (
+    <Line {...common} points={shapePoints(element.shape as any)} closed fill={ENGRAVE_COLOR} />
+  );
 }
 
 interface VirolaPathElementProps {
