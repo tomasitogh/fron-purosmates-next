@@ -17,7 +17,7 @@ export const SAMPLE_PRODUCTS: Product[] = [
     description:
       'Mate Imperial seleccionado a mano. Confeccionado en calabaza brasilera de paredes gruesas, forrado en cuero vacuno legítimo de primera calidad y terminado con virola de alpaca cincelada artesanalmente. Apto para grabado láser personalizado.',
     isCustomizable: true,
-    customizationCost: 5000,
+    customizationCost: 28000,
     category: { id: 2, description: 'Mates' },
     images: [{ url: '/categories/mate.jpg' }],
     variants: [
@@ -49,7 +49,7 @@ export const SAMPLE_PRODUCTS: Product[] = [
     description:
       'El clásico mate camionero uruguayo. Base reforzada de 4 patas, boca ancha ideal para cebar y no mojar la yerba. Virola de acero inoxidable pulido espejo lista para personalizar con tu frase o escudo.',
     isCustomizable: true,
-    customizationCost: 4500,
+    customizationCost: 28000,
     category: { id: 2, description: 'Mates' },
     images: [{ url: '/categories/mate.jpg' }],
     variants: [
