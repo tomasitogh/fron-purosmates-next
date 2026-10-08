@@ -8,6 +8,8 @@ import {
   ImagePlus,
   Loader2,
   Minus,
+  Save,
+  ShoppingCart,
   Star,
   Trash2,
   Type,
@@ -36,6 +38,7 @@ interface CustomizeToolbarProps {
   onDeselect: () => void;
   onDownloadSvg: () => void;
   onConfirm: () => void;
+  onAttachToOrder: () => void;
 }
 
 const SHAPE_BUTTONS: { kind: ShapeKind; label: string; Icon: typeof Heart }[] = [
@@ -65,6 +68,7 @@ export default function CustomizeToolbar({
   onDeselect,
   onDownloadSvg,
   onConfirm,
+  onAttachToOrder,
 }: CustomizeToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [newText, setNewText] = useState('');
@@ -307,17 +311,25 @@ export default function CustomizeToolbar({
               <button
                 type="button"
                 onClick={onConfirm}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#254642] p-3 text-sm font-semibold text-white shadow-xs transition hover:bg-[#1a3330] active:scale-[0.99]"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-stone-200 bg-stone-50 p-2.5 text-xs font-semibold text-stone-700 shadow-2xs transition hover:bg-stone-100 active:scale-[0.99]"
               >
-                <Check size={16} className="text-[#D4AF37]" />
-                Confirmar diseño
+                <Save size={15} className="text-stone-500" />
+                Guardar diseño
+              </button>
+              <button
+                type="button"
+                onClick={onAttachToOrder}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#254642] p-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#1a3330] active:scale-[0.99]"
+              >
+                <ShoppingCart size={17} className="text-[#D4AF37]" />
+                Adjuntar personalizado en el pedido
               </button>
               <button
                 type="button"
                 onClick={onDownloadSvg}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white p-3 text-sm font-semibold text-stone-700 shadow-xs transition hover:bg-stone-50 active:scale-[0.99]"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white p-2.5 text-xs font-semibold text-stone-600 shadow-2xs transition hover:bg-stone-50 active:scale-[0.99]"
               >
-                <Download size={16} />
+                <Download size={15} />
                 Descargar SVG
               </button>
             </div>

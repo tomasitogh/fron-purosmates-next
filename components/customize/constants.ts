@@ -25,6 +25,10 @@ export const ENGRAVE_COLOR = '#1a1a1a';
 /** Clave de localStorage para el autoguardado */
 export const DESIGN_STORAGE_KEY = 'virola-design';
 
+/** Clave de localStorage para el SVG adjuntado directamente al pedido */
+export const ATTACHED_SVG_STORAGE_KEY = 'purosmates_attached_svg';
+export const ATTACHED_SVG_NAME_KEY = 'purosmates_attached_svg_name';
+
 /** Debounce del autoguardado en ms */
 export const AUTOSAVE_DEBOUNCE_MS = 800;
 
