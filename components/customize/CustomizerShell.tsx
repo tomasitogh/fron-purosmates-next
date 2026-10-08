@@ -13,6 +13,7 @@ import {
   ATTACHED_SVG_STORAGE_KEY,
   AUTOSAVE_DEBOUNCE_MS,
   DEFAULT_FONT_FAMILY,
+  DEFAULT_LINE_STROKE_WIDTH,
   DESIGN_STORAGE_KEY,
   LEATHER_STORAGE_KEY,
   TEXT_RADIUS,
@@ -100,14 +101,39 @@ export default function CustomizerShell() {
   };
 
   const handleAddShape = (shape: ShapeKind) => {
+    const isLine = shape === 'line';
+    let x = 0;
+    let y = TEXT_RADIUS;
+    let rotation = 0;
+
+    if (surface === 'leather') {
+      x = 120;
+      y = 0;
+    } else if (isLine) {
+      // Si ya hay una línea en el lateral izquierdo, colocar la siguiente en el lateral derecho
+      const hasLeftLine = elements.some(
+        (e) => e.type === 'shape' && e.shape === 'line' && e.x < -40
+      );
+      if (hasLeftLine) {
+        x = TEXT_RADIUS;
+        y = 0;
+        rotation = 270;
+      } else {
+        x = -TEXT_RADIUS;
+        y = 0;
+        rotation = 90;
+      }
+    }
+
     const el: DesignElement = {
       id: nextId(),
       type: 'shape',
       shape,
-      x: surface === 'leather' ? 120 : 0,
-      y: surface === 'leather' ? 0 : TEXT_RADIUS,
-      rotation: 0,
+      x,
+      y,
+      rotation,
       scale: 1,
+      strokeWidth: isLine ? DEFAULT_LINE_STROKE_WIDTH : undefined,
     };
     setElements((prev) => [...prev, el]);
     setSelectedId(el.id);

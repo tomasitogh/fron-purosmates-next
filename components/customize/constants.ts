@@ -110,8 +110,25 @@ export function shapePoints(
 export const HEART_PATH =
   'M 0,-7 C -1,-12 -6,-16 -12,-16 C -18,-16 -21,-11 -21,-5 C -21,3 -13,9 0,19 C 13,9 21,3 21,-5 C 21,-11 18,-16 12,-16 C 6,-16 1,-12 0,-7 Z';
 
-/** Ancho de trazo de la forma 'line' (las demás son rellenas) */
-export const LINE_STROKE_WIDTH = 5;
+/** Ancho de trazo por defecto de la línea grabada (bien finita para grabado láser) */
+export const DEFAULT_LINE_STROKE_WIDTH = 2.5;
+export const LINE_STROKE_WIDTH = DEFAULT_LINE_STROKE_WIDTH;
+
+/**
+ * Path SVG de un arco curvo concéntrico con la virola (radio TEXT_RADIUS = 155).
+ * El ápice está en (0, 0) y el centro de curvatura en (0, -155).
+ * Con span de 38°, abarca un arco decorativo que sigue fielmente la curva de la virola.
+ */
+export function virolaArcPath(spanDeg = 38, radius = TEXT_RADIUS): string {
+  const halfRad = ((spanDeg / 2) * Math.PI) / 180;
+  const x1 = Number((-radius * Math.sin(halfRad)).toFixed(2));
+  const y1 = Number((-radius * (1 - Math.cos(halfRad))).toFixed(2));
+  const x2 = Number((radius * Math.sin(halfRad)).toFixed(2));
+  const y2 = y1;
+  return `M ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2}`;
+}
+
+export const VIROLA_LINE_ARC_PATH = virolaArcPath(38, TEXT_RADIUS);
 
 /** Query de Google Fonts que carga las 10 familias de una sola vez */
 export const GOOGLE_FONTS_HREF =

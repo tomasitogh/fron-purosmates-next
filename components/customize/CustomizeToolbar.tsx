@@ -14,7 +14,7 @@ import {
   Trash2,
   Type,
 } from 'lucide-react';
-import { AVAILABLE_FONTS } from './constants';
+import { AVAILABLE_FONTS, DEFAULT_LINE_STROKE_WIDTH, TEXT_RADIUS } from './constants';
 import type { CustomizeSurface, DesignElement, ShapeKind } from './types';
 
 export interface SelectedElementPatch {
@@ -24,6 +24,9 @@ export interface SelectedElementPatch {
   angle?: number;
   rotation?: number;
   scale?: number;
+  strokeWidth?: number;
+  x?: number;
+  y?: number;
 }
 
 interface CustomizeToolbarProps {
@@ -82,6 +85,25 @@ export default function CustomizeToolbar({
   // dentro de un contenedor de expresión JSX (ReferenceError en runtime).
   const editingTextRotation = editingText ? (editingText.rotation ?? 0) : 0;
   const editingTextAngle = editingText ? (editingText.angle ?? 0) : 0;
+
+  const isEditingLine = editingTransform?.type === 'shape' && editingTransform.shape === 'line';
+  const lineStrokeWidth = isEditingLine
+    ? (editingTransform.strokeWidth ?? DEFAULT_LINE_STROKE_WIDTH)
+    : DEFAULT_LINE_STROKE_WIDTH;
+  const lineRingAngle =
+    isEditingLine && surface === 'virola'
+      ? Math.round(
+          ((Math.atan2(editingTransform.x, editingTransform.y) * 180) / Math.PI + 360) % 360
+        )
+      : 0;
+
+  const handleSetLineAngle = (deg: number) => {
+    const rad = (deg * Math.PI) / 180;
+    const nx = Math.round(TEXT_RADIUS * Math.sin(rad));
+    const ny = Math.round(TEXT_RADIUS * Math.cos(rad));
+    const rot = Math.round((Math.atan2(-nx, ny) * 180) / Math.PI + 360) % 360;
+    onUpdateSelected({ x: nx, y: ny, rotation: rot });
+  };
 
   return (
     <aside className="w-full rounded-2xl border border-stone-200 bg-white p-4 shadow-sm md:w-80">
@@ -193,8 +215,59 @@ export default function CustomizeToolbar({
 
             {editingTransform && (
               <>
+                {isEditingLine && (
+                  <>
+                    <label className="block text-xs font-medium text-stone-500">
+                      Grosor de línea: {lineStrokeWidth.toFixed(1)} px
+                      <input
+                        type="range"
+                        min={1}
+                        max={8}
+                        step={0.5}
+                        value={lineStrokeWidth}
+                        onChange={(e) => onUpdateSelected({ strokeWidth: Number(e.target.value) })}
+                        className="mt-1 w-full accent-stone-800"
+                      />
+                    </label>
+
+                    {surface === 'virola' && (
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-medium text-stone-500">
+                          Posición en la virola: {lineRingAngle}°
+                          <input
+                            type="range"
+                            min={0}
+                            max={360}
+                            step={1}
+                            value={lineRingAngle}
+                            onChange={(e) => handleSetLineAngle(Number(e.target.value))}
+                            className="mt-1 w-full accent-stone-800"
+                          />
+                        </label>
+                        <div className="grid grid-cols-2 gap-1.5 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => handleSetLineAngle(270)}
+                            className="rounded-lg border border-stone-200 bg-stone-50 px-2 py-1.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-100"
+                          >
+                            👈 Lateral izq.
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSetLineAngle(90)}
+                            className="rounded-lg border border-stone-200 bg-stone-50 px-2 py-1.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-100"
+                          >
+                            👉 Lateral der.
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
                 <label className="block text-xs font-medium text-stone-500">
-                  Tamaño: {editingTransform.scale.toFixed(2)}x
+                  {isEditingLine ? 'Largo de la curva' : 'Tamaño'}:{' '}
+                  {editingTransform.scale.toFixed(2)}x
                   <input
                     type="range"
                     min={0.2}
@@ -205,20 +278,26 @@ export default function CustomizeToolbar({
                     className="mt-1 w-full accent-stone-800"
                   />
                 </label>
-                <label className="block text-xs font-medium text-stone-500">
-                  Rotación: {Math.round(editingTransform.rotation)}°
-                  <input
-                    type="range"
-                    min={0}
-                    max={360}
-                    step={1}
-                    value={editingTransform.rotation}
-                    onChange={(e) => onUpdateSelected({ rotation: Number(e.target.value) })}
-                    className="mt-1 w-full accent-stone-800"
-                  />
-                </label>
+
+                {!isEditingLine && (
+                  <label className="block text-xs font-medium text-stone-500">
+                    Rotación: {Math.round(editingTransform.rotation)}°
+                    <input
+                      type="range"
+                      min={0}
+                      max={360}
+                      step={1}
+                      value={editingTransform.rotation}
+                      onChange={(e) => onUpdateSelected({ rotation: Number(e.target.value) })}
+                      className="mt-1 w-full accent-stone-800"
+                    />
+                  </label>
+                )}
+
                 <p className="text-xs text-stone-400">
-                  También podés arrastrarlo y usar los puntos de las esquinas sobre el canvas.
+                  {isEditingLine && surface === 'virola'
+                    ? 'Podés arrastrar la línea por la virola para deslizarla con el dedo o mouse.'
+                    : 'También podés arrastrarlo y usar los puntos de las esquinas sobre el canvas.'}
                 </p>
               </>
             )}

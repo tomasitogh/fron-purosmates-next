@@ -1,4 +1,5 @@
 import {
+  DEFAULT_LINE_STROKE_WIDTH,
   DESIGN_SIZE,
   ENGRAVE_COLOR,
   HEART_PATH,
@@ -9,6 +10,7 @@ import {
   OUTER_RADIUS,
   SEAM_WIDTH,
   TEXT_RADIUS,
+  VIROLA_LINE_ARC_PATH,
   ringClipPathData,
   ringTextPathData,
   shapePoints,
@@ -33,10 +35,10 @@ function shapeToSvg(el: ShapeElement): string {
   }
 
   if (el.shape === 'line') {
-    const half = 20; // SHAPE_BASE_SIZE / 2
+    const strokeWidth = el.strokeWidth ?? DEFAULT_LINE_STROKE_WIDTH;
     return (
-      `<line x1="${-half}" y1="0" x2="${half}" y2="0" transform="${transform}" ` +
-      `stroke="${ENGRAVE_COLOR}" stroke-width="${LINE_STROKE_WIDTH}" stroke-linecap="round"/>`
+      `<path d="${VIROLA_LINE_ARC_PATH}" transform="${transform}" ` +
+      `fill="none" stroke="${ENGRAVE_COLOR}" stroke-width="${strokeWidth}" stroke-linecap="round"/>`
     );
   }
 
