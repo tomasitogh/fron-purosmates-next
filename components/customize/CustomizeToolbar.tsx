@@ -69,7 +69,7 @@ export default function CustomizeToolbar({
   onConfirm,
 }: CustomizeToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [newText, setNewText] = useState('TU TEXTO');
+  const [newText, setNewText] = useState('');
 
   const editingText = selectedElement?.type === 'text' ? selectedElement : null;
   const editingTransform =
@@ -229,13 +229,27 @@ export default function CustomizeToolbar({
                 type="text"
                 value={newText}
                 onChange={(e) => setNewText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (newText.trim()) {
+                      onAddText(newText.trim());
+                      setNewText('');
+                    }
+                  }
+                }}
                 maxLength={40}
                 className="min-w-0 flex-1 rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
                 placeholder="Escribí tu texto"
               />
               <button
                 type="button"
-                onClick={() => newText.trim() && onAddText(newText.trim())}
+                onClick={() => {
+                  if (newText.trim()) {
+                    onAddText(newText.trim());
+                    setNewText('');
+                  }
+                }}
                 className="flex shrink-0 items-center gap-1.5 rounded-lg bg-stone-800 px-3 py-2 text-sm font-medium text-white active:bg-stone-700"
               >
                 <Type size={16} />
