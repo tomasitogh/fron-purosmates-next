@@ -8,6 +8,7 @@ import {
   AVAILABLE_FONTS,
   DESIGN_SIZE,
   ENGRAVE_COLOR,
+  HEART_PATH,
   INNER_RADIUS,
   LINE_STROKE_WIDTH,
   OUTER_RADIUS,
@@ -177,7 +178,12 @@ function VirolaShapeElement({ element, onSelect, onUpdateElement }: VirolaShapeE
       />
     );
   }
-  return <Line {...common} points={shapePoints(element.shape)} closed fill={ENGRAVE_COLOR} />;
+  if (element.shape === 'heart') {
+    return <Path {...common} data={HEART_PATH} fill={ENGRAVE_COLOR} />;
+  }
+  return (
+    <Line {...common} points={shapePoints(element.shape as any)} closed fill={ENGRAVE_COLOR} />
+  );
 }
 
 interface VirolaPathElementProps {

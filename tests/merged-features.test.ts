@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   DESIGN_SIZE,
   ENGRAVE_COLOR,
+  HEART_PATH,
   INNER_RADIUS,
   LEATHER_HEIGHT,
   LEATHER_WIDTH,
@@ -111,7 +112,7 @@ function escapeXml(value: string): string {
 
 interface ShapeEl {
   type: 'shape';
-  shape: 'circle' | 'line' | 'triangle' | 'square' | 'star';
+  shape: 'circle' | 'line' | 'triangle' | 'square' | 'star' | 'heart';
   x: number;
   y: number;
   rotation: number;
@@ -153,7 +154,10 @@ function shapeToSvg(el: ShapeEl): string {
       `stroke="${ENGRAVE_COLOR}" stroke-width="${LINE_STROKE_WIDTH}" stroke-linecap="round"/>`
     );
   }
-  const points = shapePoints(el.shape);
+  if (el.shape === 'heart') {
+    return `<path d="${HEART_PATH}" transform="${transform}" fill="${ENGRAVE_COLOR}"/>`;
+  }
+  const points = shapePoints(el.shape as any);
   const pairs: string[] = [];
   for (let i = 0; i < points.length; i += 2) {
     pairs.push(`${points[i]},${points[i + 1]}`);
@@ -292,6 +296,19 @@ describe('generador SVG del customizer', () => {
     assert.ok(triangle.startsWith('<polygon points="'));
     assert.ok(triangle.includes('0,-20'));
     assert.ok(triangle.includes(`scale(1.5)`));
+
+    const heart = elementToSvg({
+      type: 'shape',
+      shape: 'heart',
+      x: 10,
+      y: -10,
+      rotation: 0,
+      scale: 1,
+    });
+    assert.ok(heart.startsWith('<path d="'));
+    assert.ok(heart.includes(HEART_PATH));
+    assert.ok(heart.includes(`fill="${ENGRAVE_COLOR}"`));
+    assert.ok(heart.includes('translate(10 -10)'));
   });
 
   it('paths vectorizados usan fill-rule="evenodd" (crítico: huecos internos del trazado)', () => {

@@ -11,7 +11,7 @@
 
 export type CustomizeSurface = 'virola' | 'leather';
 
-export type ShapeKind = 'line' | 'triangle' | 'square' | 'circle' | 'star';
+export type ShapeKind = 'heart' | 'star' | 'line' | 'triangle' | 'square' | 'circle';
 
 interface ElementBase {
   id: string;

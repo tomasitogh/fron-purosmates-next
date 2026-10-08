@@ -6,6 +6,7 @@ import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import {
   AVAILABLE_FONTS,
+  HEART_PATH,
   LEATHER_BG_COLOR,
   LEATHER_BORDER_COLOR,
   LEATHER_ENGRAVE_COLOR,
@@ -54,11 +55,14 @@ function shapeNode(el: ShapeElement, common: Record<string, unknown>): React.Rea
       />
     );
   }
+  if (el.shape === 'heart') {
+    return <Path key={el.id} {...common} data={HEART_PATH} fill={LEATHER_ENGRAVE_COLOR} />;
+  }
   return (
     <Line
       key={el.id}
       {...common}
-      points={shapePoints(el.shape)}
+      points={shapePoints(el.shape as any)}
       closed
       fill={LEATHER_ENGRAVE_COLOR}
     />

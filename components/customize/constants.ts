@@ -99,6 +99,13 @@ export function shapePoints(
   }
 }
 
+/**
+ * Path SVG del corazón centrado en (0, 0), con proporciones armónicas
+ * acordes al tamaño base de las formas (SHAPE_BASE_SIZE = 40).
+ */
+export const HEART_PATH =
+  'M 0,-7 C -1,-12 -6,-16 -12,-16 C -18,-16 -21,-11 -21,-5 C -21,3 -13,9 0,19 C 13,9 21,3 21,-5 C 21,-11 18,-16 12,-16 C 6,-16 1,-12 0,-7 Z';
+
 /** Ancho de trazo de la forma 'line' (las demás son rellenas) */
 export const LINE_STROKE_WIDTH = 5;
 

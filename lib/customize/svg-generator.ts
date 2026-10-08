@@ -1,6 +1,7 @@
 import {
   DESIGN_SIZE,
   ENGRAVE_COLOR,
+  HEART_PATH,
   INNER_RADIUS,
   LEATHER_HEIGHT,
   LEATHER_WIDTH,
@@ -39,7 +40,11 @@ function shapeToSvg(el: ShapeElement): string {
     );
   }
 
-  const points = shapePoints(el.shape);
+  if (el.shape === 'heart') {
+    return `<path d="${HEART_PATH}" transform="${transform}" fill="${ENGRAVE_COLOR}"/>`;
+  }
+
+  const points = shapePoints(el.shape as any);
   const pairs: string[] = [];
   for (let i = 0; i < points.length; i += 2) {
     pairs.push(`${points[i]},${points[i + 1]}`);

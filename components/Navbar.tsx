@@ -145,6 +145,16 @@ export default function Navbar() {
                 Tienda
               </Link>
               <Link
+                href="/customize"
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold tracking-wide uppercase transition xl:px-4 xl:text-sm ${
+                  pathname === '/customize' || pathname === '/customizer'
+                    ? 'bg-white/15 text-[#D4AF37]'
+                    : 'text-[#F5F5DC] hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                Personalizador
+              </Link>
+              <Link
                 href="/regalos-empresariales"
                 className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold tracking-wide uppercase transition xl:px-4 xl:text-sm ${
                   pathname === '/regalos-empresariales'

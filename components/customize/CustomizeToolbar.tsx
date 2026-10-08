@@ -3,15 +3,13 @@
 import { useRef, useState } from 'react';
 import {
   Check,
-  Circle,
   Download,
+  Heart,
   ImagePlus,
   Loader2,
   Minus,
-  Square,
   Star,
   Trash2,
-  Triangle,
   Type,
 } from 'lucide-react';
 import { AVAILABLE_FONTS } from './constants';
@@ -40,12 +38,10 @@ interface CustomizeToolbarProps {
   onConfirm: () => void;
 }
 
-const SHAPE_BUTTONS: { kind: ShapeKind; label: string; Icon: typeof Minus }[] = [
-  { kind: 'line', label: 'Línea', Icon: Minus },
-  { kind: 'triangle', label: 'Triángulo', Icon: Triangle },
-  { kind: 'square', label: 'Cuadrado', Icon: Square },
-  { kind: 'circle', label: 'Círculo', Icon: Circle },
+const SHAPE_BUTTONS: { kind: ShapeKind; label: string; Icon: typeof Heart }[] = [
+  { kind: 'heart', label: 'Corazón', Icon: Heart },
   { kind: 'star', label: 'Estrella', Icon: Star },
+  { kind: 'line', label: 'Línea', Icon: Minus },
 ];
 
 // Nota: `p-0` es OBLIGATORIO en botones solo-ícono de tamaño fijo.
