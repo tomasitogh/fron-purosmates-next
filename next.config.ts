@@ -36,6 +36,15 @@ const nextConfig: NextConfig = {
     ],
   },
   productionBrowserSourceMaps: true,
+  async redirects() {
+    return [
+      {
+        source: '/customizer',
+        destination: '/customize',
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {

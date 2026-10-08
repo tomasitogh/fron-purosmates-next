@@ -45,9 +45,24 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
   };
 
   const activeCategories = useMemo(() => {
+    // Si existen 'Accesorios' y 'Accesorio', eliminamos 'Accesorio' (singular) que está duplicado y vacío
+    const hasPluralAccesorios = (initialCategories || []).some(
+      (c: any) => normalizeText(c.description) === 'accesorios'
+    );
+
     const list = (initialCategories || [])
-      .filter((c: any) => c.active !== false)
-      .map((c: any) => ({ id: Number(c.id), description: c.description, active: true }));
+      .filter((c: any) => {
+        if (c.active === false) return false;
+        const desc = normalizeText(c.description);
+        if (hasPluralAccesorios && desc === 'accesorio') return false;
+        return true;
+      })
+      .map((c: any) => ({
+        id: Number(c.id),
+        // Si solo existiera 'Accesorio' en singular, mostrar 'Accesorios' en plural
+        description: normalizeText(c.description) === 'accesorio' ? 'Accesorios' : c.description,
+        active: true,
+      }));
 
     // Orden estándar: Mates primero, luego Bombillas, luego Accesorios
     const priority = ['mate', 'bombilla', 'accesorio'];
@@ -108,7 +123,6 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
 
   // Sync sidebar state from URL on mount and when URL changes (back/forward nav)
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSidebarCategoryIds(urlCategoryIds);
   }, [urlCategoryIds]);
 
@@ -144,9 +158,24 @@ export default function ShopContent({ initialProducts, initialCategories }: Shop
     let list = [...products];
 
     if (selectedCategoryIds.length > 0) {
-      list = list.filter(
-        (p) => p.category?.id != null && selectedCategoryIds.includes(Number(p.category.id))
-      );
+      list = list.filter((p) => {
+        if (p.category?.id == null) return false;
+        const pCatId = Number(p.category.id);
+        if (selectedCategoryIds.includes(pCatId)) return true;
+
+        // Si se seleccionó la categoría Accesorios, incluir también productos
+        // asociados por descripción de accesorio o ID legado (3)
+        const isAccesoriosSelected = selectedCategoryIds.some((id) => {
+          const cat = activeCategories.find((c) => c.id === id);
+          return cat && normalizeText(cat.description).includes('accesorio');
+        });
+        if (isAccesoriosSelected) {
+          const pDesc = normalizeText(p.category.description || '');
+          if (pDesc.includes('accesorio') || pCatId === 3) return true;
+        }
+
+        return false;
+      });
     }
 
     if (searchText) {

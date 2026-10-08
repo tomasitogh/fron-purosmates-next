@@ -55,6 +55,12 @@ async function getCategories() {
     const data = await res.json();
     const items = Array.isArray(data) ? data : Array.isArray(data?.content) ? data.content : [];
     if (items.length > 0) {
+      const hasPluralAccesorios = items.some(
+        (c: any) => (c.description || '').trim().toLowerCase() === 'accesorios'
+      );
+      if (hasPluralAccesorios) {
+        return items.filter((c: any) => (c.description || '').trim().toLowerCase() !== 'accesorio');
+      }
       return items;
     }
     return SAMPLE_CATEGORIES;

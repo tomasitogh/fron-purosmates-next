@@ -63,7 +63,7 @@ export default function CategoryGrid({ categories }) {
             </div>
           </Link>
           <Link
-            href="/shop?category=accesorio"
+            href="/shop?category=accesorios"
             className="group relative aspect-[6/5] cursor-pointer overflow-hidden rounded-2xl shadow-md"
           >
             <Image
