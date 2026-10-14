@@ -19,6 +19,13 @@ import {
   ringClipPathData,
   ringTextPathData,
   shapePoints,
+  CRIOLLO_WIDTH,
+  CRIOLLO_HEIGHT,
+  CRIOLLO_STORAGE_KEY,
+  CRIOLLO_OUTLINE_PATH,
+  CRIOLLO_CALABAZA_PATH,
+  CRIOLLO_LEATHER_PATH,
+  CRIOLLO_VIROLA_PATH,
 } from '../components/customize/constants.ts';
 
 // =========================================================================
@@ -100,6 +107,15 @@ describe('constants del customizer (virola + cuero)', () => {
     assert.ok(VIROLA_LINE_ARC_PATH.startsWith('M'));
     assert.ok(VIROLA_LINE_ARC_PATH.includes(`A ${TEXT_RADIUS} ${TEXT_RADIUS} 0 0 0`));
     assert.equal(DEFAULT_LINE_STROKE_WIDTH, 2.5);
+  });
+
+  it('las constantes de criollo definen silueta vertical y paths cerrados', () => {
+    assert.ok(CRIOLLO_HEIGHT > CRIOLLO_WIDTH, 'el mate criollo tiene orientación vertical/frontal');
+    assert.equal(CRIOLLO_STORAGE_KEY, 'criollo-design');
+    assert.ok(CRIOLLO_OUTLINE_PATH.startsWith('M') && CRIOLLO_OUTLINE_PATH.endsWith('Z'));
+    assert.ok(CRIOLLO_CALABAZA_PATH.startsWith('M') && CRIOLLO_CALABAZA_PATH.endsWith('Z'));
+    assert.ok(CRIOLLO_LEATHER_PATH.startsWith('M') && CRIOLLO_LEATHER_PATH.endsWith('Z'));
+    assert.ok(CRIOLLO_VIROLA_PATH.startsWith('M') && CRIOLLO_VIROLA_PATH.endsWith('Z'));
   });
 });
 

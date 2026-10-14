@@ -183,7 +183,7 @@ export default function CustomizeToolbar({
                   />
                 </label>
 
-                {surface === 'leather' ? (
+                {surface === 'leather' || surface === 'criollo' ? (
                   <label className="block text-xs font-medium text-stone-500">
                     Rotación: {Math.round(editingTextRotation)}°
                     <input

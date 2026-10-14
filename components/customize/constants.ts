@@ -148,3 +148,37 @@ export const SEAM_BORDER_COLOR = '#4A2610';
 export const SEAM_THREAD_COLOR = '#2A1308';
 export const LEATHER_ENGRAVE_COLOR = '#1E0F07'; // Quemado láser sobre cuero
 export const LEATHER_STORAGE_KEY = 'leather-design';
+
+/** --- Constantes para el Mate Criollo --- */
+export const CRIOLLO_WIDTH = 340;
+export const CRIOLLO_HEIGHT = 400;
+export const CRIOLLO_STORAGE_KEY = 'criollo-design';
+
+// Colores de los materiales
+export const CRIOLLO_CALABAZA_BG = '#B86F36';
+export const CRIOLLO_CALABAZA_BORDER = '#7D431B';
+export const CRIOLLO_LEATHER_BG = '#A26335';
+export const CRIOLLO_LEATHER_BORDER = '#6B3A17';
+export const CRIOLLO_VIROLA_BG = '#E2E8F0';
+export const CRIOLLO_VIROLA_BORDER = '#94A3B8';
+export const CRIOLLO_SEAM_THREAD = '#F5EBE1';
+export const CRIOLLO_ENGRAVE_COLOR = '#1A1A1A';
+
+// Path del contorno exterior completo del Mate Criollo
+export const CRIOLLO_OUTLINE_PATH =
+  'M -105 -165 C -45 -173, 45 -173, 105 -165 C 104 -156, 98 -148, 98 -148 C 85 -115, 83 -75, 83 -75 C 83 -35, 91 -10, 92 0 C 93 45, 88 120, 82 165 C 40 172, -40 172, -82 165 C -88 120, -93 45, -92 0 C -91 -10, -83 -35, -83 -75 C -83 -75, -85 -115, -98 -148 C -98 -148, -104 -156, -105 -165 Z';
+
+// Path de la calabaza (zona central donde se ubica el grabado)
+export const CRIOLLO_CALABAZA_PATH =
+  'M -98 -148 C -50 -155, 50 -155, 98 -148 C 85 -115, 83 -75, 83 -75 C 83 -35, 91 -10, 92 0 C 45 6, -45 6, -92 0 C -91 -10, -83 -35, -83 -75 C -83 -75, -85 -115, -98 -148 Z';
+
+// Path de la faja de cuero (parte inferior con costura)
+export const CRIOLLO_LEATHER_PATH =
+  'M -92 0 C -45 6, 45 6, 92 0 C 93 45, 88 120, 82 165 C 40 172, -40 172, -82 165 C -88 120, -93 45, -92 0 Z';
+
+// Path de la virola / boca metálica
+export const CRIOLLO_VIROLA_PATH =
+  'M -105 -165 C -45 -173, 45 -173, 105 -165 C 104 -156, 98 -148, 98 -148 C 50 -155, -50 -155, -98 -148 C -98 -148, -104 -156, -105 -165 Z';
+
+// Línea divisoria entre calabaza y faja de cuero
+export const CRIOLLO_DIVIDER_PATH = 'M -92 0 C -45 6, 45 6, 92 0';

@@ -1,4 +1,9 @@
 import {
+  CRIOLLO_DIVIDER_PATH,
+  CRIOLLO_HEIGHT,
+  CRIOLLO_OUTLINE_PATH,
+  CRIOLLO_VIROLA_PATH,
+  CRIOLLO_WIDTH,
   DEFAULT_LINE_STROKE_WIDTH,
   DESIGN_SIZE,
   ENGRAVE_COLOR,
@@ -223,9 +228,78 @@ ${fontsCss}    <clipPath id="leather-clip">
 `;
 }
 
+export async function generateSvgFromCriolloDesign(design: CustomizeDesign): Promise<string> {
+  const halfW = CRIOLLO_WIDTH / 2;
+  const halfH = CRIOLLO_HEIGHT / 2;
+
+  const families = [
+    ...new Set(
+      design.elements
+        .filter((el): el is Extract<DesignElement, { type: 'text' }> => el.type === 'text')
+        .map((el) => el.fontFamily)
+    ),
+  ];
+
+  let fontsCss = '';
+  if (families.length > 0) {
+    try {
+      const css = (await Promise.all(families.map(embeddedFontCssFor))).join('\n');
+      fontsCss = `    <style>\n${css}\n    </style>\n`;
+    } catch {
+      // fallback
+    }
+  }
+
+  // Costura de tiento lateral con cruces
+  const numStitches = 6;
+  const startY = 22;
+  const endY = 145;
+  const step = (endY - startY) / numStitches;
+  const stitchLeftX = 60;
+  const stitchRightX = 76;
+  const stitchesSvg: string[] = [];
+  for (let i = 0; i < numStitches; i++) {
+    const yTop = startY + i * step;
+    const yBottom = yTop + step - 4;
+    stitchesSvg.push(
+      `<line x1="${stitchLeftX}" y1="${yTop}" x2="${stitchRightX}" y2="${yBottom}" stroke="#888888" stroke-width="1.5"/>`
+    );
+    stitchesSvg.push(
+      `<line x1="${stitchRightX}" y1="${yTop}" x2="${stitchLeftX}" y2="${yBottom}" stroke="#888888" stroke-width="1.5"/>`
+    );
+  }
+
+  const body = design.elements.map((el) => elementToSvg(el, true)).join('\n    ');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     viewBox="${-halfW} ${-halfH} ${CRIOLLO_WIDTH} ${CRIOLLO_HEIGHT}"
+     width="${CRIOLLO_WIDTH}" height="${CRIOLLO_HEIGHT}">
+  <defs>
+${fontsCss}    <clipPath id="criollo-clip">
+      <path d="${CRIOLLO_OUTLINE_PATH}"/>
+    </clipPath>
+  </defs>
+  <!-- Guía de referencia: silueta del Mate Criollo, virola y costura de tiento. BORRAR antes de grabar -->
+  <g id="guia-referencia" fill="none" stroke="#bbbbbb" stroke-width="1">
+    <path d="${CRIOLLO_OUTLINE_PATH}"/>
+    <path d="${CRIOLLO_VIROLA_PATH}"/>
+    <path d="${CRIOLLO_DIVIDER_PATH}"/>
+    ${stitchesSvg.join('\n    ')}
+  </g>
+  <g id="grabado" clip-path="url(#criollo-clip)">
+    ${body}
+  </g>
+</svg>
+`;
+}
+
 export async function generateSvgFromDesign(design: CustomizeDesign): Promise<string> {
   if (design.surface === 'leather') {
     return generateSvgFromLeatherDesign(design);
+  }
+  if (design.surface === 'criollo') {
+    return generateSvgFromCriolloDesign(design);
   }
 
   const half = DESIGN_SIZE / 2;

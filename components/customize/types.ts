@@ -9,7 +9,7 @@
  * Las coordenadas (x, y) de los elementos son relativas al centro.
  */
 
-export type CustomizeSurface = 'virola' | 'leather';
+export type CustomizeSurface = 'virola' | 'leather' | 'criollo';
 
 export type ShapeKind = 'heart' | 'star' | 'line' | 'triangle' | 'square' | 'circle';
 
