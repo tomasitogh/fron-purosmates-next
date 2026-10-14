@@ -148,3 +148,23 @@ export const SEAM_BORDER_COLOR = '#4A2610';
 export const SEAM_THREAD_COLOR = '#2A1308';
 export const LEATHER_ENGRAVE_COLOR = '#1E0F07'; // Quemado láser sobre cuero
 export const LEATHER_STORAGE_KEY = 'leather-design';
+
+/** --- Constantes para la Calabaza del Criollo --- */
+export const CRIOLLO_WIDTH = 340;
+export const CRIOLLO_HEIGHT = 380;
+export const CRIOLLO_STORAGE_KEY = 'criollo-design';
+
+// Colores de los materiales
+export const CRIOLLO_CALABAZA_BG = '#B86F36';
+export const CRIOLLO_CALABAZA_BORDER = '#7D431B';
+export const CRIOLLO_VIROLA_BG = '#E2E8F0';
+export const CRIOLLO_VIROLA_BORDER = '#94A3B8';
+export const CRIOLLO_ENGRAVE_COLOR = '#1A1A1A';
+
+// Path del contorno exterior completo de la Calabaza del Criollo (silueta estilizada acampanada sin muescas)
+export const CRIOLLO_OUTLINE_PATH =
+  'M -115 -150 C -115 -158.28, -63.52 -165, 0 -165 C 63.52 -165, 115 -158.28, 115 -150 C 105 -110, 82 -80, 75 -55 C 75 -25, 100 10, 100 40 C 100 85, 80 130, 45 150 C 25 158, -25 158, -45 150 C -80 130, -100 85, -100 40 C -100 10, -75 -25, -75 -55 C -82 -80, -105 -110, -115 -150 Z';
+
+// Path de la virola / boca metálica
+export const CRIOLLO_VIROLA_PATH =
+  'M -115 -150 C -60 -158, 60 -158, 115 -150 C 112 -138, 105 -132, 105 -132 C 50 -140, -50 -140, -105 -132 C -105 -132, -112 -138, -115 -150 Z';

@@ -1,7 +1,18 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Circle, Group, Layer, Line, Path, Ring, Stage, TextPath, Transformer } from 'react-konva';
+import {
+  Circle,
+  Group,
+  Layer,
+  Line,
+  Path,
+  Ring,
+  Stage,
+  Text,
+  TextPath,
+  Transformer,
+} from 'react-konva';
 import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import {
@@ -396,6 +407,74 @@ export default function VirolaCanvas({
                 listening={false}
               />
 
+              {/* Guía visual suave si no hay elementos agregados: 4 extremos de la virola */}
+              {elements.length === 0 && (
+                <>
+                  {/* Arriba */}
+                  <Text
+                    text="ÁREA DE GRABADO"
+                    x={0}
+                    y={-TEXT_RADIUS}
+                    fontSize={10}
+                    fontFamily="sans-serif"
+                    fontStyle="bold"
+                    fill="#8A8275"
+                    opacity={0.65}
+                    align="center"
+                    offsetX={48}
+                    offsetY={5}
+                    listening={false}
+                  />
+                  {/* Abajo */}
+                  <Text
+                    text="ÁREA DE GRABADO"
+                    x={0}
+                    y={TEXT_RADIUS}
+                    fontSize={10}
+                    fontFamily="sans-serif"
+                    fontStyle="bold"
+                    fill="#8A8275"
+                    opacity={0.65}
+                    align="center"
+                    offsetX={48}
+                    offsetY={5}
+                    listening={false}
+                  />
+                  {/* Izquierda */}
+                  <Text
+                    text="ÁREA DE GRABADO"
+                    x={-TEXT_RADIUS}
+                    y={0}
+                    rotation={-90}
+                    fontSize={10}
+                    fontFamily="sans-serif"
+                    fontStyle="bold"
+                    fill="#8A8275"
+                    opacity={0.65}
+                    align="center"
+                    offsetX={48}
+                    offsetY={5}
+                    listening={false}
+                  />
+                  {/* Derecha */}
+                  <Text
+                    text="ÁREA DE GRABADO"
+                    x={TEXT_RADIUS}
+                    y={0}
+                    rotation={90}
+                    fontSize={10}
+                    fontFamily="sans-serif"
+                    fontStyle="bold"
+                    fill="#8A8275"
+                    opacity={0.65}
+                    align="center"
+                    offsetX={48}
+                    offsetY={5}
+                    listening={false}
+                  />
+                </>
+              )}
+
               {/* Diseño del usuario, recortado al anillo */}
               <Group clipFunc={clipToRing}>
                 {elements.map((el) => {
@@ -445,14 +524,6 @@ export default function VirolaCanvas({
             />
           </Layer>
         </Stage>
-      )}
-
-      {elements.length === 0 && stageSize > 0 && (
-        <p className="pointer-events-none absolute inset-0 flex items-center justify-center px-8 text-center text-sm text-stone-500">
-          Tu diseño aparece acá.
-          <br />
-          Agregá texto, una forma o una imagen 👇
-        </p>
       )}
     </div>
   );

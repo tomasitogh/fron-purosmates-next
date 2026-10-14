@@ -321,6 +321,38 @@ export default function LeatherCanvas({
                 listening={false}
               />
 
+              {/* Guía visual suave si no hay elementos agregados */}
+              {elements.length === 0 && (
+                <>
+                  <Text
+                    text="ÁREA DE GRABADO"
+                    x={-LEATHER_WIDTH / 4}
+                    y={-6}
+                    fontSize={10}
+                    fontFamily="sans-serif"
+                    fontStyle="bold"
+                    fill="#7D431B"
+                    opacity={0.5}
+                    align="center"
+                    offsetX={48}
+                    listening={false}
+                  />
+                  <Text
+                    text="ÁREA DE GRABADO"
+                    x={LEATHER_WIDTH / 4}
+                    y={-6}
+                    fontSize={10}
+                    fontFamily="sans-serif"
+                    fontStyle="bold"
+                    fill="#7D431B"
+                    opacity={0.5}
+                    align="center"
+                    offsetX={48}
+                    listening={false}
+                  />
+                </>
+              )}
+
               {/* Grupo de elementos de grabado láser */}
               <Group
                 clipFunc={(ctx) => {

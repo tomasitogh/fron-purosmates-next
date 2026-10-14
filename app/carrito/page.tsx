@@ -37,6 +37,7 @@ import { generateSvgFromDesign } from '@/lib/customize/svg-generator';
 import {
   ATTACHED_SVG_NAME_KEY,
   ATTACHED_SVG_STORAGE_KEY,
+  CRIOLLO_STORAGE_KEY,
   DESIGN_STORAGE_KEY,
   LEATHER_STORAGE_KEY,
 } from '@/components/customize/constants';
@@ -122,10 +123,11 @@ export default function Carrito() {
         return true;
       }
 
-      // 2. Fallback: diseño guardado en virola o cuero
+      // 2. Fallback: diseño guardado en virola, cuero o mate criollo
       const virolaRaw = localStorage.getItem(DESIGN_STORAGE_KEY);
       const leatherRaw = localStorage.getItem(LEATHER_STORAGE_KEY);
-      const raw = virolaRaw || leatherRaw;
+      const criolloRaw = localStorage.getItem(CRIOLLO_STORAGE_KEY);
+      const raw = virolaRaw || leatherRaw || criolloRaw;
       if (raw) {
         const design = JSON.parse(raw);
         if (design.elements && design.elements.length > 0) {
@@ -136,7 +138,9 @@ export default function Carrito() {
               setSvgFileName(
                 design.surface === 'leather'
                   ? 'Grabado en Cuero (Personalizador)'
-                  : 'Grabado en Virola (Personalizador)'
+                  : design.surface === 'criollo'
+                    ? 'Grabado en Calabaza del Criollo (Personalizador)'
+                    : 'Grabado en Virola (Personalizador)'
               );
             })
             .catch(() => {});

@@ -1,4 +1,7 @@
 import {
+  CRIOLLO_HEIGHT,
+  CRIOLLO_OUTLINE_PATH,
+  CRIOLLO_WIDTH,
   DEFAULT_LINE_STROKE_WIDTH,
   DESIGN_SIZE,
   ENGRAVE_COLOR,
@@ -223,9 +226,57 @@ ${fontsCss}    <clipPath id="leather-clip">
 `;
 }
 
+export async function generateSvgFromCriolloDesign(design: CustomizeDesign): Promise<string> {
+  const halfW = CRIOLLO_WIDTH / 2;
+  const halfH = CRIOLLO_HEIGHT / 2;
+
+  const families = [
+    ...new Set(
+      design.elements
+        .filter((el): el is Extract<DesignElement, { type: 'text' }> => el.type === 'text')
+        .map((el) => el.fontFamily)
+    ),
+  ];
+
+  let fontsCss = '';
+  if (families.length > 0) {
+    try {
+      const css = (await Promise.all(families.map(embeddedFontCssFor))).join('\n');
+      fontsCss = `    <style>\n${css}\n    </style>\n`;
+    } catch {
+      // fallback
+    }
+  }
+
+  const body = design.elements.map((el) => elementToSvg(el, true)).join('\n    ');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     viewBox="${-halfW} ${-halfH} ${CRIOLLO_WIDTH} ${CRIOLLO_HEIGHT}"
+     width="${CRIOLLO_WIDTH}" height="${CRIOLLO_HEIGHT}">
+  <defs>
+${fontsCss}    <clipPath id="criollo-clip">
+      <path d="${CRIOLLO_OUTLINE_PATH}"/>
+    </clipPath>
+  </defs>
+  <!-- Guía de referencia: silueta de la Calabaza del Criollo e interior de la boca. BORRAR antes de grabar -->
+  <g id="guia-referencia" fill="none" stroke="#bbbbbb" stroke-width="1">
+    <path d="${CRIOLLO_OUTLINE_PATH}"/>
+    <ellipse cx="0" cy="-150" rx="105" ry="11"/>
+  </g>
+  <g id="grabado" clip-path="url(#criollo-clip)">
+    ${body}
+  </g>
+</svg>
+`;
+}
+
 export async function generateSvgFromDesign(design: CustomizeDesign): Promise<string> {
   if (design.surface === 'leather') {
     return generateSvgFromLeatherDesign(design);
+  }
+  if (design.surface === 'criollo') {
+    return generateSvgFromCriolloDesign(design);
   }
 
   const half = DESIGN_SIZE / 2;

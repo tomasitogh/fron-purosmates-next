@@ -12,6 +12,7 @@ import {
   ATTACHED_SVG_NAME_KEY,
   ATTACHED_SVG_STORAGE_KEY,
   AUTOSAVE_DEBOUNCE_MS,
+  CRIOLLO_STORAGE_KEY,
   DEFAULT_FONT_FAMILY,
   DEFAULT_LINE_STROKE_WIDTH,
   DESIGN_STORAGE_KEY,
@@ -21,6 +22,7 @@ import {
 import type { CustomizeDesign, CustomizeSurface, DesignElement, ShapeKind } from './types';
 import VirolaCanvas, { type ElementPatch } from './VirolaCanvas';
 import LeatherCanvas from './LeatherCanvas';
+import CriolloCanvas from './CriolloCanvas';
 import CustomizeToolbar, { type SelectedElementPatch } from './CustomizeToolbar';
 
 let idCounter = 0;
@@ -56,16 +58,34 @@ export default function CustomizerShell() {
   const [leatherElements, setLeatherElements] = useState<DesignElement[]>(() =>
     loadSavedDesign(LEATHER_STORAGE_KEY)
   );
+  const [criolloElements, setCriolloElements] = useState<DesignElement[]>(() =>
+    loadSavedDesign(CRIOLLO_STORAGE_KEY)
+  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const elements = surface === 'virola' ? virolaElements : leatherElements;
-  const setElements = surface === 'virola' ? setVirolaElements : setLeatherElements;
+  const elements =
+    surface === 'virola'
+      ? virolaElements
+      : surface === 'leather'
+        ? leatherElements
+        : criolloElements;
+  const setElements =
+    surface === 'virola'
+      ? setVirolaElements
+      : surface === 'leather'
+        ? setLeatherElements
+        : setCriolloElements;
 
   // Autoguardado con debounce independiente para cada superficie
   useEffect(() => {
     const timer = setTimeout(() => {
-      const key = surface === 'virola' ? DESIGN_STORAGE_KEY : LEATHER_STORAGE_KEY;
+      const key =
+        surface === 'virola'
+          ? DESIGN_STORAGE_KEY
+          : surface === 'leather'
+            ? LEATHER_STORAGE_KEY
+            : CRIOLLO_STORAGE_KEY;
       const design: CustomizeDesign = { version: 1, surface, elements };
       try {
         localStorage.setItem(key, JSON.stringify(design));
@@ -93,8 +113,8 @@ export default function CustomizerShell() {
       fontSize: surface === 'virola' ? 22 : 24,
       angle: 0,
       rotation: 0,
-      x: surface === 'leather' ? -120 : 0,
-      y: surface === 'leather' ? 0 : TEXT_RADIUS,
+      x: surface === 'criollo' ? 0 : surface === 'leather' ? -120 : 0,
+      y: surface === 'criollo' ? -20 : surface === 'leather' ? 0 : TEXT_RADIUS,
     };
     setElements((prev) => [...prev, el]);
     setSelectedId(el.id);
@@ -106,7 +126,10 @@ export default function CustomizerShell() {
     let y = TEXT_RADIUS;
     let rotation = 0;
 
-    if (surface === 'leather') {
+    if (surface === 'criollo') {
+      x = 0;
+      y = -20;
+    } else if (surface === 'leather') {
       x = 120;
       y = 0;
     } else if (isLine) {
@@ -152,8 +175,10 @@ export default function CustomizerShell() {
       }
 
       const fit = Math.min(
-        (surface === 'virola' ? 45 : 70) / Math.min(result.width, result.height),
-        (surface === 'virola' ? 120 : 140) / Math.max(result.width, result.height),
+        (surface === 'virola' ? 45 : surface === 'criollo' ? 85 : 70) /
+          Math.min(result.width, result.height),
+        (surface === 'virola' ? 120 : surface === 'criollo' ? 130 : 140) /
+          Math.max(result.width, result.height),
         1.5
       );
 
@@ -163,8 +188,8 @@ export default function CustomizerShell() {
         d: result.d,
         sourceWidth: result.width,
         sourceHeight: result.height,
-        x: surface === 'leather' ? -120 : 0,
-        y: surface === 'leather' ? 0 : TEXT_RADIUS,
+        x: surface === 'criollo' ? 0 : surface === 'leather' ? -120 : 0,
+        y: surface === 'criollo' ? -20 : surface === 'leather' ? 0 : TEXT_RADIUS,
         rotation: 0,
         scale: fit,
       };
@@ -205,7 +230,9 @@ export default function CustomizerShell() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `grabado-${surface === 'virola' ? 'virola' : 'base-cuero'}.svg`;
+      const surfaceSlug =
+        surface === 'virola' ? 'virola' : surface === 'leather' ? 'base-cuero' : 'calabaza-criollo';
+      link.download = `grabado-${surfaceSlug}.svg`;
       link.click();
       URL.revokeObjectURL(url);
       toast.success('SVG descargado exitosamente.');
@@ -222,7 +249,12 @@ export default function CustomizerShell() {
       return;
     }
     const design: CustomizeDesign = { version: 1, surface, elements };
-    const storageKey = surface === 'virola' ? DESIGN_STORAGE_KEY : LEATHER_STORAGE_KEY;
+    const storageKey =
+      surface === 'virola'
+        ? DESIGN_STORAGE_KEY
+        : surface === 'leather'
+          ? LEATHER_STORAGE_KEY
+          : CRIOLLO_STORAGE_KEY;
     try {
       localStorage.setItem(storageKey, JSON.stringify(design));
       toast.success('¡Diseño guardado con éxito!');
@@ -239,11 +271,17 @@ export default function CustomizerShell() {
     const toastId = toast.loading('Adjuntando tu diseño al pedido…');
     try {
       const svg = await generateSvgFromDesign({ version: 1, surface, elements });
-      const surfaceName = surface === 'virola' ? 'Virola' : 'Base-Cuero';
+      const surfaceName =
+        surface === 'virola' ? 'Virola' : surface === 'leather' ? 'Base-Cuero' : 'Calabaza-Criollo';
       const fileName = `Grabado-${surfaceName}.svg`;
 
       const design: CustomizeDesign = { version: 1, surface, elements };
-      const storageKey = surface === 'virola' ? DESIGN_STORAGE_KEY : LEATHER_STORAGE_KEY;
+      const storageKey =
+        surface === 'virola'
+          ? DESIGN_STORAGE_KEY
+          : surface === 'leather'
+            ? LEATHER_STORAGE_KEY
+            : CRIOLLO_STORAGE_KEY;
 
       localStorage.setItem(storageKey, JSON.stringify(design));
       localStorage.setItem(ATTACHED_SVG_STORAGE_KEY, svg);
@@ -282,7 +320,7 @@ export default function CustomizerShell() {
 
   return (
     <div className="space-y-4">
-      {/* Selector de Superficie: Virola vs Base de Cuero */}
+      {/* Selector de Superficie: Virola vs Base de Cuero vs Calabaza del Criollo */}
       <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
         <button
           type="button"
@@ -323,14 +361,46 @@ export default function CustomizerShell() {
             </span>
           )}
         </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setSurface('criollo');
+            setSelectedId(null);
+          }}
+          className={`flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold shadow-xs transition ${
+            surface === 'criollo'
+              ? 'bg-[#7C3F1D] text-white shadow-sm ring-2 ring-[#7C3F1D]/30'
+              : 'border border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
+          }`}
+        >
+          <span>Calabaza del Criollo</span>
+          {criolloElements.length > 0 && (
+            <span className="py-0.2 ml-1 rounded-full bg-[#F3EBDD] px-1.5 text-[11px] font-extrabold text-[#7C3F1D]">
+              {criolloElements.length}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Indicador contextual de zona */}
-      <div className="text-center text-xs text-stone-500">
+      <div className="flex items-center justify-center gap-1.5 text-center text-xs text-stone-600">
+        <span className="inline-block h-2 w-2 rounded-full bg-[#D4AF37]" />
         {surface === 'virola' ? (
-          <p>Grabado láser circular sobre el anillo de metal superior.</p>
+          <p>
+            <span className="font-semibold text-stone-700">Zona de grabado:</span> Anillo circular
+            de metal (virola superior).
+          </p>
+        ) : surface === 'leather' ? (
+          <p>
+            <span className="font-semibold text-stone-700">Zona de grabado:</span> Faja de cuero
+            color suela (lados izquierdo y derecho de la costura).
+          </p>
         ) : (
-          <p>Grabado láser plano sobre la faja de cuero color suela (costura central de tiento).</p>
+          <p>
+            <span className="font-semibold text-stone-700">Zona de grabado:</span> Frente de la
+            calabaza del clásico Mate Criollo.
+          </p>
         )}
       </div>
 
@@ -344,8 +414,15 @@ export default function CustomizerShell() {
               onSelect={setSelectedId}
               onUpdateElement={handleCanvasUpdate}
             />
-          ) : (
+          ) : surface === 'leather' ? (
             <LeatherCanvas
+              elements={elements}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onUpdateElement={handleCanvasUpdate}
+            />
+          ) : (
+            <CriolloCanvas
               elements={elements}
               selectedId={selectedId}
               onSelect={setSelectedId}
