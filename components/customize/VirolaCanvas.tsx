@@ -361,115 +361,38 @@ export default function VirolaCanvas({
         >
           <Layer>
             <Group x={stageSize / 2} y={stageSize / 2} scaleX={scale} scaleY={scale}>
-              {/* Sombra proyectada del mate completo */}
-              <Circle
-                x={0}
-                y={0}
-                radius={196}
-                fill="#000000"
-                shadowColor="#000000"
-                shadowBlur={22}
-                shadowOpacity={0.22}
-                shadowOffset={{ x: 0, y: 7 }}
-                listening={false}
-              />
-
-              {/* Hombros / cuerpo de calabaza del mate que asoman alrededor de la virola */}
-              <Circle
-                x={0}
-                y={0}
-                radius={196}
-                fill="#8C4E22"
-                stroke="#5E3011"
-                strokeWidth={2.5}
-                listening={false}
-              />
-              {/* Textura y luz cálida de la calabaza exterior */}
-              <Circle
-                x={0}
-                y={0}
-                radius={193}
-                stroke="#B86F36"
-                strokeWidth={3}
-                opacity={0.65}
-                listening={false}
-              />
-              {/* Sombra de encastre donde apoya la virola de metal sobre la calabaza */}
-              <Circle
-                x={0}
-                y={0}
-                radius={OUTER_RADIUS + 2}
-                stroke="#3D1D09"
-                strokeWidth={3.5}
-                opacity={0.75}
-                listening={false}
-              />
-
-              {/* Profundidad del interior del mate (calabaza y yerba mate vista desde la boca) */}
-              <Circle
-                x={0}
-                y={0}
-                radius={INNER_RADIUS}
-                fill="#1C2E1B"
-                stroke="#170C06"
-                strokeWidth={3}
-                listening={false}
-              />
-              {/* Textura de yerba mate en el interior */}
-              <Circle x={0} y={0} radius={INNER_RADIUS - 8} fill="#243822" listening={false} />
-              <Circle x={0} y={0} radius={INNER_RADIUS - 22} fill="#182717" listening={false} />
-
-              {/* Cuerpo metálico de la virola de alpaca / acero */}
+              {/* Guía visual: la virola (no escucha eventos) */}
               <Ring
                 x={0}
                 y={0}
                 innerRadius={INNER_RADIUS}
                 outerRadius={OUTER_RADIUS}
-                fill="#D8DEE6"
-                stroke="#94A3B8"
-                strokeWidth={2}
-                listening={false}
-              />
-
-              {/* Bisel y reflejos de luz metálica */}
-              <Circle
-                x={0}
-                y={0}
-                radius={OUTER_RADIUS - 2}
-                stroke="#FFFFFF"
-                strokeWidth={1.5}
-                opacity={0.65}
+                fill="#ece6dc"
                 listening={false}
               />
               <Circle
                 x={0}
                 y={0}
-                radius={INNER_RADIUS + 2}
-                stroke="#FFFFFF"
+                radius={OUTER_RADIUS}
+                stroke="#c8bfae"
                 strokeWidth={1.5}
-                opacity={0.5}
                 listening={false}
               />
-
-              {/* Brillo circular superior de metal pulido */}
-              <Path
-                data="M -125 -90 A 155 155 0 0 1 125 -90"
-                stroke="#FFFFFF"
-                strokeWidth={20}
-                opacity={0.15}
-                lineCap="round"
+              <Circle
+                x={0}
+                y={0}
+                radius={INNER_RADIUS}
+                stroke="#c8bfae"
+                strokeWidth={1.5}
                 listening={false}
               />
-
-              {/* Línea guía suave de grabado central */}
               <Circle
                 x={0}
                 y={0}
                 radius={TEXT_RADIUS}
-                stroke="#8494A7"
+                stroke="#ddd5c8"
                 strokeWidth={1}
                 dash={[4, 6]}
-                opacity={0.35}
                 listening={false}
               />
 

@@ -1,7 +1,6 @@
 import {
   CRIOLLO_HEIGHT,
   CRIOLLO_OUTLINE_PATH,
-  CRIOLLO_VIROLA_PATH,
   CRIOLLO_WIDTH,
   DEFAULT_LINE_STROKE_WIDTH,
   DESIGN_SIZE,
@@ -260,10 +259,10 @@ ${fontsCss}    <clipPath id="criollo-clip">
       <path d="${CRIOLLO_OUTLINE_PATH}"/>
     </clipPath>
   </defs>
-  <!-- Guía de referencia: silueta de la Calabaza del Criollo y virola. BORRAR antes de grabar -->
+  <!-- Guía de referencia: silueta de la Calabaza del Criollo e interior de la boca. BORRAR antes de grabar -->
   <g id="guia-referencia" fill="none" stroke="#bbbbbb" stroke-width="1">
     <path d="${CRIOLLO_OUTLINE_PATH}"/>
-    <path d="${CRIOLLO_VIROLA_PATH}"/>
+    <ellipse cx="0" cy="-155" rx="115" ry="9"/>
   </g>
   <g id="grabado" clip-path="url(#criollo-clip)">
     ${body}

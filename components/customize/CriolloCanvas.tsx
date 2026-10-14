@@ -11,9 +11,6 @@ import {
   CRIOLLO_ENGRAVE_COLOR,
   CRIOLLO_HEIGHT,
   CRIOLLO_OUTLINE_PATH,
-  CRIOLLO_VIROLA_BG,
-  CRIOLLO_VIROLA_BORDER,
-  CRIOLLO_VIROLA_PATH,
   CRIOLLO_WIDTH,
   DEFAULT_LINE_STROKE_WIDTH,
   HEART_PATH,
@@ -205,23 +202,14 @@ export default function CriolloCanvas({
                 listening={false}
               />
 
-              {/* 2. Boca / Virola de Alpaca superior */}
-              <Path
-                data={CRIOLLO_VIROLA_PATH}
-                fill={CRIOLLO_VIROLA_BG}
-                stroke={CRIOLLO_VIROLA_BORDER}
-                strokeWidth={1.8}
-                listening={false}
-              />
-
-              {/* Profundidad interior de la boca del mate */}
+              {/* Interior oscuro de la boca del mate */}
               <Ellipse
                 x={0}
                 y={-155}
                 radiusX={115}
                 radiusY={9}
-                fill="#2E1B10"
-                stroke="#1B0F09"
+                fill="#1A1A1A"
+                stroke="#111111"
                 strokeWidth={1.5}
                 listening={false}
               />
