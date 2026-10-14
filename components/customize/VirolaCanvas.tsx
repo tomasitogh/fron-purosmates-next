@@ -361,30 +361,63 @@ export default function VirolaCanvas({
         >
           <Layer>
             <Group x={stageSize / 2} y={stageSize / 2} scaleX={scale} scaleY={scale}>
-              {/* Sombra base exterior para dar volumen 3D al mate */}
+              {/* Sombra proyectada del mate completo */}
               <Circle
                 x={0}
                 y={0}
-                radius={OUTER_RADIUS}
+                radius={196}
                 fill="#000000"
                 shadowColor="#000000"
-                shadowBlur={18}
-                shadowOpacity={0.16}
-                shadowOffset={{ x: 0, y: 5 }}
+                shadowBlur={22}
+                shadowOpacity={0.22}
+                shadowOffset={{ x: 0, y: 7 }}
                 listening={false}
               />
 
-              {/* Profundidad del interior del mate (calabaza vista desde la boca) */}
+              {/* Hombros / cuerpo de calabaza del mate que asoman alrededor de la virola */}
+              <Circle
+                x={0}
+                y={0}
+                radius={196}
+                fill="#8C4E22"
+                stroke="#5E3011"
+                strokeWidth={2.5}
+                listening={false}
+              />
+              {/* Textura y luz cálida de la calabaza exterior */}
+              <Circle
+                x={0}
+                y={0}
+                radius={193}
+                stroke="#B86F36"
+                strokeWidth={3}
+                opacity={0.65}
+                listening={false}
+              />
+              {/* Sombra de encastre donde apoya la virola de metal sobre la calabaza */}
+              <Circle
+                x={0}
+                y={0}
+                radius={OUTER_RADIUS + 2}
+                stroke="#3D1D09"
+                strokeWidth={3.5}
+                opacity={0.75}
+                listening={false}
+              />
+
+              {/* Profundidad del interior del mate (calabaza y yerba mate vista desde la boca) */}
               <Circle
                 x={0}
                 y={0}
                 radius={INNER_RADIUS}
-                fill="#24140B"
+                fill="#1C2E1B"
                 stroke="#170C06"
                 strokeWidth={3}
                 listening={false}
               />
-              <Circle x={0} y={0} radius={INNER_RADIUS - 6} fill="#160B05" listening={false} />
+              {/* Textura de yerba mate en el interior */}
+              <Circle x={0} y={0} radius={INNER_RADIUS - 8} fill="#243822" listening={false} />
+              <Circle x={0} y={0} radius={INNER_RADIUS - 22} fill="#182717" listening={false} />
 
               {/* Cuerpo metálico de la virola de alpaca / acero */}
               <Ring

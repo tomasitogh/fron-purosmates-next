@@ -217,8 +217,8 @@ export default function CriolloCanvas({
               {/* Profundidad interior de la boca del mate */}
               <Ellipse
                 x={0}
-                y={-149}
-                radiusX={100}
+                y={-155}
+                radiusX={115}
                 radiusY={9}
                 fill="#2E1B10"
                 stroke="#1B0F09"

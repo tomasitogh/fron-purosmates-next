@@ -161,10 +161,10 @@ export const CRIOLLO_VIROLA_BG = '#E2E8F0';
 export const CRIOLLO_VIROLA_BORDER = '#94A3B8';
 export const CRIOLLO_ENGRAVE_COLOR = '#1A1A1A';
 
-// Path del contorno exterior completo de la Calabaza del Criollo (silueta limpia sin base)
+// Path del contorno exterior completo de la Calabaza del Criollo (silueta estilizada acampanada)
 export const CRIOLLO_OUTLINE_PATH =
-  'M -115 -150 C -50 -158, 50 -158, 115 -150 C 112 -138, 105 -132, 105 -132 C 88 -85, 84 -60, 84 -60 C 84 -20, 97 15, 97 45 C 97 85, 85 125, 55 148 C 35 158, -35 158, -55 148 C -85 125, -97 85, -97 45 C -97 15, -84 -20, -84 -60 C -84 -60, -88 -85, -105 -132 C -105 -132, -112 -138, -115 -150 Z';
+  'M -125 -155 C -60 -164, 60 -164, 125 -155 C 120 -142, 108 -135, 105 -135 C 85 -95, 75 -65, 75 -55 C 75 -25, 100 10, 100 40 C 100 85, 80 130, 45 150 C 25 158, -25 158, -45 150 C -80 130, -100 85, -100 40 C -100 10, -75 -25, -75 -55 C -75 -65, -85 -95, -105 -135 C -108 -135, -120 -142, -125 -155 Z';
 
 // Path de la virola / boca metálica
 export const CRIOLLO_VIROLA_PATH =
-  'M -115 -150 C -50 -158, 50 -158, 115 -150 C 112 -138, 105 -132, 105 -132 C 50 -140, -50 -140, -105 -132 C -105 -132, -112 -138, -115 -150 Z';
+  'M -125 -155 C -60 -164, 60 -164, 125 -155 C 120 -142, 108 -135, 105 -135 C 50 -144, -50 -144, -105 -135 C -108 -135, -120 -142, -125 -155 Z';
