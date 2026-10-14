@@ -384,13 +384,23 @@ export default function CustomizerShell() {
       </div>
 
       {/* Indicador contextual de zona */}
-      <div className="text-center text-xs text-stone-500">
+      <div className="flex items-center justify-center gap-1.5 text-center text-xs text-stone-600">
+        <span className="inline-block h-2 w-2 rounded-full bg-[#D4AF37]" />
         {surface === 'virola' ? (
-          <p>Grabado láser circular sobre el anillo de metal superior.</p>
+          <p>
+            <span className="font-semibold text-stone-700">Zona de grabado:</span> Anillo circular
+            de metal (virola superior).
+          </p>
         ) : surface === 'leather' ? (
-          <p>Grabado láser plano sobre la faja de cuero color suela (costura central de tiento).</p>
+          <p>
+            <span className="font-semibold text-stone-700">Zona de grabado:</span> Faja de cuero
+            color suela (lados izquierdo y derecho de la costura).
+          </p>
         ) : (
-          <p>Grabado láser frontal sobre la calabaza del clásico Mate Criollo.</p>
+          <p>
+            <span className="font-semibold text-stone-700">Zona de grabado:</span> Frente de la
+            calabaza del clásico Mate Criollo.
+          </p>
         )}
       </div>
 

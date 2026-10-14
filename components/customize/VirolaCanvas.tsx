@@ -1,7 +1,18 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Circle, Group, Layer, Line, Path, Ring, Stage, TextPath, Transformer } from 'react-konva';
+import {
+  Circle,
+  Group,
+  Layer,
+  Line,
+  Path,
+  Ring,
+  Stage,
+  Text,
+  TextPath,
+  Transformer,
+} from 'react-konva';
 import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import {
@@ -395,6 +406,38 @@ export default function VirolaCanvas({
                 dash={[4, 6]}
                 listening={false}
               />
+
+              {/* Guía visual suave si no hay elementos agregados */}
+              {elements.length === 0 && (
+                <>
+                  <Text
+                    text="ÁREA DE GRABADO"
+                    x={0}
+                    y={-TEXT_RADIUS - 6}
+                    fontSize={10}
+                    fontFamily="sans-serif"
+                    fontStyle="bold"
+                    fill="#8A8275"
+                    opacity={0.65}
+                    align="center"
+                    offsetX={48}
+                    listening={false}
+                  />
+                  <Text
+                    text="ÁREA DE GRABADO"
+                    x={0}
+                    y={TEXT_RADIUS - 6}
+                    fontSize={10}
+                    fontFamily="sans-serif"
+                    fontStyle="bold"
+                    fill="#8A8275"
+                    opacity={0.65}
+                    align="center"
+                    offsetX={48}
+                    listening={false}
+                  />
+                </>
+              )}
 
               {/* Diseño del usuario, recortado al anillo */}
               <Group clipFunc={clipToRing}>
