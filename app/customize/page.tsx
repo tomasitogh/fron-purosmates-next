@@ -3,12 +3,13 @@ import CustomizerLoader from '@/components/customize/CustomizerLoader';
 import { GOOGLE_FONTS_HREF } from '@/components/customize/constants';
 
 export const metadata: Metadata = {
-  title: 'Personalizador de Virolas 100% Gratuito | Puros Mates',
+  title: 'Personalizador de Mates 100% Gratuito | Puros Mates',
   description:
-    'Diseñá tu mate ideal en tiempo real: grabá tu frase, escudo, iniciales o dibujo en la virola de alpaca o acero con precisión láser.',
+    'Diseñá tu mate ideal en tiempo real: grabá tu frase, escudo, iniciales o dibujo en la virola de metal, base de cuero o calabaza del mate criollo con precisión láser.',
   openGraph: {
-    title: 'Personalizador de Virolas Online - Puros Mates',
-    description: 'Creá tu diseño único de grabado láser en virola antes de comprar.',
+    title: 'Personalizador de Mates Online - Puros Mates',
+    description:
+      'Creá tu diseño único de grabado láser en virola, cuero o calabaza criolla antes de comprar.',
   },
 };
 
@@ -31,8 +32,9 @@ export default function CustomizePage() {
             Diseñá el Grabado de tu Mate
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-stone-200 sm:text-base md:text-lg">
-            Personalizá tu mate en vivo. Grabá tu virola de metal o la base de cuero con costura de
-            tiento: escribí nombres, fechas, escudos o logos con precisión láser.
+            Personalizá tu mate en vivo. Elegí entre la virola de metal, la base de cuero o la
+            calabaza del mate criollo: escribí nombres, fechas, escudos o logos con grabado láser de
+            alta precisión.
           </p>
 
           {/* Marketing Steps */}
@@ -48,7 +50,7 @@ export default function CustomizePage() {
                 2
               </span>
               <p className="text-xs text-white/90">
-                Ajustá la curvatura, ángulo y tamaño sobre la virola
+                Elegí la superficie (virola, cuero o calabaza) y acomodá tu diseño
               </p>
             </div>
             <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-left backdrop-blur-xs">
@@ -56,7 +58,7 @@ export default function CustomizePage() {
                 3
               </span>
               <p className="text-xs text-white/90">
-                Descargá tu matriz SVG lista para el grabado láser
+                Adjuntalo directo a tu pedido o descargá la matriz SVG
               </p>
             </div>
           </div>
@@ -67,8 +69,10 @@ export default function CustomizePage() {
       <main className="mx-auto w-full max-w-5xl px-3 pt-6 sm:px-4 md:pt-10">
         <div className="mb-6 rounded-2xl border border-amber-200/70 bg-amber-50/80 p-4 text-xs leading-relaxed text-amber-900 sm:text-sm">
           <span className="font-bold text-amber-950">💡 Consejo de diseño: </span>
-          Todo elemento ubicado sobre el anillo plateado se graba con láser de alta precisión. Podés
-          arrastrar los textos y figuras alrededor del aro para encontrar la posición perfecta.
+          Podés personalizar la virola circular de metal, la faja de cuero artesanal o el frente de
+          la calabaza criolla. Todos los textos, dibujos y fotos que agregues se graban con láser de
+          alta precisión. Podés moverlos, rotarlos y cambiarles el tamaño libremente hasta encontrar
+          la posición perfecta.
         </div>
 
         <CustomizerLoader />
