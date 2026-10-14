@@ -407,13 +407,14 @@ export default function VirolaCanvas({
                 listening={false}
               />
 
-              {/* Guía visual suave si no hay elementos agregados */}
+              {/* Guía visual suave si no hay elementos agregados: 4 extremos de la virola */}
               {elements.length === 0 && (
                 <>
+                  {/* Arriba */}
                   <Text
                     text="ÁREA DE GRABADO"
                     x={0}
-                    y={-TEXT_RADIUS - 6}
+                    y={-TEXT_RADIUS}
                     fontSize={10}
                     fontFamily="sans-serif"
                     fontStyle="bold"
@@ -421,12 +422,14 @@ export default function VirolaCanvas({
                     opacity={0.65}
                     align="center"
                     offsetX={48}
+                    offsetY={5}
                     listening={false}
                   />
+                  {/* Abajo */}
                   <Text
                     text="ÁREA DE GRABADO"
                     x={0}
-                    y={TEXT_RADIUS - 6}
+                    y={TEXT_RADIUS}
                     fontSize={10}
                     fontFamily="sans-serif"
                     fontStyle="bold"
@@ -434,6 +437,39 @@ export default function VirolaCanvas({
                     opacity={0.65}
                     align="center"
                     offsetX={48}
+                    offsetY={5}
+                    listening={false}
+                  />
+                  {/* Izquierda */}
+                  <Text
+                    text="ÁREA DE GRABADO"
+                    x={-TEXT_RADIUS}
+                    y={0}
+                    rotation={-90}
+                    fontSize={10}
+                    fontFamily="sans-serif"
+                    fontStyle="bold"
+                    fill="#8A8275"
+                    opacity={0.65}
+                    align="center"
+                    offsetX={48}
+                    offsetY={5}
+                    listening={false}
+                  />
+                  {/* Derecha */}
+                  <Text
+                    text="ÁREA DE GRABADO"
+                    x={TEXT_RADIUS}
+                    y={0}
+                    rotation={90}
+                    fontSize={10}
+                    fontFamily="sans-serif"
+                    fontStyle="bold"
+                    fill="#8A8275"
+                    opacity={0.65}
+                    align="center"
+                    offsetX={48}
+                    offsetY={5}
                     listening={false}
                   />
                 </>
