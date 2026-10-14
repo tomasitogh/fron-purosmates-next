@@ -194,22 +194,34 @@ export default function CriolloCanvas({
 
               {/* Brillo sutil y natural sobre la curvatura de la calabaza */}
               <Line
-                points={[0, -110, 0, 70]}
+                points={[0, -105, 0, 70]}
                 stroke="#FFFFFF"
-                strokeWidth={28}
+                strokeWidth={26}
                 opacity={0.07}
                 lineCap="round"
                 listening={false}
               />
 
-              {/* Interior oscuro de la boca del mate */}
+              {/* Borde / labio superior de la calabaza pulida */}
               <Ellipse
                 x={0}
-                y={-155}
+                y={-150}
                 radiusX={115}
-                radiusY={9}
-                fill="#1A1A1A"
-                stroke="#111111"
+                radiusY={15}
+                fill="#C4793B"
+                stroke={CRIOLLO_CALABAZA_BORDER}
+                strokeWidth={1.5}
+                listening={false}
+              />
+
+              {/* Interior oscuro de la cavidad del mate */}
+              <Ellipse
+                x={0}
+                y={-150}
+                radiusX={105}
+                radiusY={11}
+                fill="#181818"
+                stroke="#0D0D0D"
                 strokeWidth={1.5}
                 listening={false}
               />

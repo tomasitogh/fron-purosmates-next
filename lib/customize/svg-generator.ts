@@ -262,7 +262,7 @@ ${fontsCss}    <clipPath id="criollo-clip">
   <!-- Guía de referencia: silueta de la Calabaza del Criollo e interior de la boca. BORRAR antes de grabar -->
   <g id="guia-referencia" fill="none" stroke="#bbbbbb" stroke-width="1">
     <path d="${CRIOLLO_OUTLINE_PATH}"/>
-    <ellipse cx="0" cy="-155" rx="115" ry="9"/>
+    <ellipse cx="0" cy="-150" rx="105" ry="11"/>
   </g>
   <g id="grabado" clip-path="url(#criollo-clip)">
     ${body}
