@@ -243,15 +243,8 @@ export default function CriolloCanvas({
                 />
               )}
 
-              {/* 3. Grupo de grabado láser (recortado a la silueta de la calabaza) */}
-              <Group
-                clipFunc={(ctx) => {
-                  if (typeof Path2D !== 'undefined') {
-                    const p = new Path2D(CRIOLLO_OUTLINE_PATH);
-                    ctx.clip(p);
-                  }
-                }}
-              >
+              {/* 3. Grupo de grabado láser sobre la calabaza */}
+              <Group>
                 {elements.map((el) => {
                   if (el.type === 'text') {
                     const posX = el.x ?? 0;
