@@ -114,7 +114,7 @@ export default function CustomizerShell() {
       angle: 0,
       rotation: 0,
       x: surface === 'criollo' ? 0 : surface === 'leather' ? -120 : 0,
-      y: surface === 'criollo' ? -75 : surface === 'leather' ? 0 : TEXT_RADIUS,
+      y: surface === 'criollo' ? -20 : surface === 'leather' ? 0 : TEXT_RADIUS,
     };
     setElements((prev) => [...prev, el]);
     setSelectedId(el.id);
@@ -128,7 +128,7 @@ export default function CustomizerShell() {
 
     if (surface === 'criollo') {
       x = 0;
-      y = -75;
+      y = -20;
     } else if (surface === 'leather') {
       x = 120;
       y = 0;
@@ -189,7 +189,7 @@ export default function CustomizerShell() {
         sourceWidth: result.width,
         sourceHeight: result.height,
         x: surface === 'criollo' ? 0 : surface === 'leather' ? -120 : 0,
-        y: surface === 'criollo' ? -75 : surface === 'leather' ? 0 : TEXT_RADIUS,
+        y: surface === 'criollo' ? -20 : surface === 'leather' ? 0 : TEXT_RADIUS,
         rotation: 0,
         scale: fit,
       };
@@ -231,7 +231,7 @@ export default function CustomizerShell() {
       const link = document.createElement('a');
       link.href = url;
       const surfaceSlug =
-        surface === 'virola' ? 'virola' : surface === 'leather' ? 'base-cuero' : 'mate-criollo';
+        surface === 'virola' ? 'virola' : surface === 'leather' ? 'base-cuero' : 'calabaza-criollo';
       link.download = `grabado-${surfaceSlug}.svg`;
       link.click();
       URL.revokeObjectURL(url);
@@ -272,7 +272,7 @@ export default function CustomizerShell() {
     try {
       const svg = await generateSvgFromDesign({ version: 1, surface, elements });
       const surfaceName =
-        surface === 'virola' ? 'Virola' : surface === 'leather' ? 'Base-Cuero' : 'Mate-Criollo';
+        surface === 'virola' ? 'Virola' : surface === 'leather' ? 'Base-Cuero' : 'Calabaza-Criollo';
       const fileName = `Grabado-${surfaceName}.svg`;
 
       const design: CustomizeDesign = { version: 1, surface, elements };
@@ -320,7 +320,7 @@ export default function CustomizerShell() {
 
   return (
     <div className="space-y-4">
-      {/* Selector de Superficie: Virola vs Base de Cuero vs Mate Criollo */}
+      {/* Selector de Superficie: Virola vs Base de Cuero vs Calabaza del Criollo */}
       <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
         <button
           type="button"
@@ -374,7 +374,7 @@ export default function CustomizerShell() {
               : 'border border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
           }`}
         >
-          <span>Mate Criollo 🧉</span>
+          <span>Calabaza del Criollo</span>
           {criolloElements.length > 0 && (
             <span className="py-0.2 ml-1 rounded-full bg-[#F3EBDD] px-1.5 text-[11px] font-extrabold text-[#7C3F1D]">
               {criolloElements.length}
@@ -390,7 +390,7 @@ export default function CustomizerShell() {
         ) : surface === 'leather' ? (
           <p>Grabado láser plano sobre la faja de cuero color suela (costura central de tiento).</p>
         ) : (
-          <p>Grabado láser frontal sobre la silueta y calabaza del clásico Mate Criollo.</p>
+          <p>Grabado láser frontal sobre la calabaza del clásico Mate Criollo.</p>
         )}
       </div>
 

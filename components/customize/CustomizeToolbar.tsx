@@ -389,19 +389,11 @@ export default function CustomizeToolbar({
             <div className="mt-4 flex flex-col gap-2.5 border-t border-stone-100 pt-4">
               <button
                 type="button"
-                onClick={onConfirm}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-stone-200 bg-stone-50 p-2.5 text-xs font-semibold text-stone-700 shadow-2xs transition hover:bg-stone-100 active:scale-[0.99]"
-              >
-                <Save size={15} className="text-stone-500" />
-                Guardar diseño
-              </button>
-              <button
-                type="button"
                 onClick={onAttachToOrder}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#254642] p-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#1a3330] active:scale-[0.99]"
               >
                 <ShoppingCart size={17} className="text-[#D4AF37]" />
-                Adjuntar personalizado en el pedido
+                Agregar personalizado al pedido
               </button>
               <button
                 type="button"

@@ -8,15 +8,9 @@ import {
   AVAILABLE_FONTS,
   CRIOLLO_CALABAZA_BG,
   CRIOLLO_CALABAZA_BORDER,
-  CRIOLLO_CALABAZA_PATH,
-  CRIOLLO_DIVIDER_PATH,
   CRIOLLO_ENGRAVE_COLOR,
   CRIOLLO_HEIGHT,
-  CRIOLLO_LEATHER_BG,
-  CRIOLLO_LEATHER_BORDER,
-  CRIOLLO_LEATHER_PATH,
   CRIOLLO_OUTLINE_PATH,
-  CRIOLLO_SEAM_THREAD,
   CRIOLLO_VIROLA_BG,
   CRIOLLO_VIROLA_BORDER,
   CRIOLLO_VIROLA_PATH,
@@ -176,61 +170,6 @@ export default function CriolloCanvas({
     }
   };
 
-  // Costura de tiento lateral artesanal (puntadas cruzadas en X en el lateral derecho de la faja)
-  const numStitches = 6;
-  const startY = 22;
-  const endY = 145;
-  const stitchStep = (endY - startY) / numStitches;
-  const stitchLeftX = 60;
-  const stitchRightX = 76;
-
-  const stitches = [];
-  for (let i = 0; i < numStitches; i++) {
-    const yTop = startY + i * stitchStep;
-    const yBottom = yTop + stitchStep - 4;
-
-    stitches.push(
-      <Line
-        key={`cr-s1-${i}`}
-        points={[stitchLeftX, yTop, stitchRightX, yBottom]}
-        stroke={CRIOLLO_SEAM_THREAD}
-        strokeWidth={2.4}
-        lineCap="round"
-        listening={false}
-      />
-    );
-    stitches.push(
-      <Line
-        key={`cr-s2-${i}`}
-        points={[stitchRightX, yTop, stitchLeftX, yBottom]}
-        stroke={CRIOLLO_SEAM_THREAD}
-        strokeWidth={2.4}
-        lineCap="round"
-        listening={false}
-      />
-    );
-    stitches.push(
-      <Circle
-        key={`cr-h1-${i}`}
-        x={stitchLeftX}
-        y={yTop}
-        radius={1.6}
-        fill="#2B1408"
-        listening={false}
-      />
-    );
-    stitches.push(
-      <Circle
-        key={`cr-h2-${i}`}
-        x={stitchRightX}
-        y={yTop}
-        radius={1.6}
-        fill="#2B1408"
-        listening={false}
-      />
-    );
-  }
-
   return (
     <div ref={containerRef} className="relative w-full" style={{ touchAction: 'none' }}>
       {stageWidth > 0 && (
@@ -243,78 +182,30 @@ export default function CriolloCanvas({
         >
           <Layer>
             <Group x={stageWidth / 2} y={stageHeight / 2} scaleX={scale} scaleY={scale}>
-              {/* Sombra base del mate sobre la superficie */}
-              <Ellipse
-                x={0}
-                y={172}
-                radiusX={72}
-                radiusY={10}
-                fill="#000000"
-                opacity={0.16}
-                listening={false}
-              />
-
-              {/* 1. Cuerpo de Calabaza (tonalidad ámbar tostado natural) */}
+              {/* 1. Silueta pura de la Calabaza del Criollo (sin base) */}
               <Path
-                data={CRIOLLO_CALABAZA_PATH}
+                data={CRIOLLO_OUTLINE_PATH}
                 fill={CRIOLLO_CALABAZA_BG}
                 stroke={CRIOLLO_CALABAZA_BORDER}
                 strokeWidth={2}
                 shadowColor="#000000"
-                shadowBlur={10}
-                shadowOpacity={0.1}
-                shadowOffset={{ x: 0, y: 3 }}
+                shadowBlur={12}
+                shadowOpacity={0.12}
+                shadowOffset={{ x: 0, y: 4 }}
                 listening={false}
               />
 
-              {/* Brillo / volumen sutil sobre la calabaza */}
+              {/* Brillo sutil y natural sobre la curvatura de la calabaza */}
               <Line
-                points={[0, -140, 0, -10]}
+                points={[0, -110, 0, 70]}
                 stroke="#FFFFFF"
-                strokeWidth={26}
-                opacity={0.06}
+                strokeWidth={28}
+                opacity={0.07}
                 lineCap="round"
                 listening={false}
               />
 
-              {/* 2. Faja de Cuero / Lonja (parte inferior con textura artesanal) */}
-              <Path
-                data={CRIOLLO_LEATHER_PATH}
-                fill={CRIOLLO_LEATHER_BG}
-                stroke={CRIOLLO_LEATHER_BORDER}
-                strokeWidth={2}
-                listening={false}
-              />
-
-              {/* Línea divisoria de unión calabaza - cuero */}
-              <Path
-                data={CRIOLLO_DIVIDER_PATH}
-                stroke="#4E270E"
-                strokeWidth={2}
-                fillEnabled={false}
-                listening={false}
-              />
-
-              {/* Pespunte decorativo superior e inferior en el cuero */}
-              <Line
-                points={[-86, 12, 86, 12]}
-                stroke="#703D1A"
-                strokeWidth={1}
-                dash={[4, 3]}
-                listening={false}
-              />
-              <Line
-                points={[-78, 155, 78, 155]}
-                stroke="#703D1A"
-                strokeWidth={1}
-                dash={[4, 3]}
-                listening={false}
-              />
-
-              {/* Costura de tiento artesanal cruzada en el lateral */}
-              {stitches}
-
-              {/* 3. Boca / Virola de Alpaca superior (borde metálico) */}
+              {/* 2. Boca / Virola de Alpaca superior */}
               <Path
                 data={CRIOLLO_VIROLA_PATH}
                 fill={CRIOLLO_VIROLA_BG}
@@ -323,11 +214,11 @@ export default function CriolloCanvas({
                 listening={false}
               />
 
-              {/* Hueco interior / profundidad de la boca del mate */}
+              {/* Profundidad interior de la boca del mate */}
               <Ellipse
                 x={0}
-                y={-165}
-                radiusX={96}
+                y={-149}
+                radiusX={100}
                 radiusY={9}
                 fill="#2E1B10"
                 stroke="#1B0F09"
@@ -335,12 +226,12 @@ export default function CriolloCanvas({
                 listening={false}
               />
 
-              {/* Guía visual suave si no hay elementos */}
+              {/* Guía visual suave si no hay elementos agregados */}
               {elements.length === 0 && (
                 <Text
                   text="ÁREA DE GRABADO"
                   x={0}
-                  y={-75}
+                  y={-20}
                   fontSize={10}
                   fontFamily="sans-serif"
                   fontStyle="bold"
@@ -352,7 +243,7 @@ export default function CriolloCanvas({
                 />
               )}
 
-              {/* 4. Grupo de Elementos Grabados a Láser (recortados a la silueta del mate) */}
+              {/* 3. Grupo de grabado láser (recortado a la silueta de la calabaza) */}
               <Group
                 clipFunc={(ctx) => {
                   if (typeof Path2D !== 'undefined') {
@@ -364,7 +255,7 @@ export default function CriolloCanvas({
                 {elements.map((el) => {
                   if (el.type === 'text') {
                     const posX = el.x ?? 0;
-                    const posY = el.y ?? -75;
+                    const posY = el.y ?? -20;
 
                     return (
                       <Text

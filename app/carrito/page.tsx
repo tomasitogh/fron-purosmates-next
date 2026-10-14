@@ -139,7 +139,7 @@ export default function Carrito() {
                 design.surface === 'leather'
                   ? 'Grabado en Cuero (Personalizador)'
                   : design.surface === 'criollo'
-                    ? 'Grabado en Mate Criollo (Personalizador)'
+                    ? 'Grabado en Calabaza del Criollo (Personalizador)'
                     : 'Grabado en Virola (Personalizador)'
               );
             })
