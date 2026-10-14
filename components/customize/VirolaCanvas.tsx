@@ -361,38 +361,82 @@ export default function VirolaCanvas({
         >
           <Layer>
             <Group x={stageSize / 2} y={stageSize / 2} scaleX={scale} scaleY={scale}>
-              {/* Guía visual: la virola (no escucha eventos) */}
+              {/* Sombra base exterior para dar volumen 3D al mate */}
+              <Circle
+                x={0}
+                y={0}
+                radius={OUTER_RADIUS}
+                fill="#000000"
+                shadowColor="#000000"
+                shadowBlur={18}
+                shadowOpacity={0.16}
+                shadowOffset={{ x: 0, y: 5 }}
+                listening={false}
+              />
+
+              {/* Profundidad del interior del mate (calabaza vista desde la boca) */}
+              <Circle
+                x={0}
+                y={0}
+                radius={INNER_RADIUS}
+                fill="#24140B"
+                stroke="#170C06"
+                strokeWidth={3}
+                listening={false}
+              />
+              <Circle x={0} y={0} radius={INNER_RADIUS - 6} fill="#160B05" listening={false} />
+
+              {/* Cuerpo metálico de la virola de alpaca / acero */}
               <Ring
                 x={0}
                 y={0}
                 innerRadius={INNER_RADIUS}
                 outerRadius={OUTER_RADIUS}
-                fill="#ece6dc"
+                fill="#D8DEE6"
+                stroke="#94A3B8"
+                strokeWidth={2}
+                listening={false}
+              />
+
+              {/* Bisel y reflejos de luz metálica */}
+              <Circle
+                x={0}
+                y={0}
+                radius={OUTER_RADIUS - 2}
+                stroke="#FFFFFF"
+                strokeWidth={1.5}
+                opacity={0.65}
                 listening={false}
               />
               <Circle
                 x={0}
                 y={0}
-                radius={OUTER_RADIUS}
-                stroke="#c8bfae"
+                radius={INNER_RADIUS + 2}
+                stroke="#FFFFFF"
                 strokeWidth={1.5}
+                opacity={0.5}
                 listening={false}
               />
-              <Circle
-                x={0}
-                y={0}
-                radius={INNER_RADIUS}
-                stroke="#c8bfae"
-                strokeWidth={1.5}
+
+              {/* Brillo circular superior de metal pulido */}
+              <Path
+                data="M -125 -90 A 155 155 0 0 1 125 -90"
+                stroke="#FFFFFF"
+                strokeWidth={20}
+                opacity={0.15}
+                lineCap="round"
                 listening={false}
               />
+
+              {/* Línea guía suave de grabado central */}
               <Circle
                 x={0}
                 y={0}
                 radius={TEXT_RADIUS}
-                stroke="#ddd5c8"
+                stroke="#8494A7"
                 strokeWidth={1}
                 dash={[4, 6]}
+                opacity={0.35}
                 listening={false}
               />
 
@@ -445,14 +489,6 @@ export default function VirolaCanvas({
             />
           </Layer>
         </Stage>
-      )}
-
-      {elements.length === 0 && stageSize > 0 && (
-        <p className="pointer-events-none absolute inset-0 flex items-center justify-center px-8 text-center text-sm text-stone-500">
-          Tu diseño aparece acá.
-          <br />
-          Agregá texto, una forma o una imagen 👇
-        </p>
       )}
     </div>
   );

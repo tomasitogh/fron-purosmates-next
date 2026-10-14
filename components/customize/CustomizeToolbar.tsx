@@ -250,14 +250,14 @@ export default function CustomizeToolbar({
                             onClick={() => handleSetLineAngle(270)}
                             className="rounded-lg border border-stone-200 bg-stone-50 px-2 py-1.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-100"
                           >
-                            👈 Lateral izq.
+                            Lateral izq.
                           </button>
                           <button
                             type="button"
                             onClick={() => handleSetLineAngle(90)}
                             className="rounded-lg border border-stone-200 bg-stone-50 px-2 py-1.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-100"
                           >
-                            👉 Lateral der.
+                            Lateral der.
                           </button>
                         </div>
                       </div>
