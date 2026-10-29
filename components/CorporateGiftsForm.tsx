@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Send, CheckCircle2, Loader2 } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Send, CheckCircle2, Loader2, Upload, X, Image as ImageIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface FormData {
@@ -12,6 +12,9 @@ interface FormData {
   cantidad: string;
   tipoRegalo: string;
   tipoMate: string;
+  color: string;
+  conPersonalizado: string; // 'si' | 'no' | ''
+  logoUrl: string;
   fechaEntrega: string;
   comentarios: string;
 }
@@ -25,16 +28,93 @@ export default function CorporateGiftsForm() {
     cantidad: '',
     tipoRegalo: '',
     tipoMate: '',
+    color: '',
+    conPersonalizado: '',
+    logoUrl: '',
     fechaEntrega: '',
     comentarios: '',
   });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoFileName, setLogoFileName] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handlePersonalizadoSelect = (value: 'si' | 'no') => {
+    setForm((prev) => ({
+      ...prev,
+      conPersonalizado: value,
+      // Si cambia a "no", limpiamos el logo
+      logoUrl: value === 'no' ? '' : prev.logoUrl,
+    }));
+    if (value === 'no') {
+      setLogoPreview(null);
+      setLogoFileName('');
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validación de tamaño (máx 15MB)
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('El archivo es demasiado grande (máximo 15 MB).');
+      return;
+    }
+
+    setLogoFileName(file.name);
+
+    // Preview local inmediato si es imagen
+    if (file.type.startsWith('image/')) {
+      const objectUrl = URL.createObjectURL(file);
+      setLogoPreview(objectUrl);
+    } else {
+      setLogoPreview(null);
+    }
+
+    // Subida al servidor
+    setUploadingLogo(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/api/v1/corporate-gifts/upload-logo', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al subir la imagen');
+      }
+
+      setForm((prev) => ({ ...prev, logoUrl: data.url }));
+      toast.success('¡Logo subido con éxito!');
+    } catch (err: unknown) {
+      console.error('Error subiendo logo:', err);
+      toast.error('No se pudo subir la imagen. Podés continuar y enviárnosla luego por WhatsApp.');
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setLogoPreview(null);
+    setLogoFileName('');
+    setForm((prev) => ({ ...prev, logoUrl: '' }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,13 +130,24 @@ export default function CorporateGiftsForm() {
       return;
     }
 
+    if (uploadingLogo) {
+      toast.error('Esperá a que termine de subirse el logo');
+      return;
+    }
+
     setIsSubmitting(true);
+
+    const payload = {
+      ...form,
+      conPersonalizado:
+        form.conPersonalizado === 'si' ? true : form.conPersonalizado === 'no' ? false : null,
+    };
 
     try {
       const response = await fetch('/api/v1/corporate-gifts/inquiry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -223,8 +314,31 @@ export default function CorporateGiftsForm() {
           </select>
         </div>
 
-        {/* Fecha de entrega requerida */}
+        {/* Color preferido */}
         <div>
+          <label htmlFor="color" className="mb-1 block text-sm font-medium text-gray-700">
+            Color preferido
+          </label>
+          <select
+            id="color"
+            name="color"
+            value={form.color}
+            onChange={handleChange}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30 focus:outline-none"
+          >
+            <option value="">Seleccionar color...</option>
+            <option value="Negro">Negro</option>
+            <option value="Marrón">Marrón</option>
+            <option value="Suela / Natural">Suela / Natural</option>
+            <option value="Bordó / Borgoña">Bordó / Borgoña</option>
+            <option value="Verde">Verde</option>
+            <option value="Surtido / Varios">Surtido / Varios colores</option>
+            <option value="Otro">Otro (especificar en comentarios)</option>
+          </select>
+        </div>
+
+        {/* Fecha de entrega requerida */}
+        <div className="sm:col-span-2">
           <label htmlFor="fechaEntrega" className="mb-1 block text-sm font-medium text-gray-700">
             Fecha requerida de entrega
           </label>
@@ -237,6 +351,142 @@ export default function CorporateGiftsForm() {
             className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30 focus:outline-none"
           />
         </div>
+      </div>
+
+      {/* Pregunta sobre Personalización */}
+      <div className="mt-6 rounded-xl border border-gray-200 bg-[#F5F2E9]/50 p-5">
+        <label className="mb-2 block text-sm font-semibold text-[#254642]">
+          ¿Querés los productos personalizados con el logo grabado de tu empresa?
+        </label>
+        <p className="mb-3 text-xs text-gray-500">
+          Grabado láser de alta precisión en virola o cuero con el logo o frase corporativa.
+        </p>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => handlePersonalizadoSelect('si')}
+            className={`flex items-center justify-center gap-2 rounded-lg border-2 p-3 text-sm font-medium transition-all ${
+              form.conPersonalizado === 'si'
+                ? 'border-[#254642] bg-[#254642] text-white shadow-sm'
+                : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+            }`}
+          >
+            <CheckCircle2
+              className={`h-4 w-4 ${form.conPersonalizado === 'si' ? 'text-[#D4AF37]' : 'text-gray-400'}`}
+            />
+            Sí, quiero personalización con logo
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handlePersonalizadoSelect('no')}
+            className={`flex items-center justify-center gap-2 rounded-lg border-2 p-3 text-sm font-medium transition-all ${
+              form.conPersonalizado === 'no'
+                ? 'border-[#254642] bg-[#254642] text-white shadow-sm'
+                : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+            }`}
+          >
+            No, mates lisos (sin grabado)
+          </button>
+        </div>
+
+        {/* Zona para subir imagen de logo si eligió "Sí" */}
+        {form.conPersonalizado === 'si' && (
+          <div className="mt-5 rounded-lg border border-dashed border-[#254642]/40 bg-white p-4 sm:p-5">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm font-semibold text-[#254642]">
+                Subí el logo o diseño para el grabado
+              </span>
+              <span className="text-xs text-gray-400">Opcional</span>
+            </div>
+            <p className="mb-3 text-xs text-gray-500">
+              Formatos recomendados: PNG, JPG o SVG. Si todavía no lo tenés a mano, podés
+              enviárnoslo más adelante por WhatsApp.
+            </p>
+
+            {/* Input oculto */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp,application/pdf"
+              className="hidden"
+            />
+
+            {/* Vista cuando NO hay archivo cargado ni subiendo */}
+            {!logoPreview && !form.logoUrl && !uploadingLogo && (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-6 transition-all hover:border-[#D4AF37] hover:bg-[#F5F2E9]/30"
+              >
+                <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[#254642]/10 text-[#254642]">
+                  <Upload className="h-5 w-5" />
+                </div>
+                <span className="text-sm font-medium text-gray-700">
+                  Hacé click para adjuntar tu logo
+                </span>
+                <span className="mt-1 text-xs text-gray-400">PNG, JPG, SVG o PDF (máx. 15 MB)</span>
+              </button>
+            )}
+
+            {/* Estado de carga */}
+            {uploadingLogo && (
+              <div className="flex flex-col items-center justify-center p-6 text-center">
+                <Loader2 className="mb-2 h-8 w-8 animate-spin text-[#254642]" />
+                <span className="text-sm font-medium text-gray-700">Subiendo archivo...</span>
+                <span className="text-xs text-gray-400">{logoFileName}</span>
+              </div>
+            )}
+
+            {/* Vista con preview / logo cargado */}
+            {(logoPreview || form.logoUrl) && !uploadingLogo && (
+              <div className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  {logoPreview ? (
+                    <img
+                      src={logoPreview}
+                      alt="Vista previa del logo"
+                      className="h-14 w-14 rounded border border-gray-200 bg-white object-contain p-1"
+                    />
+                  ) : (
+                    <div className="flex h-14 w-14 items-center justify-center rounded border border-gray-200 bg-white text-[#254642]">
+                      <ImageIcon className="h-6 w-6" />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-gray-800">
+                      {logoFileName || 'Logo adjunto'}
+                    </p>
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Logo cargado con éxito
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
+                  >
+                    Cambiar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRemoveLogo}
+                    className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                    title="Eliminar archivo"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Comentarios */}
@@ -259,7 +509,7 @@ export default function CorporateGiftsForm() {
       <div className="mt-6">
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || uploadingLogo}
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#D4AF37] px-6 py-3 text-base font-semibold text-[#254642] transition-all hover:bg-[#DAA520] disabled:opacity-60"
         >
           {isSubmitting ? (

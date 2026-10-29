@@ -10,7 +10,16 @@ import {
   CorporateGiftInquiry,
   InquiryStatus,
 } from '@/redux/adminSlice';
-import { Copy, Info, Trash2, X, Briefcase, Mail } from 'lucide-react';
+import {
+  Copy,
+  Info,
+  Trash2,
+  X,
+  Briefcase,
+  Mail,
+  ExternalLink,
+  Image as ImageIcon,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import { AppDispatch, RootState } from '@/redux/store';
 import { TokenGetter } from '@/lib/apiClient';
@@ -172,7 +181,17 @@ export default function AdminMayorista({ getToken }: AdminMayoristaProps) {
                       {inquiry.empresa || '-'}
                     </td>
                     <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
-                      <span className="font-medium text-gray-900">{inquiry.nombre}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900">{inquiry.nombre}</span>
+                        {inquiry.logoUrl && (
+                          <span
+                            className="inline-flex items-center gap-1 rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800"
+                            title="Incluye logo adjunto"
+                          >
+                            <ImageIcon className="h-3 w-3" /> Logo
+                          </span>
+                        )}
+                      </div>
                       <span className="mt-0.5 block text-xs text-gray-400">{inquiry.email}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -232,7 +251,17 @@ export default function AdminMayorista({ getToken }: AdminMayoristaProps) {
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <p className="text-sm font-bold text-gray-900">{inquiry.empresa || '-'}</p>
-                  <p className="text-xs text-gray-500">{inquiry.nombre}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-gray-500">{inquiry.nombre}</p>
+                    {inquiry.logoUrl && (
+                      <span
+                        className="inline-flex items-center gap-1 rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800"
+                        title="Incluye logo adjunto"
+                      >
+                        <ImageIcon className="h-2.5 w-2.5" /> Logo
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <span
                   className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_LABELS[inquiry.status]?.color || 'bg-gray-100 text-gray-800'}`}
@@ -339,6 +368,20 @@ export default function AdminMayorista({ getToken }: AdminMayoristaProps) {
                   <p className="font-medium text-gray-900">{inquiry.tipoMate || '-'}</p>
                 </div>
                 <div>
+                  <p className="text-xs tracking-wide text-gray-500 uppercase">Color</p>
+                  <p className="font-medium text-gray-900">{inquiry.color || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs tracking-wide text-gray-500 uppercase">Personalizado</p>
+                  <p className="font-medium text-gray-900">
+                    {inquiry.conPersonalizado === true
+                      ? 'Sí (con logo grabado)'
+                      : inquiry.conPersonalizado === false
+                        ? 'No (liso sin grabado)'
+                        : '-'}
+                  </p>
+                </div>
+                <div>
                   <p className="text-xs tracking-wide text-gray-500 uppercase">
                     Fecha deseada de entrega
                   </p>
@@ -351,6 +394,34 @@ export default function AdminMayorista({ getToken }: AdminMayoristaProps) {
                   </div>
                 )}
               </div>
+
+              {inquiry.logoUrl && (
+                <div className="mt-4 border-t border-gray-200 pt-3">
+                  <p className="mb-2 text-xs tracking-wide text-gray-500 uppercase">
+                    Logo / Archivo adjunto
+                  </p>
+                  <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3">
+                    <img
+                      src={inquiry.logoUrl}
+                      alt="Logo corporativo adjunto"
+                      className="h-14 w-14 rounded border border-gray-200 bg-gray-50 object-contain p-1"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <a
+                        href={inquiry.logoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#254642] hover:underline"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        Ver / descargar archivo original
+                      </a>
+                      <p className="mt-0.5 truncate text-xs text-gray-400">{inquiry.logoUrl}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {inquiry.comentarios && (
                 <div className="mt-4">
                   <p className="text-xs tracking-wide text-gray-500 uppercase">Comentarios</p>
