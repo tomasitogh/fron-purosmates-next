@@ -135,6 +135,7 @@ export interface CorporateGiftInquiry {
   color?: string;
   conPersonalizado?: boolean;
   logoUrl?: string;
+  fotoReferenciaUrl?: string;
   presupuesto?: string;
   fechaEntrega?: string;
   comentarios?: string;

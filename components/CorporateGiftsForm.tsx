@@ -13,6 +13,7 @@ interface FormData {
   tipoRegalo: string;
   tipoMate: string;
   color: string;
+  fotoReferenciaUrl: string;
   conPersonalizado: string; // 'si' | 'no' | ''
   logoUrl: string;
   fechaEntrega: string;
@@ -29,6 +30,7 @@ export default function CorporateGiftsForm() {
     tipoRegalo: '',
     tipoMate: '',
     color: '',
+    fotoReferenciaUrl: '',
     conPersonalizado: '',
     logoUrl: '',
     fechaEntrega: '',
@@ -37,10 +39,18 @@ export default function CorporateGiftsForm() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  // Logo upload state
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoFileName, setLogoFileName] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Reference photo upload state
+  const [uploadingRef, setUploadingRef] = useState(false);
+  const [refPreview, setRefPreview] = useState<string | null>(null);
+  const [refFileName, setRefFileName] = useState<string>('');
+  const refFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -52,7 +62,6 @@ export default function CorporateGiftsForm() {
     setForm((prev) => ({
       ...prev,
       conPersonalizado: value,
-      // Si cambia a "no", limpiamos el logo
       logoUrl: value === 'no' ? '' : prev.logoUrl,
     }));
     if (value === 'no') {
@@ -65,7 +74,6 @@ export default function CorporateGiftsForm() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validación de tamaño (máx 15MB)
     if (file.size > 15 * 1024 * 1024) {
       toast.error('El archivo es demasiado grande (máximo 15 MB).');
       return;
@@ -73,7 +81,6 @@ export default function CorporateGiftsForm() {
 
     setLogoFileName(file.name);
 
-    // Preview local inmediato si es imagen
     if (file.type.startsWith('image/')) {
       const objectUrl = URL.createObjectURL(file);
       setLogoPreview(objectUrl);
@@ -81,7 +88,6 @@ export default function CorporateGiftsForm() {
       setLogoPreview(null);
     }
 
-    // Subida al servidor
     setUploadingLogo(true);
     const formData = new FormData();
     formData.append('file', file);
@@ -117,6 +123,59 @@ export default function CorporateGiftsForm() {
     }
   };
 
+  const handleRefFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('El archivo es demasiado grande (máximo 15 MB).');
+      return;
+    }
+
+    setRefFileName(file.name);
+
+    if (file.type.startsWith('image/')) {
+      const objectUrl = URL.createObjectURL(file);
+      setRefPreview(objectUrl);
+    } else {
+      setRefPreview(null);
+    }
+
+    setUploadingRef(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/api/v1/corporate-gifts/upload-logo', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al subir la imagen');
+      }
+
+      setForm((prev) => ({ ...prev, fotoReferenciaUrl: data.url }));
+      toast.success('¡Foto de referencia subida con éxito!');
+    } catch (err: unknown) {
+      console.error('Error subiendo foto de referencia:', err);
+      toast.error('No se pudo subir la foto. Podés continuar y enviárnosla luego por WhatsApp.');
+    } finally {
+      setUploadingRef(false);
+    }
+  };
+
+  const handleRemoveRef = () => {
+    setRefPreview(null);
+    setRefFileName('');
+    setForm((prev) => ({ ...prev, fotoReferenciaUrl: '' }));
+    if (refFileInputRef.current) {
+      refFileInputRef.current.value = '';
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -124,14 +183,17 @@ export default function CorporateGiftsForm() {
       !form.nombre.trim() ||
       !form.email.trim() ||
       !form.telefono.trim() ||
-      !form.empresa.trim()
+      !form.empresa.trim() ||
+      !form.cantidad.trim() ||
+      !form.tipoRegalo.trim() ||
+      !form.tipoMate.trim()
     ) {
-      toast.error('Completá todos los campos obligatorios');
+      toast.error('Por favor completá todos los campos obligatorios marcados con *');
       return;
     }
 
-    if (uploadingLogo) {
-      toast.error('Esperá a que termine de subirse el logo');
+    if (uploadingLogo || uploadingRef) {
+      toast.error('Esperá a que termine de subirse el archivo');
       return;
     }
 
@@ -255,62 +317,73 @@ export default function CorporateGiftsForm() {
           />
         </div>
 
-        {/* Cantidad */}
+        {/* Cantidad estimada (Obligatoria) */}
         <div>
           <label htmlFor="cantidad" className="mb-1 block text-sm font-medium text-gray-700">
-            Cantidad estimada
+            Cantidad estimada *
           </label>
           <select
             id="cantidad"
             name="cantidad"
+            required
             value={form.cantidad}
             onChange={handleChange}
             className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30 focus:outline-none"
           >
-            <option value="">Seleccionar...</option>
+            <option value="">Seleccionar cantidad *</option>
+            <option value="20">20 unidades</option>
+            <option value="30">30 unidades</option>
+            <option value="40">40 unidades</option>
             <option value="50">50 unidades</option>
             <option value="51-100">51 a 100 unidades</option>
-            <option value="100+">100 o más unidades</option>
+            <option value="100-500">100 a 500 unidades</option>
+            <option value="500+">500 o más unidades</option>
           </select>
         </div>
 
-        {/* Tipo de regalo */}
+        {/* Tipo de regalo / Kit (Obligatorio) */}
         <div>
           <label htmlFor="tipoRegalo" className="mb-1 block text-sm font-medium text-gray-700">
-            Tipo de Producto / Kit de Interés
+            Tipo de Producto / Kit de Interés *
           </label>
           <select
             id="tipoRegalo"
             name="tipoRegalo"
+            required
             value={form.tipoRegalo}
             onChange={handleChange}
             className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30 focus:outline-none"
           >
-            <option value="">Seleccionar...</option>
+            <option value="">Seleccionar producto *</option>
             <option value="Mate">Mate</option>
             <option value="Mate + Bombilla">Mate + Bombilla</option>
             <option value="Mate + Yerbero">Mate + Yerbero</option>
-            <option value="Otro">Otro</option>
+            <option value="Kit Completo (Mate + Bombilla + Yerbero)">
+              Kit Completo (Mate + Bombilla + Yerbero)
+            </option>
+            <option value="Otro">Otro (especificar en comentarios)</option>
           </select>
         </div>
 
-        {/* Tipo de mate */}
+        {/* Tipo de mate (Obligatorio) */}
         <div>
           <label htmlFor="tipoMate" className="mb-1 block text-sm font-medium text-gray-700">
-            Tipo de Mate
+            Modelo de Mate *
           </label>
           <select
             id="tipoMate"
             name="tipoMate"
+            required
             value={form.tipoMate}
             onChange={handleChange}
             className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30 focus:outline-none"
           >
-            <option value="">Seleccionar...</option>
+            <option value="">Seleccionar modelo de mate *</option>
             <option value="Criollo">Criollo</option>
             <option value="Camionero">Camionero</option>
             <option value="Torpedo">Torpedo</option>
             <option value="Imperial">Imperial</option>
+            <option value="A definir / No estoy seguro">A definir / No estoy seguro</option>
           </select>
         </div>
 
@@ -335,6 +408,90 @@ export default function CorporateGiftsForm() {
             <option value="Surtido / Varios">Surtido / Varios colores</option>
             <option value="Otro">Otro (especificar en comentarios)</option>
           </select>
+        </div>
+
+        {/* Foto o modelo de referencia */}
+        <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50/80 p-4 transition-colors hover:border-[#254642]/50 sm:col-span-2">
+          <div className="mb-1 flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-800">
+              ¿Tenés una foto o modelo de referencia?
+            </label>
+            <span className="text-xs text-gray-400">Opcional</span>
+          </div>
+          <p className="mb-3 text-xs text-gray-500">
+            Si viste un mate que te gustó en nuestras redes o tenés una foto del modelo que querés,
+            adjuntala acá para que sepamos exactamente qué buscás.
+          </p>
+
+          <input
+            type="file"
+            ref={refFileInputRef}
+            onChange={handleRefFileChange}
+            accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp,application/pdf"
+            className="hidden"
+          />
+
+          {!refPreview && !form.fotoReferenciaUrl && !uploadingRef && (
+            <button
+              type="button"
+              onClick={() => refFileInputRef.current?.click()}
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:border-[#D4AF37] hover:bg-[#F5F2E9]/40"
+            >
+              <Upload className="h-4 w-4 text-[#254642]" />
+              Adjuntar foto o modelo de referencia
+            </button>
+          )}
+
+          {uploadingRef && (
+            <div className="flex items-center justify-center gap-2 py-3 text-sm text-gray-600">
+              <Loader2 className="h-4 w-4 animate-spin text-[#254642]" />
+              <span>Subiendo foto de referencia...</span>
+            </div>
+          )}
+
+          {(refPreview || form.fotoReferenciaUrl) && !uploadingRef && (
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white p-2.5">
+              <div className="flex min-w-0 items-center gap-3">
+                {refPreview ? (
+                  <img
+                    src={refPreview}
+                    alt="Foto de referencia"
+                    className="h-12 w-12 rounded border border-gray-200 object-cover"
+                  />
+                ) : (
+                  <div className="flex h-12 w-12 items-center justify-center rounded border border-gray-200 bg-gray-50 text-[#254642]">
+                    <ImageIcon className="h-5 w-5" />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-medium text-gray-800">
+                    {refFileName || 'Foto de referencia adjunta'}
+                  </p>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Foto adjuntada con éxito
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => refFileInputRef.current?.click()}
+                  className="rounded px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100"
+                >
+                  Cambiar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRemoveRef}
+                  className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                  title="Eliminar foto"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Fecha de entrega requerida */}
@@ -509,7 +666,7 @@ export default function CorporateGiftsForm() {
       <div className="mt-6">
         <button
           type="submit"
-          disabled={isSubmitting || uploadingLogo}
+          disabled={isSubmitting || uploadingLogo || uploadingRef}
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#D4AF37] px-6 py-3 text-base font-semibold text-[#254642] transition-all hover:bg-[#DAA520] disabled:opacity-60"
         >
           {isSubmitting ? (
