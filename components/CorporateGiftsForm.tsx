@@ -60,11 +60,8 @@ export default function CorporateGiftsForm() {
     setForm((prev) => ({
       ...prev,
       [name]: value,
-      // "Suela natural" solo existe para el Criollo
-      color:
-        name === 'tipoMate' && value !== 'Criollo' && prev.color === 'Suela natural'
-          ? ''
-          : prev.color,
+      // El Criollo solo viene en suela natural; los demás en negro o marrón
+      ...(name === 'tipoMate' ? { color: '' } : {}),
     }));
   };
 
@@ -351,9 +348,14 @@ export default function CorporateGiftsForm() {
             className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30 focus:outline-none"
           >
             <option value="">Seleccionar color *</option>
-            <option value="Negro">Negro</option>
-            <option value="Marrón">Marrón</option>
-            {form.tipoMate === 'Criollo' && <option value="Suela natural">Suela natural</option>}
+            {form.tipoMate === 'Criollo' ? (
+              <option value="Suela natural">Suela natural</option>
+            ) : (
+              <>
+                <option value="Negro">Negro</option>
+                <option value="Marrón">Marrón</option>
+              </>
+            )}
           </select>
         </div>
 
