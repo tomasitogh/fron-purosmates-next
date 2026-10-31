@@ -1,0 +1,44 @@
+{
+  "slug": "por-que-se-raja-o-se-pudre-un-mate",
+  "title": "¿Por qué se raja o se pudre un mate y cómo evitarlo?",
+  "description": "Las causas más comunes de mates rajados o con moho: humedad, agua hirviendo y mal secado. Cómo prevenirlo y qué hacer.",
+  "category": "Cuidados",
+  "answer": "Un mate de calabaza o madera se raja o se pudre casi siempre por humedad: guardarlo con yerba mojada, no secarlo bien después de usarlo o curarlo con agua hirviendo. Se evita vaciándolo apenas terminás, sin enjuagarlo, y secándolo al sol o con servilleta.",
+  "sections": [
+    {
+      "heading": "Causas principales",
+      "paragraphs": [
+        "La yerba húmeda dentro del mate favorece el moho y descompone la calabaza o la madera desde adentro. El agua demasiado caliente y los golpes de temperatura pueden producir rajaduras."
+      ]
+    },
+    {
+      "heading": "Cómo cuidarlo después de cada uso",
+      "paragraphs": [
+        "Retirá la yerba sin mojar el mate, pasá una servilleta y dejalo secar al aire o al sol. El secado puede llevar más de 2 horas según el clima."
+      ]
+    },
+    {
+      "heading": "Qué hacer si ya tiene moho",
+      "paragraphs": [
+        "Retirá la yerba, raspá la zona afectada y repetí un curado completo. Si el moho está muy profundo o el mate huele mal, conviene reemplazarlo."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Puedo lavar el mate con detergente?",
+      "answer": "No se recomienda en calabaza ni madera, porque absorben el sabor y la humedad. Basta con vaciar, raspar y secar."
+    },
+    {
+      "question": "¿Cuánto tarda en secarse un mate?",
+      "answer": "Más de 2 horas, dependiendo del sol y la humedad del ambiente."
+    }
+  ],
+  "related": ["como-curar-un-mate-de-calabaza"],
+  "cta": {
+    "label": "Mirá los mates de la tienda",
+    "href": "/shop"
+  },
+  "datePublished": "2026-10-31",
+  "dateModified": "2026-10-31"
+}

@@ -1,0 +1,48 @@
+{
+  "slug": "que-mate-elegir-calabaza-madera-o-acero",
+  "title": "¿Qué mate elegir: calabaza, madera o acero inoxidable?",
+  "description": "Diferencias entre mates de calabaza, madera de algarrobo y acero inoxidable: curado, mantenimiento y para qué sirve cada uno.",
+  "category": "Guía de compra",
+  "answer": "Si buscás el sabor tradicional elegí calabaza, si querés más durabilidad con curado elegí madera de algarrobo, y si querés cero mantenimiento (o tomar tereré) elegí acero inoxidable. Los de calabaza y madera necesitan curado y cuidado de la humedad; el acero no.",
+  "sections": [
+    {
+      "heading": "Calabaza",
+      "paragraphs": [
+        "Es el mate clásico. Aporta el sabor tradicional pero requiere curado y secado cuidadoso."
+      ]
+    },
+    {
+      "heading": "Madera de algarrobo",
+      "paragraphs": [
+        "También se cura, con un paso extra: untar el interior con aceite o manteca antes de cargar la yerba."
+      ]
+    },
+    {
+      "heading": "Acero inoxidable",
+      "paragraphs": ["No se cura, se usa desde el primer día y es práctico para el tereré."]
+    },
+    {
+      "heading": "¿Y la virola?",
+      "paragraphs": [
+        "En los modelos camionero e imperial, la virola es la parte metálica superior y es donde se hacen los grabados personalizados. Puede ser de acero inoxidable, alpaca o bronce."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Cuál es mejor para empezar?",
+      "answer": "Si no querés complicarte, el acero inoxidable. Si te gusta el ritual completo, la calabaza."
+    },
+    {
+      "question": "¿Qué es un mate camionero?",
+      "answer": "Es un modelo de mate con virola metálica en el borde, muy usado para grabados personalizados."
+    }
+  ],
+  "related": ["como-curar-un-mate-de-calabaza", "como-regalar-un-mate-personalizado"],
+  "cta": {
+    "label": "Elegí tu mate",
+    "href": "/shop?category=mate"
+  },
+  "datePublished": "2026-10-31",
+  "dateModified": "2026-10-31"
+}

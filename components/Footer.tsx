@@ -123,6 +123,19 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/blog" className="transition hover:opacity-70">
+                  Blog del Mate
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/comparar/puros-mates-vs-mercadolibre"
+                  className="transition hover:opacity-70"
+                >
+                  Comparativas
+                </Link>
+              </li>
+              <li>
                 <span className="text-[#3D5F54]/70">WhatsApp: 11 3054 8207</span>
               </li>
             </ul>
@@ -222,6 +235,19 @@ export default function Footer() {
               <li>
                 <Link href="/nosotros#faq" className="transition hover:opacity-70">
                   Preguntas Frecuentes
+                </Link>
+              </li>
+              <li>
+                <Link href="/blog" className="transition hover:opacity-70">
+                  Blog del Mate
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/comparar/puros-mates-vs-mercadolibre"
+                  className="transition hover:opacity-70"
+                >
+                  Comparativas
                 </Link>
               </li>
             </ul>

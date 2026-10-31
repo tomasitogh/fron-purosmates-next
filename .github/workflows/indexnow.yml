@@ -1,0 +1,28 @@
+name: IndexNow
+# Avisa a Bing (y por ende a ChatGPT/Copilot/DuckDuckGo) solo de las notas y comparativas
+# que cambiaron en el push, no de todo el sitio.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'content/blog/**'
+      - 'lib/comparisons.ts'
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Esperar el deploy de Vercel
+        run: sleep 180
+      - name: Enviar URLs modificadas
+        run: |
+          URLS=$(git diff --name-only HEAD~1 HEAD -- content/blog | sed -E 's#content/blog/(.*)\.json#https://www.purosmates.com.ar/blog/\1#')
+          if git diff --name-only HEAD~1 HEAD | grep -q '^lib/comparisons.ts$'; then
+            URLS="$URLS https://www.purosmates.com.ar/comparar/puros-mates-vs-mercadolibre https://www.purosmates.com.ar/comparar/puros-mates-vs-imperio-verde https://www.purosmates.com.ar/comparar/puros-mates-vs-dedicar"
+          fi
+          [ -n "$(echo $URLS | tr -d ' ')" ] && node scripts/indexnow.mjs $URLS || echo "Nada que avisar"

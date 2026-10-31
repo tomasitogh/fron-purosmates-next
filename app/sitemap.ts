@@ -1,10 +1,16 @@
 import { MetadataRoute } from 'next';
 import { getBaseUrl } from '@/lib/site';
+import { getAllPosts } from '@/lib/blog';
+import { COMPARISONS } from '@/lib/comparisons';
 
 // Rebuild the sitemap at most once per hour instead of on every request/crawl
 export const revalidate = 3600;
 
 const baseUrl = getBaseUrl();
+
+// Fecha fija: reportar `new Date()` en cada build le dice a Google que todo cambió siempre
+// y termina ignorando <lastmod>. Actualizar solo cuando cambie el contenido de esas páginas.
+const STATIC_LAST_MODIFIED = new Date('2026-10-31');
 
 async function getProducts() {
   try {
@@ -41,31 +47,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
-      lastModified: new Date(),
+      lastModified: STATIC_LAST_MODIFIED,
       changeFrequency: 'daily',
       priority: 1,
     },
     {
       url: `${baseUrl}/shop`,
-      lastModified: new Date(),
+      lastModified: STATIC_LAST_MODIFIED,
       changeFrequency: 'daily',
       priority: 0.9,
     },
     {
       url: `${baseUrl}/nosotros`,
-      lastModified: new Date(),
+      lastModified: STATIC_LAST_MODIFIED,
       changeFrequency: 'monthly',
       priority: 0.7,
     },
     {
       url: `${baseUrl}/regalos-empresariales`,
-      lastModified: new Date(),
+      lastModified: STATIC_LAST_MODIFIED,
       changeFrequency: 'monthly',
       priority: 0.9,
     },
     {
       url: `${baseUrl}/rincon-matero`,
-      lastModified: new Date(),
+      lastModified: STATIC_LAST_MODIFIED,
       changeFrequency: 'monthly',
       priority: 0.8,
     },
@@ -88,5 +94,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       };
     });
 
-  return [...staticRoutes, ...productRoutes];
+  const blogRoutes: MetadataRoute.Sitemap = [
+    {
+      url: `${baseUrl}/blog`,
+      lastModified: STATIC_LAST_MODIFIED,
+      changeFrequency: 'daily',
+      priority: 0.8,
+    },
+    ...getAllPosts().map((post) => ({
+      url: `${baseUrl}/blog/${post.slug}`,
+      lastModified: new Date(post.dateModified ?? post.datePublished),
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
+    })),
+  ];
+
+  const comparisonRoutes: MetadataRoute.Sitemap = COMPARISONS.map((c) => ({
+    url: `${baseUrl}/comparar/${c.slug}`,
+    lastModified: STATIC_LAST_MODIFIED,
+    changeFrequency: 'monthly' as const,
+    priority: 0.8,
+  }));
+
+  return [...staticRoutes, ...blogRoutes, ...comparisonRoutes, ...productRoutes];
 }

@@ -13,7 +13,7 @@ import { BookOpen, Gamepad2, HelpCircle, Sparkles, Wand2 } from 'lucide-react';
 const baseUrl = getBaseUrl();
 
 export const metadata: Metadata = {
-  title: 'El : Guía, Ritual y Cultura del Mate | Puros Mates',
+  title: 'Guía, Ritual y Cultura del Mate | Puros Mates',
   description:
     'Guía definitiva de curado según el material, preguntas frecuentes sobre la yerba mate, las 10 reglas de la ronda y herramientas interactivas de calibración y juegos.',
   keywords: [
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     'calculadora de temperatura mate',
   ],
   openGraph: {
-    title: 'El : Guía, Ritual y Cultura del Mate | Puros Mates',
+    title: 'Guía, Ritual y Cultura del Mate | Puros Mates',
     description:
       'Guía definitiva de curado, preguntas frecuentes sobre el mate, reglas de la ronda y simulador de temperatura.',
     type: 'article',

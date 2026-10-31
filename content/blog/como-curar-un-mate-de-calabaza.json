@@ -1,0 +1,50 @@
+{
+  "slug": "como-curar-un-mate-de-calabaza",
+  "title": "¿Cómo curar un mate de calabaza paso a paso?",
+  "description": "Curá tu mate de calabaza en 5 pasos: yerba, agua caliente, reposo de 8 a 12 horas, raspado y secado. Evitá que se rompa o agarre moho.",
+  "category": "Cuidados",
+  "answer": "Para curar un mate de calabaza llenalo con yerba, cubrila con agua caliente (no hirviendo, entre 75 y 80 °C), dejalo reposar entre 8 y 12 horas, raspá el interior para sacar el hollejo y secalo bien al sol o con servilleta. Repetí el proceso entre 3 y 5 veces según el mate.",
+  "sections": [
+    {
+      "heading": "Paso a paso",
+      "paragraphs": [
+        "El curado sella el interior de la calabaza, elimina el sabor a vegetal y evita que el mate se pudra con el uso."
+      ],
+      "list": [
+        "Llená el mate con yerba usada o nueva hasta arriba.",
+        "Cubrí con agua caliente a 75–80 °C, sin hervir.",
+        "Dejá reposar entre 8 y 12 horas.",
+        "Vaciá, y raspá con una cuchara el hollejo (la telita interior que se desprende).",
+        "Secá al sol o con servilleta; no lo guardes húmedo.",
+        "Repetí 3 a 5 veces hasta que el agua salga sin sabor amargo."
+      ]
+    },
+    {
+      "heading": "Errores que arruinan el curado",
+      "paragraphs": [
+        "Los más comunes son usar agua hirviendo, que puede rajar la calabaza, y guardar el mate sin secar. Si ves manchas oscuras o notás olor a humedad, es señal de que quedó húmedo y conviene limpiarlo cuanto antes."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Cuánto tarda en curarse un mate de calabaza?",
+      "answer": "El reposo es de 8 a 12 horas por vuelta y se repite entre 3 y 5 veces, así que el proceso completo suele llevar unos días."
+    },
+    {
+      "question": "¿Se puede usar agua hirviendo para curar el mate?",
+      "answer": "No conviene. El agua a 75–80 °C es suficiente y reduce el riesgo de que la calabaza se raje."
+    },
+    {
+      "question": "¿Un mate de acero inoxidable también se cura?",
+      "answer": "No. Los mates de acero inoxidable se pueden usar desde el primer momento."
+    }
+  ],
+  "related": ["por-que-se-raja-o-se-pudre-un-mate", "que-mate-elegir-calabaza-madera-o-acero"],
+  "cta": {
+    "label": "Mirá los mates de calabaza",
+    "href": "/shop?category=mate"
+  },
+  "datePublished": "2026-10-31",
+  "dateModified": "2026-10-31"
+}

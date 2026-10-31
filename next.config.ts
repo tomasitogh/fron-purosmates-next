@@ -43,6 +43,12 @@ const nextConfig: NextConfig = {
         destination: '/customize',
         permanent: true,
       },
+      // /el-ritual servía el mismo contenido que /rincon-matero (contenido duplicado)
+      {
+        source: '/el-ritual',
+        destination: '/rincon-matero',
+        permanent: true,
+      },
     ];
   },
   async rewrites() {
