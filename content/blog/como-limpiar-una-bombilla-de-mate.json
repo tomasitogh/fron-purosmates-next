@@ -1,0 +1,60 @@
+{
+  "slug": "como-limpiar-una-bombilla-de-mate",
+  "title": "¿Cómo limpiar una bombilla de mate por dentro y por fuera?",
+  "description": "Limpiá tu bombilla de mate después de cada uso y hacé una limpieza profunda con agua caliente, bicarbonato o vinagre para destapar el filtro y sacar el sabor feo.",
+  "category": "Cuidados",
+  "answer": "Para limpiar una bombilla de mate enjuagala con agua tibia apenas termines de cebar, soplá o pasá agua por el caño para sacar restos de yerba y dejala secar. De vez en cuando, sumergila unos minutos en agua caliente con bicarbonato o vinagre, cepillá el filtro con un cepillo chico y enjuagala muy bien.",
+  "sections": [
+    {
+      "heading": "La limpieza de todos los días",
+      "paragraphs": [
+        "Lo que más ensucia una bombilla es la yerba que se queda atrapada en el filtro y la humedad que queda adentro del caño. Por eso lo mejor es enjuagarla apenas terminás de tomar, cuando los restos todavía no se secaron.",
+        "Pasá agua tibia por el caño de punta a punta, golpeala suave contra la palma para sacar los restos y dejala secar apoyada, sin taparla ni guardarla húmeda."
+      ]
+    },
+    {
+      "heading": "Limpieza profunda paso a paso",
+      "paragraphs": [
+        "Si la bombilla ya tiene sabor raro, se tapa seguido o notás residuos en el filtro, conviene hacer una limpieza más a fondo."
+      ],
+      "list": [
+        "Sumergila unos minutos en agua bien caliente con una cucharada de bicarbonato o un chorrito de vinagre.",
+        "Cepillá el filtro y el interior del caño con un cepillo fino, como los que se usan para bombillas.",
+        "Enjuagala varias veces con agua limpia hasta que no quede olor a vinagre.",
+        "Secala bien antes de guardarla."
+      ]
+    },
+    {
+      "heading": "Qué evitar",
+      "paragraphs": [
+        "No uses esponjas abrasivas ni productos muy fuertes, porque pueden dañar el acabado y dejar residuos que después se sienten en el mate. Tampoco dejes la bombilla dentro del mate de un día para el otro: la humedad y la yerba pegada favorecen el mal olor.",
+        "Si el filtro está deformado o roto, limpiarlo no alcanza y conviene cambiar la bombilla. En Puros Mates podés ver distintos modelos para elegir una que sea fácil de desarmar y limpiar."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Cada cuánto hay que limpiar la bombilla a fondo?",
+      "answer": "Depende del uso. Si cebás todos los días, una limpieza profunda cada tanto o cuando notes que se tapa o tiene gusto raro es una buena regla."
+    },
+    {
+      "question": "¿Se puede limpiar la bombilla con detergente?",
+      "answer": "Es mejor evitarlo porque puede dejar sabor. El agua caliente con bicarbonato o vinagre y un buen enjuague suelen alcanzar."
+    },
+    {
+      "question": "¿Qué hago si la bombilla se tapa seguido?",
+      "answer": "Probá con una limpieza profunda y revisá el filtro. Si está deformado o dañado, lo más práctico es cambiarla."
+    },
+    {
+      "question": "¿Hay que secar la bombilla antes de guardarla?",
+      "answer": "Sí. Guardarla húmeda favorece el mal olor y los residuos."
+    }
+  ],
+  "related": ["por-que-se-raja-o-se-pudre-un-mate", "como-curar-un-mate-de-calabaza"],
+  "cta": {
+    "label": "Mirá las bombillas",
+    "href": "/shop?category=bombilla"
+  },
+  "datePublished": "2026-10-31",
+  "dateModified": "2026-10-31"
+}
