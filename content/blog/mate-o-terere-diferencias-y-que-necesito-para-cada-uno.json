@@ -1,0 +1,56 @@
+{
+  "slug": "mate-o-terere-diferencias-y-que-necesito-para-cada-uno",
+  "title": "¿Mate o tereré: cuál es la diferencia y qué necesito para cada uno?",
+  "description": "Mate y tereré usan yerba mate, pero se toman distinto: uno con agua caliente, el otro con agua fría. Qué recipiente y bombilla conviene para cada uno.",
+  "category": "Guía",
+  "answer": "La diferencia principal es la temperatura: el mate se toma con agua caliente, y el tereré con agua fría o con hielo, a veces con jugo o hierbas. Los dos usan yerba mate y bombilla, pero cambia el recipiente que más conviene y la forma de prepararlo y disfrutarlo.",
+  "sections": [
+    {
+      "heading": "Cómo se toma cada uno",
+      "paragraphs": [
+        "El mate se ceba con agua caliente, sin hervir, y suele tomarse en rondas. El tereré es la versión fría: se prepara con agua helada y, según la costumbre, se le agregan jugos o yuyos. Es una bebida muy asociada a los días de calor.",
+        "En los dos casos la base es la yerba mate y se toma con bombilla, pero el ritmo y el sabor son distintos."
+      ]
+    },
+    {
+      "heading": "Qué recipiente conviene",
+      "paragraphs": [
+        "Para el mate caliente funcionan bien la calabaza, la madera o el acero inoxidable; en nuestra guía sobre qué mate elegir comparamos cada material. Para el tereré, lo habitual es un recipiente más grande, ya que se le agrega hielo y líquido, y que mantenga el frío."
+      ]
+    },
+    {
+      "heading": "La bombilla y la yerba",
+      "paragraphs": [
+        "La bombilla sirve para ambos, pero con tereré se usa mucho y se enfría con el hielo, así que conviene que sea resistente y fácil de limpiar. Con la yerba pasa algo parecido: lo importante es que no sea demasiado polvo, para que no se tape.",
+        "Si querés empezar por uno solo, el mate tradicional es el más sencillo de armar con lo básico: un mate, una bombilla, yerba y un termo."
+      ]
+    },
+    {
+      "heading": "Cuál te conviene según tu uso",
+      "paragraphs": [
+        "Si tomás mate todo el año, probablemente quieras un mate que te dure y que puedas personalizar. Si vas a sumar tereré en verano, conviene tener un segundo recipiente para no mezclar usos. En Puros Mates hacemos mates artesanales argentinos y podés sumarles grabado personalizado en la virola."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿El tereré lleva la misma yerba que el mate?",
+      "answer": "Se prepara con yerba mate, igual que el mate. Hay quienes eligen yerbas específicas o mezclas con hierbas, es cuestión de gusto."
+    },
+    {
+      "question": "¿Puedo usar mi mate de siempre para tomar tereré?",
+      "answer": "Se puede, pero si el mate es de calabaza o madera el frío y la humedad constante pueden afectarlo. Muchos prefieren tener un recipiente aparte."
+    },
+    {
+      "question": "¿Sirve la misma bombilla para mate y tereré?",
+      "answer": "Sí, la bombilla es la misma. Solo asegurate de limpiarla bien después de cada uso."
+    }
+  ],
+  "related": ["que-mate-elegir-calabaza-madera-o-acero", "como-limpiar-una-bombilla-de-mate"],
+  "cta": {
+    "label": "Mirá los mates",
+    "href": "/shop?category=mate"
+  },
+  "datePublished": "2026-11-01",
+  "dateModified": "2026-11-01"
+}
