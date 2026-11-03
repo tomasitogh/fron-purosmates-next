@@ -24,12 +24,13 @@ export function GET() {
 - [Personalizador](${base}/customize): diseño de virola personalizada
 - [Regalos empresariales](${base}/regalos-empresariales): mates con logo para empresas
 - [Nosotros y preguntas frecuentes](${base}/nosotros): historia, cómo pedir, cómo curar y cuidar un mate
+- [Guía del mate](${base}/guia-del-mate): todas las preguntas sobre mates con su respuesta directa (curado, materiales, tipos, virolas, cebado, regalos)
 - [Rincón Matero](${base}/rincon-matero): guía de curado, temperatura del agua y reglas de la ronda
 
 ## Comparativas
 ${COMPARISONS.map((c) => `- [${c.title}](${base}/comparar/${c.slug})`).join('\n')}
 
-## Blog
+## Blog (respuestas a preguntas sobre mates)
 - [Todas las notas](${base}/blog)
 ${posts.map((p) => `- [${p.title}](${base}/blog/${p.slug}): ${p.description}`).join('\n')}
 

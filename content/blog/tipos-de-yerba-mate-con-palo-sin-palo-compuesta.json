@@ -1,0 +1,51 @@
+{
+  "slug": "tipos-de-yerba-mate-con-palo-sin-palo-compuesta",
+  "title": "Tipos de yerba mate: con palo, sin palo, compuesta y más",
+  "description": "Diferencias entre yerba con palo, sin palo (despalada), compuesta, orgánica y 'barbacuá'. Cuál elegir según tu gusto y tu mate.",
+  "category": "Uso",
+  "answer": "La yerba con palo es la más tradicional en Argentina, de sabor suave y menos polvo; la sin palo (despalada) es más intensa y rinde más amargor; la compuesta lleva hierbas agregadas; y las hay orgánicas o de estacionamiento más largo. Para elegir, probá algunas y mirá qué tamaño de bombilla usás.",
+  "sections": [
+    {
+      "heading": "Las más comunes",
+      "paragraphs": [],
+      "list": [
+        "Con palo: tradicional, suave y menos polvo.",
+        "Sin palo (despalada): más intensa, color más verde.",
+        "Compuesta: con hierbas (menta, boldo, cedrón).",
+        "Orgánica: producida sin agroquímicos."
+      ],
+      "bullets": true
+    },
+    {
+      "heading": "Cómo elegir",
+      "paragraphs": [
+        "Depende de tu gusto y del tipo de bombilla: una yerba con mucho polvo tapa ciertos filtros. Mirá [cómo elegir una bombilla](/blog/como-elegir-una-bombilla-para-mate) y [cómo cebar bien](/blog/como-cebar-un-mate-paso-a-paso)."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Cuál es la diferencia entre yerba con palo y sin palo?",
+      "answer": "La con palo incluye pedacitos de tallo y es más suave; la sin palo es más intensa."
+    },
+    {
+      "question": "¿Qué yerba conviene para empezar?",
+      "answer": "Una con palo y de molienda media, más fácil de cebar y menos amarga."
+    },
+    {
+      "question": "¿Se puede usar cualquier yerba en cualquier mate?",
+      "answer": "Sí, pero el sabor cambia entre materiales; mejor curar tu mate con la yerba que uses a diario."
+    }
+  ],
+  "related": [
+    "como-cebar-un-mate-paso-a-paso",
+    "por-que-el-mate-se-pone-amargo-o-lavado",
+    "como-elegir-una-bombilla-para-mate"
+  ],
+  "cta": {
+    "label": "Mirá las bombillas de Puros Mates",
+    "href": "/shop?category=bombilla"
+  },
+  "datePublished": "2026-11-03",
+  "dateModified": "2026-11-03"
+}

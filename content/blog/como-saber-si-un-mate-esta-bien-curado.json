@@ -1,0 +1,51 @@
+{
+  "slug": "como-saber-si-un-mate-esta-bien-curado",
+  "title": "¿Cómo saber si un mate está bien curado y listo para usar?",
+  "description": "Señales de que tu mate de calabaza ya está curado: sabor del agua, hollejo, olor y color. Y qué hacer si todavía no está listo.",
+  "category": "Cuidados",
+  "answer": "Un mate está bien curado cuando el agua sale sin sabor amargo ni vegetal, el hollejo (la telita interior) se desprende fácil, no hay olor a humedad y el interior se ve parejo. Si el agua todavía sabe amarga o a calabaza, repetí el curado una vez más.",
+  "sections": [
+    {
+      "heading": "Señales de un mate bien curado",
+      "paragraphs": ["Probá un poco del agua de reposo y mirá el interior:"],
+      "list": [
+        "El agua no tiene gusto amargo ni a calabaza cruda.",
+        "El hollejo se despegó y se raspa sin esfuerzo.",
+        "El interior está parejo, sin manchas oscuras ni olor a humedad.",
+        "Los primeros mates de yerba no tienen un sabor raro."
+      ],
+      "bullets": true
+    },
+    {
+      "heading": "Si todavía no está listo",
+      "paragraphs": [
+        "Repetí el curado una o dos veces. Si hay manchas o mal olor, probablemente quedó húmedo: mirá [qué hacer si el mate huele a humedad](/blog/que-hacer-si-el-mate-huele-o-sabe-a-humedad). El proceso completo está en [cómo curar un mate de calabaza](/blog/como-curar-un-mate-de-calabaza)."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Cuántas veces hay que curar un mate?",
+      "answer": "En general de 3 a 5 veces para una calabaza; menos si tiene un buen terminado de fábrica."
+    },
+    {
+      "question": "¿Por qué mi mate curado igual sabe feo?",
+      "answer": "Puede que falten tandas de curado o que haya quedado húmedo. Repetí el curado y secalo bien."
+    },
+    {
+      "question": "¿Se puede usar un mate sin curar?",
+      "answer": "Los de calabaza o madera conviene curarlos antes; los de acero, vidrio o silicona se usan directo."
+    }
+  ],
+  "related": [
+    "como-curar-un-mate-de-calabaza",
+    "curar-un-mate-con-yerba-usada-o-yerba-nueva",
+    "por-que-el-mate-nuevo-sabe-amargo"
+  ],
+  "cta": {
+    "label": "Mirá los mates de Puros Mates",
+    "href": "/shop?category=mate"
+  },
+  "datePublished": "2026-11-03",
+  "dateModified": "2026-11-03"
+}

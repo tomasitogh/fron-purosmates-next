@@ -1,0 +1,55 @@
+{
+  "slug": "hay-que-curar-un-mate-de-acero-vidrio-ceramica-o-silicona",
+  "title": "¿Hay que curar un mate de acero inoxidable, vidrio, cerámica o silicona?",
+  "description": "Qué mates se curan y cuáles no: calabaza y madera sí; acero inoxidable, vidrio, cerámica y silicona no. Cómo prepararlos antes del primer uso.",
+  "category": "Cuidados",
+  "answer": "No. Los mates de acero inoxidable, vidrio, cerámica y silicona no se curan: solo se lavan con agua caliente y detergente neutro antes del primer uso. El curado es solo para materiales naturales y porosos como la calabaza y la madera.",
+  "sections": [
+    {
+      "heading": "Por qué algunos se curan y otros no",
+      "paragraphs": [
+        "La calabaza y la madera son porosas: el curado las sella y quita el sabor a vegetal. Los materiales no porosos no absorben ni sueltan sabores, así que no lo necesitan."
+      ]
+    },
+    {
+      "heading": "Cómo prepararlos",
+      "paragraphs": ["Antes de estrenarlos:"],
+      "list": [
+        "Lavá con agua caliente y un poco de detergente neutro.",
+        "Enjuagá bien y secá.",
+        "Cebá y listo."
+      ]
+    },
+    {
+      "heading": "Si todavía no sabés qué material elegir",
+      "paragraphs": [
+        "Mirá la comparación completa en [qué mate elegir: calabaza, madera o acero](/blog/que-mate-elegir-calabaza-madera-o-acero) y [de qué está hecho un mate](/blog/de-que-esta-hecho-un-mate)."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Los mates de acero inoxidable se pueden usar enseguida?",
+      "answer": "Sí, después de lavarlos una vez. No requieren curado."
+    },
+    {
+      "question": "¿Se cura un mate de silicona?",
+      "answer": "No. Se lava y se usa."
+    },
+    {
+      "question": "¿Un mate de cerámica se cura?",
+      "answer": "No, salvo que el fabricante diga lo contrario. Se lava y se usa."
+    }
+  ],
+  "related": [
+    "que-mate-elegir-calabaza-madera-o-acero",
+    "mate-de-acero-inoxidable-ventajas-y-desventajas",
+    "como-curar-un-mate-de-calabaza"
+  ],
+  "cta": {
+    "label": "Mirá los mates de Puros Mates",
+    "href": "/shop?category=mate"
+  },
+  "datePublished": "2026-11-03",
+  "dateModified": "2026-11-03"
+}

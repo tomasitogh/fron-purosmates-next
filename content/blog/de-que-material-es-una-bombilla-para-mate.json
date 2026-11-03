@@ -1,0 +1,52 @@
+{
+  "slug": "de-que-material-es-una-bombilla-para-mate",
+  "title": "¿De qué material es una bombilla de mate? Alpaca, acero y más",
+  "description": "Materiales de las bombillas: alpaca, acero inoxidable, bronce, aluminio y caña. Ventajas, cuidados y cuál conviene.",
+  "category": "Materiales y tipos",
+  "answer": "Las bombillas se fabrican principalmente en alpaca, acero inoxidable, bronce, aluminio y caña natural. El acero inoxidable es el más resistente y fácil de limpiar; la alpaca es la clásica y vistosa; la caña es tradicional y liviana pero dura menos.",
+  "sections": [
+    {
+      "heading": "Comparación rápida",
+      "paragraphs": [],
+      "list": [
+        "Acero inoxidable: resistente, fácil de limpiar, no se oxida.",
+        "Alpaca: clásica, con grabados, se oscurece con el tiempo.",
+        "Bronce: pesada y de estilo antiguo.",
+        "Aluminio: económica y liviana, menos duradera.",
+        "Caña: natural, se desgasta más rápido."
+      ],
+      "bullets": true
+    },
+    {
+      "heading": "Cómo elegir y cuidar",
+      "paragraphs": [
+        "Mirá [cómo elegir una bombilla para mate](/blog/como-elegir-una-bombilla-para-mate) y [cómo limpiar una bombilla](/blog/como-limpiar-una-bombilla-de-mate)."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Qué bombilla es mejor, de alpaca o de acero?",
+      "answer": "El acero es más duradero; la alpaca tiene más tradición y brillo, pero se oscurece."
+    },
+    {
+      "question": "¿Una bombilla de aluminio es segura?",
+      "answer": "Es un material habitual y económico, pero suele ser menos duradero que el acero."
+    },
+    {
+      "question": "¿Cada cuánto hay que cambiar la bombilla?",
+      "answer": "Cuando el filtro se deforma o no se puede limpiar bien."
+    }
+  ],
+  "related": [
+    "como-elegir-una-bombilla-para-mate",
+    "como-limpiar-una-bombilla-de-mate",
+    "como-cebar-un-mate-paso-a-paso"
+  ],
+  "cta": {
+    "label": "Mirá las bombillas de Puros Mates",
+    "href": "/shop?category=bombilla"
+  },
+  "datePublished": "2026-11-03",
+  "dateModified": "2026-11-03"
+}

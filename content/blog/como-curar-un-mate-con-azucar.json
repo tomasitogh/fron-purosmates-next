@@ -1,0 +1,55 @@
+{
+  "slug": "como-curar-un-mate-con-azucar",
+  "title": "¿Cómo curar un mate con azúcar? Paso a paso y cuándo conviene",
+  "description": "Curar un mate de calabaza con azúcar: cuánta poner, cuánto tiempo dejarlo y en qué se diferencia del curado solo con yerba y agua.",
+  "category": "Cuidados",
+  "answer": "Para curar un mate con azúcar mezclá yerba con una o dos cucharadas de azúcar, llená el mate, cubrí con agua caliente (no hirviendo) y dejalo reposar unas 24 horas. Después vaciá, raspá el hollejo y secalo bien. Es un método tradicional para suavizar el amargor del mate nuevo.",
+  "sections": [
+    {
+      "heading": "Paso a paso",
+      "paragraphs": [
+        "El azúcar no reemplaza al curado: se suma al método clásico de yerba y agua caliente. Sirve sobre todo para quitarle el gusto amargo y vegetal a la calabaza nueva."
+      ],
+      "list": [
+        "Mezclá yerba (usada o nueva) con una o dos cucharadas de azúcar.",
+        "Llená el mate hasta el borde y apretá un poco.",
+        "Cubrí con agua caliente, sin hervir (75–80 °C).",
+        "Dejá reposar unas 24 horas, completando agua si baja.",
+        "Vaciá, raspá la telita interior (hollejo) con una cuchara.",
+        "Enjuagá y secá bien antes de usarlo."
+      ]
+    },
+    {
+      "heading": "Cuándo conviene y cuándo no",
+      "paragraphs": [
+        "Es una opción cuando la calabaza es nueva y muy amarga. Si el mate va a quedar guardado húmedo, el azúcar puede favorecer el moho, así que el secado final es clave.",
+        "Si preferís no usarla, el curado solo con yerba y agua funciona igual: está explicado en [cómo curar un mate de calabaza](/blog/como-curar-un-mate-de-calabaza)."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Cuánta azúcar hay que poner para curar un mate?",
+      "answer": "Con una o dos cucharadas mezcladas con la yerba alcanza. Más azúcar no cura mejor."
+    },
+    {
+      "question": "¿Se puede curar un mate solo con azúcar?",
+      "answer": "No. El azúcar se usa junto con yerba y agua caliente; sola no cumple la función de curar."
+    },
+    {
+      "question": "¿Curar con azúcar es mejor que curar solo con yerba?",
+      "answer": "No es necesariamente mejor. Ayuda a bajar el amargor, pero ambos métodos curan; lo que más importa es el reposo y el secado."
+    }
+  ],
+  "related": [
+    "como-curar-un-mate-de-calabaza",
+    "curar-un-mate-con-yerba-usada-o-yerba-nueva",
+    "por-que-se-raja-o-se-pudre-un-mate"
+  ],
+  "cta": {
+    "label": "Mirá los mates de Puros Mates",
+    "href": "/shop?category=mate"
+  },
+  "datePublished": "2026-11-03",
+  "dateModified": "2026-11-03"
+}

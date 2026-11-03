@@ -1,0 +1,56 @@
+{
+  "slug": "que-es-la-virola-de-un-mate-y-de-que-material-puede-ser",
+  "title": "¿Qué es la virola de un mate y de qué material puede ser?",
+  "description": "La virola es el aro de metal del borde del mate. Materiales: alpaca, acero inoxidable, aluminio y otros. Para qué sirve y cómo se cuida.",
+  "category": "Materiales y tipos",
+  "answer": "La virola es el aro de metal que rodea la boca del mate. Protege el borde de golpes y rajaduras, refuerza la calabaza y es donde se graba el diseño personalizado. Puede ser de alpaca, acero inoxidable, aluminio u otros metales.",
+  "sections": [
+    {
+      "heading": "Para qué sirve",
+      "paragraphs": [
+        "Cumple tres funciones: proteger el borde, reforzar la calabaza y dar un acabado estético. Además es el lugar clásico para grabar un nombre o un logo."
+      ]
+    },
+    {
+      "heading": "Materiales más comunes",
+      "paragraphs": [],
+      "list": [
+        "Alpaca: aleación de cobre, níquel y zinc; clásica y con buen brillo.",
+        "Acero inoxidable: muy resistente y fácil de mantener.",
+        "Aluminio: liviano y económico, aunque menos resistente."
+      ],
+      "bullets": true
+    },
+    {
+      "heading": "Cuidados y personalización",
+      "paragraphs": [
+        "Secala siempre y limpiala con paño suave; más en [cómo cuidar la virola de alpaca](/blog/como-cuidar-la-virola-de-alpaca-de-un-mate). En Puros Mates podés [diseñar el grabado de tu virola](/customize)."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Qué es la virola de un mate?",
+      "answer": "El aro de metal que rodea la boca del mate para protegerla y reforzarla."
+    },
+    {
+      "question": "¿Se puede grabar la virola?",
+      "answer": "Sí. Es la zona más usada para nombres, frases o logos."
+    },
+    {
+      "question": "¿Todas las virolas son del mismo metal?",
+      "answer": "No. Pueden ser de alpaca, acero inoxidable, aluminio u otros, y cambia la durabilidad y el acabado."
+    }
+  ],
+  "related": [
+    "virola-de-alpaca-vs-acero-inoxidable-vs-aluminio",
+    "como-cuidar-la-virola-de-alpaca-de-un-mate",
+    "como-regalar-un-mate-personalizado"
+  ],
+  "cta": {
+    "label": "Diseñá la virola de tu mate",
+    "href": "/customize"
+  },
+  "datePublished": "2026-11-03",
+  "dateModified": "2026-11-03"
+}

@@ -1,0 +1,52 @@
+{
+  "slug": "temperatura-del-agua-para-el-mate",
+  "title": "¿A qué temperatura se toma el mate? La temperatura ideal del agua",
+  "description": "Temperatura ideal del agua para el mate: entre 70 y 80 °C. Por qué no hay que hervirla y cómo evitar que la yerba se queme.",
+  "category": "Uso",
+  "answer": "La temperatura ideal del agua para el mate es de 70 a 80 °C: más caliente de eso quema la yerba y deja el mate amargo. Si no tenés termómetro, apagá el fuego cuando aparecen las primeras burbujas, antes de que hierva.",
+  "sections": [
+    {
+      "heading": "Por qué no hervirla",
+      "paragraphs": [
+        "El agua hirviendo quema la yerba, la deja amarga y puede dañar la calabaza. Con 70–80 °C se extrae el sabor sin amargar."
+      ]
+    },
+    {
+      "heading": "Cómo calcularla sin termómetro",
+      "paragraphs": [
+        "Sacá la pava cuando empiezan a salir burbujas chicas del fondo, antes de que haga ebullición completa. En el [Rincón Matero](/rincon-matero) hay una guía rápida."
+      ]
+    },
+    {
+      "heading": "Y si el agua está fría",
+      "paragraphs": [
+        "El mate frío se llama tereré: mirá [mate o tereré: diferencias](/blog/mate-o-terere-diferencias-y-que-necesito-para-cada-uno)."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Se puede tomar mate con agua hirviendo?",
+      "answer": "No conviene: quema la yerba y amarga el mate."
+    },
+    {
+      "question": "¿Qué temperatura es demasiado baja?",
+      "answer": "Por debajo de unos 65 °C el mate se siente tibio y pierde sabor."
+    },
+    {
+      "question": "¿Por qué el mate se pone amargo?",
+      "answer": "Casi siempre por agua demasiado caliente o por no cebar bien. Ver [por qué se pone amargo el mate](/blog/por-que-el-mate-se-pone-amargo-o-lavado)."
+    }
+  ],
+  "related": [
+    "como-cebar-un-mate-sin-que-se-tape-la-bombilla",
+    "por-que-el-mate-se-pone-amargo-o-lavado",
+    "mate-o-terere-diferencias-y-que-necesito-para-cada-uno"
+  ],
+  "cta": {
+    "label": "Mirá los mates de Puros Mates",
+    "href": "/shop?category=mate"
+  },
+  "datePublished": "2026-11-03",
+  "dateModified": "2026-11-03"
+}

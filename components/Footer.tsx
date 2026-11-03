@@ -128,6 +128,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/guia-del-mate" className="transition hover:opacity-70">
+                  Guía del mate
+                </Link>
+              </li>
+              <li>
                 <Link
                   href="/comparar/puros-mates-vs-mercadolibre"
                   className="transition hover:opacity-70"
@@ -240,6 +245,11 @@ export default function Footer() {
               <li>
                 <Link href="/blog" className="transition hover:opacity-70">
                   Blog del Mate
+                </Link>
+              </li>
+              <li>
+                <Link href="/guia-del-mate" className="transition hover:opacity-70">
+                  Guía del mate
                 </Link>
               </li>
               <li>

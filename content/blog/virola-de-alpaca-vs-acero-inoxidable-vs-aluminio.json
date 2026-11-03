@@ -1,0 +1,56 @@
+{
+  "slug": "virola-de-alpaca-vs-acero-inoxidable-vs-aluminio",
+  "title": "Virola de alpaca, acero inoxidable o aluminio: ¿cuál conviene?",
+  "description": "Comparamos las virolas de alpaca, acero inoxidable y aluminio: durabilidad, aspecto, mantenimiento y precio, para elegir bien tu mate.",
+  "category": "Materiales y tipos",
+  "answer": "El acero inoxidable es la opción más resistente y de menor mantenimiento; la alpaca es la clásica, de brillo cálido pero que se oscurece con el tiempo; el aluminio es liviano y económico pero se raya y se desgasta antes. Para uso diario, la mayoría prefiere acero inoxidable o alpaca.",
+  "sections": [
+    {
+      "heading": "Alpaca",
+      "paragraphs": [
+        "Es una aleación de cobre, níquel y zinc (no contiene plata, aunque su color se parezca). Tiene un aspecto clásico y se trabaja muy bien para grabados, pero con la humedad y el uso puede oscurecerse."
+      ]
+    },
+    {
+      "heading": "Acero inoxidable",
+      "paragraphs": [
+        "Resiste mejor la humedad y los golpes, se limpia fácil y mantiene su brillo. Es práctico para quienes no quieren mantenimiento."
+      ]
+    },
+    {
+      "heading": "Aluminio",
+      "paragraphs": ["Es liviano y económico, pero más blando: se raya y se marca con facilidad."]
+    },
+    {
+      "heading": "Cuál elegir",
+      "paragraphs": [
+        "Si priorizás tradición y estética, alpaca; si priorizás durabilidad, acero inoxidable. Mirá también [qué es una virola](/blog/que-es-la-virola-de-un-mate-y-de-que-material-puede-ser) y [cómo cuidar la alpaca](/blog/como-cuidar-la-virola-de-alpaca-de-un-mate)."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿La alpaca es plata?",
+      "answer": "No. Es una aleación de cobre, níquel y zinc, sin plata."
+    },
+    {
+      "question": "¿Qué virola se oscurece menos?",
+      "answer": "La de acero inoxidable."
+    },
+    {
+      "question": "¿Se puede grabar el acero inoxidable?",
+      "answer": "Sí. Depende de cada tienda y modelo, pero es un material habitual para grabar."
+    }
+  ],
+  "related": [
+    "que-es-la-virola-de-un-mate-y-de-que-material-puede-ser",
+    "como-cuidar-la-virola-de-alpaca-de-un-mate",
+    "como-regalar-un-mate-personalizado"
+  ],
+  "cta": {
+    "label": "Mirá los mates de Puros Mates",
+    "href": "/shop?category=mate"
+  },
+  "datePublished": "2026-11-03",
+  "dateModified": "2026-11-03"
+}

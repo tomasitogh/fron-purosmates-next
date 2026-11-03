@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import JsonLd from '@/components/blog/JsonLd';
-import { formatDateEs, getAllPosts } from '@/lib/blog';
+import { formatDateEs, getAllPosts, groupPostsByCategory } from '@/lib/blog';
 import { getBaseUrl } from '@/lib/site';
 
 const baseUrl = getBaseUrl();
@@ -47,21 +47,33 @@ export default function BlogIndexPage() {
         Respuestas directas a las dudas más comunes sobre mates: cómo curarlos, cuidarlos, elegirlos
         y regalarlos.
       </p>
-      <ul className="space-y-8">
-        {posts.map((post) => (
-          <li key={post.slug} className="border-b border-gray-200 pb-8">
-            <p className="text-sm text-[#3D5F54]/80">
-              {post.category} · {formatDateEs(post.datePublished)}
-            </p>
-            <h2 className="mt-1 text-2xl font-semibold text-[#254642]">
-              <Link href={`/blog/${post.slug}`} className="hover:underline">
-                {post.title}
-              </Link>
-            </h2>
-            <p className="mt-2 text-gray-700">{post.description}</p>
-          </li>
-        ))}
-      </ul>
+      <p className="mb-10 rounded-lg bg-[#E8DCC4] p-5 text-[#254642]">
+        ¿Buscás todas las respuestas juntas? Mirá la{' '}
+        <Link href="/guia-del-mate" className="font-semibold underline">
+          Guía completa del mate
+        </Link>
+        : cada pregunta con su respuesta directa.
+      </p>
+      {groupPostsByCategory(posts).map(({ category, posts: list }) => (
+        <section key={category} className="mb-12" aria-labelledby={`cat-${category}`}>
+          <h2 id={`cat-${category}`} className="mb-4 text-2xl font-bold text-[#254642]">
+            {category}
+          </h2>
+          <ul className="space-y-8">
+            {list.map((post) => (
+              <li key={post.slug} className="border-b border-gray-200 pb-8">
+                <p className="text-sm text-[#3D5F54]/80">{formatDateEs(post.datePublished)}</p>
+                <h3 className="mt-1 text-xl font-semibold text-[#254642]">
+                  <Link href={`/blog/${post.slug}`} className="hover:underline">
+                    {post.title}
+                  </Link>
+                </h3>
+                <p className="mt-2 text-gray-700">{post.description}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
     </div>
   );
 }

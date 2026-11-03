@@ -6,6 +6,8 @@ export interface BlogSection {
   heading: string;
   paragraphs: string[];
   list?: string[];
+  /** true = viñetas en lugar de lista numerada. */
+  bullets?: boolean;
 }
 
 export interface BlogFaq {
@@ -41,6 +43,32 @@ export function getAllPosts(): BlogPost[] {
 
 export function getPostBySlug(slug: string): BlogPost | undefined {
   return getAllPosts().find((post) => post.slug === slug);
+}
+
+/** Orden en que se muestran las categorías en el índice y en la guía. */
+export const CATEGORY_ORDER = [
+  'Cuidados',
+  'Materiales y tipos',
+  'Uso',
+  'Guía de compra',
+  'Guías de compra',
+  'Guía',
+  'Regalos',
+  'Regalos empresariales',
+];
+
+export function groupPostsByCategory(posts: BlogPost[]): { category: string; posts: BlogPost[] }[] {
+  const map = new Map<string, BlogPost[]>();
+  for (const post of posts) {
+    map.set(post.category, [...(map.get(post.category) ?? []), post]);
+  }
+  const idx = (c: string) => {
+    const i = CATEGORY_ORDER.indexOf(c);
+    return i === -1 ? CATEGORY_ORDER.length : i;
+  };
+  return [...map.entries()]
+    .sort((a, b) => idx(a[0]) - idx(b[0]))
+    .map(([category, list]) => ({ category, posts: list }));
 }
 
 export function formatDateEs(iso: string): string {

@@ -1,0 +1,50 @@
+{
+  "slug": "como-limpiar-un-mate-de-calabaza-despues-de-usarlo",
+  "title": "¿Cómo limpiar un mate de calabaza después de usarlo?",
+  "description": "Limpieza diaria del mate de calabaza: cómo vaciarlo, enjuagarlo y secarlo sin usar detergente, y cada cuánto hacer una limpieza más profunda.",
+  "category": "Cuidados",
+  "answer": "Para limpiar un mate de calabaza vaciá la yerba apenas termines, enjuagalo con agua tibia, pasá una cuchara para sacar restos, secalo con servilleta y dejalo ventilar boca abajo. No uses detergente: la calabaza es porosa y puede absorber el sabor.",
+  "sections": [
+    {
+      "heading": "Rutina diaria",
+      "paragraphs": ["Es corta y evita casi todos los problemas:"],
+      "list": [
+        "Vaciá la yerba enseguida; no la dejes todo el día.",
+        "Enjuagá con agua tibia.",
+        "Raspá los restos con una cuchara.",
+        "Secá con servilleta y dejá ventilar boca abajo."
+      ]
+    },
+    {
+      "heading": "Limpieza profunda",
+      "paragraphs": [
+        "Una vez por mes, o si notás olor, repetí el curado con agua caliente y yerba y raspá bien. Si apareció moho, seguí la guía de [qué hacer si el mate huele o sabe a humedad](/blog/que-hacer-si-el-mate-huele-o-sabe-a-humedad). Y no te olvides de [limpiar la bombilla](/blog/como-limpiar-una-bombilla-de-mate)."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Se puede lavar un mate de calabaza con detergente?",
+      "answer": "No conviene: la calabaza absorbe el sabor y el olor del detergente."
+    },
+    {
+      "question": "¿Cada cuánto hay que limpiar el mate?",
+      "answer": "Enjuagarlo y secarlo después de cada uso, y hacer una limpieza más profunda una vez al mes."
+    },
+    {
+      "question": "¿Se puede dejar la yerba en el mate de un día para otro?",
+      "answer": "No. La humedad prolongada favorece el moho y puede rajar la calabaza."
+    }
+  ],
+  "related": [
+    "que-hacer-si-el-mate-huele-o-sabe-a-humedad",
+    "como-guardar-un-mate",
+    "como-limpiar-una-bombilla-de-mate"
+  ],
+  "cta": {
+    "label": "Mirá los mates de Puros Mates",
+    "href": "/shop?category=mate"
+  },
+  "datePublished": "2026-11-03",
+  "dateModified": "2026-11-03"
+}

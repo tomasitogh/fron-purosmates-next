@@ -1,0 +1,56 @@
+{
+  "slug": "por-que-el-mate-nuevo-sabe-amargo",
+  "title": "¿Por qué mi mate nuevo sabe amargo o a calabaza y cómo arreglarlo?",
+  "description": "Si tu mate nuevo sabe amargo, a calabaza o a madera, es porque falta curarlo. Te explicamos por qué pasa y cómo solucionarlo.",
+  "category": "Cuidados",
+  "answer": "Un mate nuevo sabe amargo o a calabaza porque el interior todavía no se curó: la calabaza cruda suelta taninos y sabor vegetal. Se soluciona curándolo con yerba y agua caliente, raspando el hollejo y repitiendo el proceso hasta que el agua salga sin gusto raro.",
+  "sections": [
+    {
+      "heading": "Por qué pasa",
+      "paragraphs": [
+        "La calabaza es un fruto y, antes del curado, trae sabores propios que se pasan a la yerba. Lo mismo ocurre, con menos intensidad, en los mates de madera."
+      ]
+    },
+    {
+      "heading": "Cómo arreglarlo",
+      "paragraphs": ["Seguí el curado clásico:"],
+      "list": [
+        "Llená con yerba y agua caliente (75–80 °C).",
+        "Dejá reposar 8 a 12 horas.",
+        "Vaciá y raspá el interior.",
+        "Repetí hasta que el agua no sepa amarga."
+      ]
+    },
+    {
+      "heading": "Otras causas",
+      "paragraphs": [
+        "Si el gusto es a humedad o a cerrado, puede ser moho: mirá [qué hacer si el mate huele o sabe a humedad](/blog/que-hacer-si-el-mate-huele-o-sabe-a-humedad). Y si querés un método para suavizar más, está el [curado con azúcar](/blog/como-curar-un-mate-con-azucar)."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Cuántos días hay que curar un mate para que no amargue?",
+      "answer": "Suele alcanzar con 3 a 5 vueltas de curado, cada una de 8 a 12 horas."
+    },
+    {
+      "question": "¿El mate de acero también puede saber raro?",
+      "answer": "No debería. Si ocurre, lavalo con detergente neutro: puede ser un resto de fabricación."
+    },
+    {
+      "question": "¿Se va solo el gusto a calabaza con el uso?",
+      "answer": "Con el tiempo mejora, pero lo mejor es curarlo bien desde el principio."
+    }
+  ],
+  "related": [
+    "como-curar-un-mate-de-calabaza",
+    "como-saber-si-un-mate-esta-bien-curado",
+    "que-hacer-si-el-mate-huele-o-sabe-a-humedad"
+  ],
+  "cta": {
+    "label": "Mirá los mates de Puros Mates",
+    "href": "/shop?category=mate"
+  },
+  "datePublished": "2026-11-03",
+  "dateModified": "2026-11-03"
+}

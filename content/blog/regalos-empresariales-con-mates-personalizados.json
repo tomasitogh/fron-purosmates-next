@@ -32,6 +32,10 @@
     {
       "question": "¿Hay cantidad mínima?",
       "answer": "Consultá por el formulario de regalos empresariales: la cantidad se define en la cotización."
+    },
+    {
+      "question": "¿Se puede grabar el logo de la empresa en el mate?",
+      "answer": "Sí. Los regalos empresariales de Puros Mates se coordinan por cotización con el logo grabado en la virola."
     }
   ],
   "related": ["como-regalar-un-mate-personalizado"],

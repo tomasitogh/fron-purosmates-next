@@ -1,0 +1,57 @@
+{
+  "slug": "que-es-un-mate-camionero",
+  "title": "¿Qué es un mate camionero y qué lo diferencia de otros mates?",
+  "description": "Qué es un mate camionero: forma, tamaño, materiales (calabaza, cuero, virola de alpaca o acero) y para quién es ideal.",
+  "category": "Materiales y tipos",
+  "answer": "Un mate camionero es un mate grande, de boca ancha y base firme, pensado para cargar mucha yerba y usarse en la ruta o en el trabajo. Suele ser de calabaza, muchas veces forrado en cuero, con virola de alpaca o acero inoxidable.",
+  "sections": [
+    {
+      "heading": "Qué lo caracteriza",
+      "paragraphs": [],
+      "list": [
+        "Tamaño grande y gran capacidad de yerba y agua.",
+        "Boca ancha y base estable, para que no se vuelque fácil.",
+        "Calabaza gruesa, a menudo forrada en cuero para proteger y aislar.",
+        "Virola de metal (alpaca o acero inoxidable) en el borde."
+      ],
+      "bullets": true
+    },
+    {
+      "heading": "De qué materiales puede ser",
+      "paragraphs": [
+        "La calabaza es el material más típico. El cuero cubre por fuera, y la virola puede ser de alpaca o de acero inoxidable; sobre esto mirá [alpaca vs acero inoxidable vs aluminio](/blog/virola-de-alpaca-vs-acero-inoxidable-vs-aluminio). Para cuidarlo, seguí [cómo curar un mate forrado en cuero](/blog/como-curar-un-mate-forrado-en-cuero)."
+      ]
+    },
+    {
+      "heading": "Para quién es",
+      "paragraphs": [
+        "Es ideal para quien toma muchos mates seguidos, comparte la ronda o necesita que rinda más tiempo. Si buscás uno más chico o clásico, mirá los [tipos de mate](/blog/tipos-de-mate-imperial-camionero-torpedo-y-mas)."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Por qué se llama mate camionero?",
+      "answer": "Porque su tamaño, su base firme y su capacidad lo hicieron popular entre quienes manejan muchas horas."
+    },
+    {
+      "question": "¿Qué lleva un mate camionero?",
+      "answer": "Una calabaza grande, muchas veces forrada en cuero, y una virola de metal como alpaca o acero inoxidable."
+    },
+    {
+      "question": "¿Es mejor un mate camionero que uno común?",
+      "answer": "Depende del uso: rinde más yerba y agua, pero pesa más y cuesta un poco más."
+    }
+  ],
+  "related": [
+    "tipos-de-mate-imperial-camionero-torpedo-y-mas",
+    "como-curar-un-mate-forrado-en-cuero",
+    "que-es-la-virola-de-un-mate-y-de-que-material-puede-ser"
+  ],
+  "cta": {
+    "label": "Mirá los mates de Puros Mates",
+    "href": "/shop?category=mate"
+  },
+  "datePublished": "2026-11-03",
+  "dateModified": "2026-11-03"
+}
