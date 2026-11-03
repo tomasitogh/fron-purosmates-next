@@ -1,0 +1,64 @@
+{
+  "slug": "como-elegir-una-bombilla-para-mate",
+  "title": "¿Cómo elegir una bombilla para tu mate?",
+  "description": "Cómo elegir una bombilla para mate: material, tipo de filtro, largo y cómo combina con tu mate y tu yerba. Guía práctica para comprar bien.",
+  "category": "Guías de compra",
+  "answer": "Para elegir una bombilla fijate en tres cosas: el material (acero inoxidable o alpaca), el tipo de filtro (resorte, agujeros o picos) según qué tan fina sea tu yerba, y que el largo y el diámetro encajen con la boca de tu mate. Una buena combinación evita que se tape y mejora el sabor.",
+  "sections": [
+    {
+      "heading": "Material: acero o alpaca",
+      "paragraphs": [
+        "El acero inoxidable es práctico, fácil de limpiar y no suele alterar el sabor. La alpaca tiene un acabado más clásico y combina muy bien con mates con virola del mismo metal.",
+        "Más allá del material, lo importante es que esté bien terminada, sin bordes ásperos en la boquilla."
+      ]
+    },
+    {
+      "heading": "El filtro, según tu yerba",
+      "paragraphs": [
+        "El filtro es lo que más influye en si la bombilla se tapa o no. Cada tipo tiene su uso:"
+      ],
+      "list": [
+        "Resorte: se desarma para limpiar y funciona bien con la mayoría de las yerbas.",
+        "Agujeros finos o perforada: filtran más, pensada para yerbas con mucho polvo.",
+        "Picos o abierta: deja pasar más líquido y va mejor con yerba más gruesa."
+      ]
+    },
+    {
+      "heading": "Largo y diámetro",
+      "paragraphs": [
+        "Tiene que llegar cómodamente al fondo del mate sin quedar muy alta ni apoyada de manera forzada. Si el mate es chico, una bombilla muy larga resulta incómoda; si es grande, una corta te obliga a inclinar el mate de más.",
+        "Si no estás seguro, llevá las medidas de tu mate o consultanos por WhatsApp al 11 3054 8207 y te ayudamos a elegir."
+      ]
+    },
+    {
+      "heading": "Cómo combinarla con tu mate",
+      "paragraphs": [
+        "Con un mate de calabaza o madera, una bombilla de alpaca suma estética. Con un mate de acero, una de acero mantiene el estilo. Y si estás armando un regalo, el set mate y bombilla a juego siempre queda bien."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Qué bombilla es mejor para yerba con mucho polvo?",
+      "answer": "Una con filtro de agujeros finos o de resorte bien ajustado suele filtrar mejor y se tapa menos."
+    },
+    {
+      "question": "¿La bombilla de alpaca cambia el sabor?",
+      "answer": "Una bombilla bien terminada no debería alterar el sabor. Lo recomendable es lavarla después de cada uso."
+    },
+    {
+      "question": "¿Cada cuánto conviene cambiar la bombilla?",
+      "answer": "Cuando notes que el filtro está deformado, no se limpia bien o la boquilla quedó dañada. Con buen mantenimiento puede durar mucho."
+    }
+  ],
+  "related": [
+    "como-cebar-un-mate-sin-que-se-tape-la-bombilla",
+    "como-limpiar-una-bombilla-de-mate"
+  ],
+  "cta": {
+    "label": "Mirá las bombillas",
+    "href": "/shop?category=bombilla"
+  },
+  "datePublished": "2026-11-02",
+  "dateModified": "2026-11-02"
+}

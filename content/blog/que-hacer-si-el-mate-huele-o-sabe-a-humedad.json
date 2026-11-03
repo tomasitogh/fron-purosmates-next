@@ -1,0 +1,64 @@
+{
+  "slug": "que-hacer-si-el-mate-huele-o-sabe-a-humedad",
+  "title": "¿Qué hacer si tu mate huele o sabe a humedad?",
+  "description": "Si tu mate huele o sabe a humedad, vaciá la yerba, raspá, lavá con agua caliente y secalo bien. Cuándo se recupera y cuándo conviene cambiarlo.",
+  "category": "Cuidados",
+  "answer": "Si tu mate huele o sabe a humedad, vaciá la yerba enseguida, raspá el interior con una cuchara, enjuagalo con agua caliente sin detergente fuerte y dejalo secar bien abierto, lejos de lugares cerrados. Si el olor vuelve o hay manchas oscuras que no salen, probablemente conviene reemplazarlo.",
+  "sections": [
+    {
+      "heading": "Por qué pasa",
+      "paragraphs": [
+        "El olor a humedad casi siempre aparece cuando el mate se guarda con yerba adentro o sin secar del todo. La humedad que queda atrapada en la calabaza o en la madera favorece el moho, y de ahí el sabor rancio.",
+        "Los mates de acero inoxidable no absorben líquido, así que ahí el problema suele estar en la yerba vieja o en la bombilla, no en el material."
+      ]
+    },
+    {
+      "heading": "Cómo recuperarlo paso a paso",
+      "paragraphs": ["Si el olor es leve y no ves manchas, probá con este procedimiento:"],
+      "list": [
+        "Tirá toda la yerba y raspá las paredes con una cuchara para sacar los restos.",
+        "Enjuagá con agua caliente, sin hervir. Evitá el detergente fuerte: en calabaza y madera el material lo absorbe.",
+        "Secá con una servilleta y dejá el mate boca abajo o bien abierto en un lugar ventilado, o al sol.",
+        "Repetí el secado hasta que no quede humedad adentro.",
+        "Si sigue el sabor, hacé un nuevo curado con yerba y agua caliente."
+      ]
+    },
+    {
+      "heading": "Cuándo conviene cambiarlo",
+      "paragraphs": [
+        "Si hay manchas oscuras o verdosas que no salen al raspar, o el olor vuelve después de varios lavados, lo más prudente es no seguir usándolo. El moho en un material poroso puede estar más adentro de lo que se ve."
+      ]
+    },
+    {
+      "heading": "Cómo evitar que vuelva a pasar",
+      "paragraphs": [
+        "Vaciá el mate después de usarlo, secalo y guardalo sin yerba. No lo dejes cerrado ni en lugares húmedos. Y si la virola es de alpaca u otro metal, secá también esa zona, porque ahí se junta humedad."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Puedo seguir usando un mate con olor a humedad?",
+      "answer": "Si el olor es leve y se va después de limpiarlo y secarlo bien, sí. Si hay manchas oscuras o el olor vuelve, es mejor reemplazarlo."
+    },
+    {
+      "question": "¿Sirve lavar el mate con detergente?",
+      "answer": "En calabaza y madera conviene evitarlo, porque el material puede absorber el sabor. Alcanza con agua caliente y un buen secado."
+    },
+    {
+      "question": "¿Un mate de acero inoxidable también agarra humedad?",
+      "answer": "El acero no absorbe líquido, pero igual puede tomar mal olor si queda yerba mojada adentro. Vaciarlo y secarlo después de usar evita el problema."
+    },
+    {
+      "question": "¿Cuánto tiempo tengo que dejarlo secar?",
+      "answer": "Hasta que el interior esté completamente seco al tacto y sin olor. Depende del clima y del material, así que no hay un tiempo fijo."
+    }
+  ],
+  "related": ["como-curar-un-mate-de-calabaza", "por-que-se-raja-o-se-pudre-un-mate"],
+  "cta": {
+    "label": "Mirá los mates artesanales de Puros Mates",
+    "href": "/shop?category=mate"
+  },
+  "datePublished": "2026-11-02",
+  "dateModified": "2026-11-02"
+}
