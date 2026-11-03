@@ -32,6 +32,10 @@
     {
       "question": "¿Cuánto tarda en secarse un mate?",
       "answer": "Más de 2 horas, dependiendo del sol y la humedad del ambiente."
+    },
+    {
+      "question": "¿Se puede reparar un mate rajado?",
+      "answer": "Las rajaduras finas a veces se estabilizan con un buen secado, pero una grieta profunda no tiene arreglo confiable. Si pierde líquido, es mejor cambiarlo."
     }
   ],
   "related": ["como-curar-un-mate-de-calabaza"],

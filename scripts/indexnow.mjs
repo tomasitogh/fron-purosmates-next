@@ -13,7 +13,12 @@ if (urlList.length === 0) {
 const res = await fetch('https://api.indexnow.org/indexnow', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json; charset=utf-8' },
-  body: JSON.stringify({ host: HOST, key: KEY, keyLocation: `https://${HOST}/${KEY}.txt`, urlList }),
+  body: JSON.stringify({
+    host: HOST,
+    key: KEY,
+    keyLocation: `https://${HOST}/${KEY}.txt`,
+    urlList,
+  }),
 });
 console.log('IndexNow status:', res.status);
 process.exit(res.ok || res.status === 202 ? 0 : 1);

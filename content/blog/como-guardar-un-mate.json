@@ -1,0 +1,53 @@
+{
+  "slug": "como-guardar-un-mate",
+  "title": "¿Cómo guardar un mate para que no se pudra ni se raje?",
+  "description": "Cómo guardar un mate de calabaza o madera: secado, ventilación, dónde ubicarlo y qué evitar para que dure muchos años.",
+  "category": "Cuidados",
+  "answer": "Para guardar un mate, vaciá la yerba, enjuagalo, secalo por completo y dejalo ventilar boca abajo antes de guardarlo en un lugar fresco, seco y sin sol directo. Guardarlo húmedo o con yerba adentro es la principal causa de moho y de rajaduras.",
+  "sections": [
+    {
+      "heading": "Antes de guardarlo",
+      "paragraphs": [
+        "Un mate seco dura años; uno húmedo, semanas.",
+        "Dejalo secar al aire un par de horas, boca abajo, y revisá que adentro no queden gotas."
+      ]
+    },
+    {
+      "heading": "Dónde guardarlo",
+      "paragraphs": [
+        "Elegí un lugar fresco y ventilado. Evitá el sol fuerte, la humedad del baño y las bolsas cerradas. Si lo vas a guardar mucho tiempo, no lo tapes herméticamente."
+      ]
+    },
+    {
+      "heading": "Errores comunes",
+      "paragraphs": [
+        "Dejar la yerba adentro toda la noche, guardarlo apenas enjuagado o apoyarlo sobre una superficie húmeda. Si algo de esto pasó, mirá [por qué se raja o se pudre un mate](/blog/por-que-se-raja-o-se-pudre-un-mate)."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Se puede guardar un mate con yerba?",
+      "answer": "No. La yerba retiene humedad y favorece el moho."
+    },
+    {
+      "question": "¿Conviene guardar el mate boca abajo?",
+      "answer": "Sí, así escurre y se ventila."
+    },
+    {
+      "question": "¿Se puede guardar un mate al sol?",
+      "answer": "No. El sol fuerte y el calor pueden rajar la calabaza y la madera."
+    }
+  ],
+  "related": [
+    "como-limpiar-un-mate-de-calabaza-despues-de-usarlo",
+    "por-que-se-raja-o-se-pudre-un-mate",
+    "como-curar-un-mate-de-calabaza"
+  ],
+  "cta": {
+    "label": "Mirá los mates de Puros Mates",
+    "href": "/shop?category=mate"
+  },
+  "datePublished": "2026-11-03",
+  "dateModified": "2026-11-03"
+}

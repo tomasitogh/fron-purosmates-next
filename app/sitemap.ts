@@ -96,6 +96,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const blogRoutes: MetadataRoute.Sitemap = [
     {
+      url: `${baseUrl}/guia-del-mate`,
+      lastModified: new Date(
+        getAllPosts()
+          .map((post) => post.dateModified ?? post.datePublished)
+          .sort()
+          .at(-1) ?? STATIC_LAST_MODIFIED
+      ),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
       url: `${baseUrl}/blog`,
       lastModified: STATIC_LAST_MODIFIED,
       changeFrequency: 'daily',

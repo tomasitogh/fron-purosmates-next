@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import JsonLd from '@/components/blog/JsonLd';
+import InlineText from '@/components/blog/InlineText';
 import { formatDateEs, getAllPosts, getPostBySlug } from '@/lib/blog';
 import { getBaseUrl } from '@/lib/site';
 
@@ -99,6 +100,10 @@ export default async function BlogPostPage({ params }: PageProps) {
         /{' '}
         <Link href="/blog" className="hover:underline">
           Blog
+        </Link>{' '}
+        /{' '}
+        <Link href="/guia-del-mate" className="hover:underline">
+          Guía del mate
         </Link>
       </nav>
 
@@ -111,23 +116,30 @@ export default async function BlogPostPage({ params }: PageProps) {
 
       <p className="mb-8 text-lg leading-relaxed font-medium text-gray-900">{post.answer}</p>
 
-      {post.sections.map((section) => (
-        <section key={section.heading} className="mb-8">
-          <h2 className="mb-3 text-2xl font-semibold text-[#254642]">{section.heading}</h2>
-          {section.paragraphs.map((p, i) => (
-            <p key={i} className="mb-3 leading-relaxed text-gray-800">
-              {p}
-            </p>
-          ))}
-          {section.list && (
-            <ol className="mb-3 list-decimal space-y-1 pl-6 text-gray-800">
-              {section.list.map((item, i) => (
-                <li key={i}>{item}</li>
-              ))}
-            </ol>
-          )}
-        </section>
-      ))}
+      {post.sections.map((section) => {
+        const ListTag = section.bullets ? 'ul' : 'ol';
+        return (
+          <section key={section.heading} className="mb-8">
+            <h2 className="mb-3 text-2xl font-semibold text-[#254642]">{section.heading}</h2>
+            {section.paragraphs.map((p, i) => (
+              <p key={i} className="mb-3 leading-relaxed text-gray-800">
+                <InlineText text={p} />
+              </p>
+            ))}
+            {section.list && (
+              <ListTag
+                className={`mb-3 space-y-1 pl-6 text-gray-800 ${section.bullets ? 'list-disc' : 'list-decimal'}`}
+              >
+                {section.list.map((item, i) => (
+                  <li key={i}>
+                    <InlineText text={item} />
+                  </li>
+                ))}
+              </ListTag>
+            )}
+          </section>
+        );
+      })}
 
       {post.cta && (
         <p className="mb-10 rounded-lg bg-[#E8DCC4] p-5 text-[#254642]">

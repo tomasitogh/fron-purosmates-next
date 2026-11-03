@@ -132,3 +132,12 @@ Laser-engraving designer for the mate's "virola" (metal ring). Lives entirely in
   > potrace paths REQUIRE `fill-rule="evenodd"` (it emits it in its own SVG output). Both the Konva `<Path>` in the canvas and the `<path>` in the exported SVG must set it explicitly — with the default `nonzero` all inner holes (letters, details) fill in and the design becomes a solid black blob.
 - **Font embedding**: `generateSvgFromDesign` is async and embeds the used Google Fonts into the exported SVG as base64 `@font-face` inside `<defs>`, so the file renders with the selected typography anywhere (browser/viewer) even without the font installed. If font download fails it degrades gracefully to `sans-serif`. Converting text to outlines (for laser software that ignores embedded fonts) remains a future improvement.
 - **Pending phases**: wire "Confirmar personalizado" to the Spring Boot order API (currently a `console.log` stub), and admin-side SVG download.
+
+---
+
+## 📚 Blog y Guía del mate (SEO / respuestas para IA)
+
+- Cada nota es un JSON en `content/blog/` (ver `lib/blog.ts`): `answer` (respuesta directa que va arriba), `sections`, mínimo 3 `faqs` y `related`. Los enlaces internos se escriben `[texto](/ruta)`.
+- `/guia-del-mate` junta todas las preguntas con su respuesta (FAQPage + ItemList). Las notas nuevas aparecen solas ahí, en `/blog`, en `sitemap.xml` y en `llms.txt`.
+- `tests/blog-content.test.ts` valida slugs, FAQs y enlaces internos.
+- `.claude/skills/seo*` son las skills de SEO de claude-seo (MIT); para sus scripts: `.claude/skills/seo/scripts/claude-seo setup`.

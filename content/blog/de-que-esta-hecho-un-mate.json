@@ -1,0 +1,58 @@
+{
+  "slug": "de-que-esta-hecho-un-mate",
+  "title": "¿De qué está hecho un mate? Calabaza, madera, acero, cerámica y más",
+  "description": "Materiales de los mates: calabaza, madera (algarrobo, palo santo), acero inoxidable, cerámica, vidrio y silicona. Ventajas y cómo se cuidan.",
+  "category": "Materiales y tipos",
+  "answer": "El mate tradicional se hace con la calabaza (fruto de una planta, secado y vaciado), pero también existen mates de madera como algarrobo o palo santo, de acero inoxidable, cerámica, vidrio, silicona y combinaciones con cuero y virolas de metal. Cada material cambia el sabor, el cuidado y la duración.",
+  "sections": [
+    {
+      "heading": "Los materiales más usados",
+      "paragraphs": [],
+      "list": [
+        "Calabaza: el clásico; se cura y aporta el sabor tradicional.",
+        "Madera (algarrobo, palo santo): dura y duradera; requiere curado y secado.",
+        "Acero inoxidable: no se cura, resiste golpes y conserva la temperatura (según el modelo).",
+        "Cerámica y vidrio: neutros en sabor, se rompen si se caen.",
+        "Silicona: liviana e irrompible, popular para llevar."
+      ],
+      "bullets": true
+    },
+    {
+      "heading": "Cómo elegir",
+      "paragraphs": [
+        "Si buscás la experiencia tradicional, calabaza. Si querés algo que dure y no requiera curado, acero. Más comparaciones en [qué mate elegir: calabaza, madera o acero](/blog/que-mate-elegir-calabaza-madera-o-acero)."
+      ]
+    },
+    {
+      "heading": "Y la virola, ¿de qué es?",
+      "paragraphs": [
+        "El borde de metal que protege la boca del mate puede ser de alpaca, acero inoxidable u otros metales: mirá [qué es una virola y de qué puede ser](/blog/que-es-la-virola-de-un-mate-y-de-que-material-puede-ser)."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Cuál es el material más tradicional para un mate?",
+      "answer": "La calabaza, que se usa desde hace siglos en la región."
+    },
+    {
+      "question": "¿Qué mate no necesita curarse?",
+      "answer": "Los de acero inoxidable, vidrio, cerámica y silicona."
+    },
+    {
+      "question": "¿Qué material conserva mejor el calor?",
+      "answer": "Los mates de acero con doble pared conservan mejor la temperatura que los de calabaza, que es más aislante pero se enfría con el uso."
+    }
+  ],
+  "related": [
+    "que-mate-elegir-calabaza-madera-o-acero",
+    "que-es-la-virola-de-un-mate-y-de-que-material-puede-ser",
+    "hay-que-curar-un-mate-de-acero-vidrio-ceramica-o-silicona"
+  ],
+  "cta": {
+    "label": "Mirá los mates de Puros Mates",
+    "href": "/shop?category=mate"
+  },
+  "datePublished": "2026-11-03",
+  "dateModified": "2026-11-03"
+}

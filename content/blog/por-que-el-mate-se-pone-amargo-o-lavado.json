@@ -1,0 +1,62 @@
+{
+  "slug": "por-que-el-mate-se-pone-amargo-o-lavado",
+  "title": "¿Por qué el mate se pone amargo o lavado? Causas y soluciones",
+  "description": "Por qué el mate sabe amargo o se lava rápido: temperatura del agua, cantidad de yerba, forma de cebar y estado del mate.",
+  "category": "Uso",
+  "answer": "El mate se pone amargo casi siempre por agua demasiado caliente o por mover la bombilla; se lava rápido cuando hay poca yerba, la bombilla está tapada o se cebó mal. Se arregla con agua a 70–80 °C, más yerba y una buena técnica de cebado.",
+  "sections": [
+    {
+      "heading": "Causas del amargor",
+      "paragraphs": [],
+      "list": [
+        "Agua hirviendo.",
+        "Mover la bombilla en cada trago.",
+        "Mate nuevo sin curar.",
+        "Yerba de baja calidad o muy polvo."
+      ],
+      "bullets": true
+    },
+    {
+      "heading": "Causas del mate lavado",
+      "paragraphs": [],
+      "list": [
+        "Poca yerba o muy poca montaña.",
+        "Agua que cae sobre la yerba en lugar de la pared del mate.",
+        "Bombilla tapada o filtro sucio.",
+        "Mate demasiado grande para la cantidad de yerba."
+      ],
+      "bullets": true
+    },
+    {
+      "heading": "Cómo mejorarlo",
+      "paragraphs": [
+        "Leé [cómo cebar un mate sin que se tape la bombilla](/blog/como-cebar-un-mate-sin-que-se-tape-la-bombilla) y [temperatura del agua](/blog/temperatura-del-agua-para-el-mate). Si el mate es nuevo, [curarlo bien](/blog/por-que-el-mate-nuevo-sabe-amargo) es clave."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Cuánta yerba hay que poner?",
+      "answer": "Llená entre dos tercios y tres cuartos del mate, inclinándolo para dejar una 'montañita'."
+    },
+    {
+      "question": "¿Por qué la yerba se hunde y el mate se lava?",
+      "answer": "Suele ser por agua en exceso, poca yerba o una bombilla tapada."
+    },
+    {
+      "question": "¿La calidad de la yerba influye?",
+      "answer": "Sí. Una yerba con mucho polvo tapa la bombilla y lava más rápido."
+    }
+  ],
+  "related": [
+    "temperatura-del-agua-para-el-mate",
+    "como-cebar-un-mate-sin-que-se-tape-la-bombilla",
+    "por-que-el-mate-nuevo-sabe-amargo"
+  ],
+  "cta": {
+    "label": "Mirá los mates de Puros Mates",
+    "href": "/shop?category=mate"
+  },
+  "datePublished": "2026-11-03",
+  "dateModified": "2026-11-03"
+}
