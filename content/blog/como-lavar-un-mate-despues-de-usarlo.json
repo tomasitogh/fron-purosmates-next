@@ -1,0 +1,63 @@
+{
+  "slug": "como-lavar-un-mate-despues-de-usarlo",
+  "title": "¿Cómo se lava un mate después de usarlo?",
+  "description": "Cómo lavar un mate de calabaza, madera o acero después de usarlo: vaciar enseguida, enjuagar con agua, sin detergente fuerte y secar bien para evitar moho.",
+  "category": "Cuidados",
+  "answer": "Después de usarlo, vaciá la yerba enseguida, enjuagá el mate con agua tibia o fría, ayudate con una cuchara o cepillo suave si quedó yerba pegada y secalo bien por dentro y por fuera. En un mate de calabaza evitá el detergente, porque deja sabor y puede alterar el curado.",
+  "sections": [
+    {
+      "heading": "El paso más importante: vaciar enseguida",
+      "paragraphs": [
+        "La yerba húmeda que se queda adentro es la causa principal del mal olor y del moho. Lo mejor es vaciar el mate apenas terminás de tomar, aunque después lo laves con más calma.",
+        "Un golpecito suave contra el tacho o la bolsa alcanza para sacar casi todo."
+      ]
+    },
+    {
+      "heading": "Cómo lavar según el material",
+      "paragraphs": ["No todos los mates se cuidan igual:"],
+      "list": [
+        "Calabaza: enjuagá solo con agua y raspá con una cuchara los restos si hace falta. Evitá detergente, que puede quedar absorbido por el material.",
+        "Madera: tratalo parecido a la calabaza, con agua y sin dejarlo en remojo.",
+        "Acero inoxidable: se puede lavar con agua y un poco de detergente suave, enjuagando bien."
+      ]
+    },
+    {
+      "heading": "Secado: donde se gana o se pierde todo",
+      "paragraphs": [
+        "Secá el interior con un trapo o servilleta y dejalo boca abajo o en un lugar ventilado hasta que no quede humedad. Guardar un mate húmedo en un cajón o con la tapa puesta es lo que provoca olor a humedad.",
+        "Si ya notás olor, mirá nuestra nota sobre qué hacer si el mate huele o sabe a humedad."
+      ]
+    },
+    {
+      "heading": "Un detalle con la virola",
+      "paragraphs": [
+        "Si tu mate tiene virola, secala también para que no quede agua acumulada en la unión con la calabaza o la madera. En Puros Mates hacemos mates con virolas de alpaca y podés grabarlas, así que vale la pena cuidarlas."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Se puede lavar un mate de calabaza con detergente?",
+      "answer": "No es recomendable. La calabaza es porosa y puede retener el sabor del detergente. Alcanza con agua y, si hace falta, una cuchara para raspar."
+    },
+    {
+      "question": "¿Hay que lavar el mate todos los días?",
+      "answer": "Lo fundamental es vaciarlo y secarlo después de cada uso. El lavado con agua conviene hacerlo seguido para que no se acumule yerba."
+    },
+    {
+      "question": "¿Puedo dejar el mate en remojo?",
+      "answer": "Mejor no. El remojo prolongado favorece rajaduras y humedad en calabaza y madera."
+    }
+  ],
+  "related": [
+    "que-hacer-si-el-mate-huele-o-sabe-a-humedad",
+    "como-curar-un-mate-de-calabaza",
+    "como-cuidar-la-virola-de-alpaca-de-un-mate"
+  ],
+  "cta": {
+    "label": "Mirá los mates",
+    "href": "/shop?category=mate"
+  },
+  "datePublished": "2026-11-03",
+  "dateModified": "2026-11-03"
+}

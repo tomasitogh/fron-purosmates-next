@@ -1,0 +1,68 @@
+{
+  "slug": "a-que-temperatura-va-el-agua-para-el-mate",
+  "title": "¿A qué temperatura tiene que estar el agua para el mate?",
+  "description": "El agua para el mate va entre 70 y 80 °C, sin hervir. Por qué importa, cómo calcularla sin termómetro y qué pasa si te pasás de temperatura.",
+  "category": "Cebado",
+  "answer": "El agua para el mate tiene que estar entre 70 y 80 °C, es decir, caliente pero sin llegar a hervir. Si hierve, quema la yerba, amarga el sabor y puede dañar un mate de calabaza. Si está muy fría, el mate sale lavado y la yerba no suelta sabor.",
+  "sections": [
+    {
+      "heading": "Por qué no conviene que hierva",
+      "paragraphs": [
+        "Cuando el agua hierve, la yerba se \"quema\": el mate se vuelve amargo y áspero desde los primeros sorbos y se lava más rápido.",
+        "Además, el agua hirviendo es más agresiva con el material del mate. En una calabaza, el calor excesivo puede favorecer rajaduras, sobre todo si todavía no está bien curada."
+      ]
+    },
+    {
+      "heading": "Cómo calcularla sin termómetro",
+      "paragraphs": ["Casi nadie ceba con termómetro, y no hace falta. Hay referencias simples:"],
+      "list": [
+        "Apagá la pava justo antes de que rompa el hervor, cuando empiezan a subir burbujitas chicas.",
+        "Si ya hirvió, esperá un minuto antes de cebar.",
+        "Si la pava tiene corte automático, dejala reposar unos instantes antes de usarla.",
+        "Probá el primer mate: si te quema la lengua o sale amargo, bajá un poco la temperatura la próxima vez."
+      ]
+    },
+    {
+      "heading": "El agua tibia tampoco es la solución",
+      "paragraphs": [
+        "Con agua demasiado fría la yerba no libera sabor y el mate queda aguado. Es el error contrario y se nota enseguida: no hay espuma y el gusto es flojo.",
+        "El tereré es otra historia, porque se toma con agua fría a propósito, pero para el mate tradicional lo ideal es esa franja de agua bien caliente sin hervir."
+      ]
+    },
+    {
+      "heading": "Cuidá también el mate",
+      "paragraphs": [
+        "Un mate bien curado y bien seco aguanta mejor el calor del uso diario. Si querés ver opciones de mates en Puros Mates, hay calabazas, madera y acero inoxidable, cada uno con su comportamiento frente al calor."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Qué pasa si cebo con agua hirviendo?",
+      "answer": "La yerba se quema, el mate sale amargo y se lava rápido. En un mate de calabaza, además, aumenta el riesgo de que se raje."
+    },
+    {
+      "question": "¿Hace falta usar termómetro?",
+      "answer": "No. Con apagar la pava antes del hervor, o esperar un minuto si ya hirvió, alcanza para quedar en el rango correcto."
+    },
+    {
+      "question": "¿Por qué mi mate sale amargo?",
+      "answer": "Una causa frecuente es el agua demasiado caliente. Otras son mover mucho la bombilla o usar una yerba muy fina."
+    },
+    {
+      "question": "¿El agua puede estar más fría si uso un mate de acero?",
+      "answer": "El mate de acero inoxidable no se raja por el calor, pero la temperatura ideal para el sabor de la yerba sigue siendo la misma."
+    }
+  ],
+  "related": [
+    "como-cebar-un-mate-sin-que-se-tape-la-bombilla",
+    "por-que-se-raja-o-se-pudre-un-mate",
+    "mate-o-terere-diferencias-y-que-necesito-para-cada-uno"
+  ],
+  "cta": {
+    "label": "Mirá los mates",
+    "href": "/shop?category=mate"
+  },
+  "datePublished": "2026-11-03",
+  "dateModified": "2026-11-03"
+}
