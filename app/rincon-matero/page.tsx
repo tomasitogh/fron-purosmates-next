@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Link from 'next/link';
 import { getBaseUrl } from '@/lib/site';
 import MateRitualGame from '@/components/rincon-matero/MateRitualGame';
 import ProductQuizGame from '@/components/rincon-matero/ProductQuizGame';
@@ -237,6 +238,28 @@ export default function RinconMateroPage() {
                 matero.
               </p>
             </div>
+
+            {/* JUEGO 3D: Playground (ruta aparte, carga Three.js solo allí) */}
+            <Link
+              href="/playground"
+              className="group flex flex-col items-start gap-4 rounded-3xl bg-gradient-to-br from-[#254642] to-[#1C3632] p-6 text-white shadow-xl transition hover:scale-[1.01] sm:flex-row sm:items-center sm:justify-between sm:p-8"
+            >
+              <div>
+                <span className="text-xs font-black tracking-widest text-[#D4AF37] uppercase">
+                  Nuevo · Juego 3D
+                </span>
+                <h3 className="mt-1 text-2xl font-black text-[#F5F5DC] sm:text-3xl">
+                  Cebá tu mate
+                </h3>
+                <p className="mt-1 max-w-xl text-sm text-white/80 sm:text-base">
+                  Sentate a la mesa, elegí termo, mate, bombilla y yerba, y cebalo paso a paso.
+                  ¿Cuánto sacás?
+                </p>
+              </div>
+              <span className="rounded-2xl bg-[#D4AF37] px-6 py-3 font-black text-[#254642] transition group-hover:brightness-105">
+                Jugar →
+              </span>
+            </Link>
 
             {/* JUEGO 1: Calculadora de Temperatura y Cebada */}
             <TemperatureCalculator />

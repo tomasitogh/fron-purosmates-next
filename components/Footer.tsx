@@ -118,6 +118,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/playground" className="transition hover:opacity-70">
+                  Cebá tu mate (juego 3D)
+                </Link>
+              </li>
+              <li>
                 <Link href="/nosotros#faq" className="transition hover:opacity-70">
                   Preguntas Frecuentes
                 </Link>
@@ -235,6 +240,11 @@ export default function Footer() {
                   className="font-semibold text-[#D4AF37] transition hover:opacity-70"
                 >
                   Rincón Matero (Juegos & Tips)
+                </Link>
+              </li>
+              <li>
+                <Link href="/playground" className="transition hover:opacity-70">
+                  Cebá tu mate (juego 3D)
                 </Link>
               </li>
               <li>
