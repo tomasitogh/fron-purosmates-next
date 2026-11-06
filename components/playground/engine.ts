@@ -13,7 +13,16 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
-import { buildMateModel, buildYerbaPack, canvasTexture, rng, std, woodTexture } from './models';
+import {
+  buildBombillaModel,
+  buildMateModel,
+  buildTermoModel,
+  buildYerbaPack,
+  canvasTexture,
+  rng,
+  std,
+  woodTexture,
+} from './models';
 import {
   CATEGORY_ORDER,
   OPTIONS,
@@ -303,62 +312,9 @@ function hitbox(radius: number, height: number) {
 }
 
 function buildBombilla(shape: BombillaShape) {
-  const g = new THREE.Group();
-  const metal = std(shape.metal, { metalness: 0.95, roughness: 0.22 });
-  const L = 0.24;
-  if (shape.style === 'pico') {
-    const curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, 0.02, 0),
-      new THREE.Vector3(0, 0.17, 0),
-      new THREE.Vector3(0.008, 0.215, 0),
-      new THREE.Vector3(0.032, 0.238, 0),
-    ]);
-    g.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 40, 0.0036, 10), metal));
-    const paleta = new THREE.Mesh(new THREE.SphereGeometry(0.012, 20, 12), metal);
-    paleta.scale.set(1.4, 1.6, 0.45);
-    paleta.position.y = 0.017;
-    g.add(paleta);
-    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.005, 12, 8), metal);
-    tip.scale.set(1.3, 0.6, 1);
-    tip.position.set(0.034, 0.239, 0);
-    g.add(tip);
-  } else {
-    const tube = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.0034, 0.0034, L - 0.02, 12).translate(
-        0,
-        0.02 + (L - 0.02) / 2,
-        0
-      ),
-      metal
-    );
-    g.add(tube);
-    const mouth = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.0034, 0.012, 12), metal);
-    mouth.scale.z = 0.6;
-    mouth.position.y = L;
-    g.add(mouth);
-    if (shape.style === 'recta') {
-      const filtro = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.0075, 0.0075, 0.032, 16).translate(0, 0.016, 0),
-        metal
-      );
-      g.add(filtro);
-    } else {
-      const pts: THREE.Vector3[] = [];
-      for (let i = 0; i <= 120; i++) {
-        const t = i / 120;
-        const a = t * Math.PI * 2 * 9;
-        pts.push(new THREE.Vector3(Math.cos(a) * 0.0075, 0.002 + t * 0.042, Math.sin(a) * 0.0075));
-      }
-      g.add(
-        new THREE.Mesh(
-          new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 240, 0.0012, 6),
-          metal
-        )
-      );
-    }
-  }
-  g.add(hitbox(0.028, 0.26));
-  return { group: g };
+  const { group } = buildBombillaModel(shape.style);
+  group.add(hitbox(0.028, 0.26));
+  return { group };
 }
 
 function radiusAt(profile: THREE.Vector2[], y: number) {
@@ -398,47 +354,9 @@ function buildMate(shape: MateShape) {
 }
 
 function buildTermo(shape: TermoShape) {
-  const g = new THREE.Group();
-  const h = shape.height;
-  const r = 0.045;
-  const bodyH = h - 0.07;
-  const body = std(shape.body, { metalness: 0.45, roughness: 0.38 });
-  const cap = std(shape.cap, { roughness: 0.5 });
-  const steel = std('#cfd3d6', { metalness: 1, roughness: 0.28 });
-  g.add(
-    new THREE.Mesh(new THREE.CylinderGeometry(r, r, bodyH, 40).translate(0, bodyH / 2, 0), body)
-  );
-  g.add(
-    new THREE.Mesh(
-      new THREE.CylinderGeometry(r * 1.01, r * 1.01, 0.012, 40).translate(0, 0.006, 0),
-      steel
-    )
-  );
-  g.add(
-    new THREE.Mesh(
-      new THREE.CylinderGeometry(0.032, r, 0.03, 40).translate(0, bodyH + 0.015, 0),
-      steel
-    )
-  );
-  g.add(
-    new THREE.Mesh(
-      new THREE.CylinderGeometry(0.031, 0.033, 0.04, 32).translate(0, bodyH + 0.05, 0),
-      cap
-    )
-  );
-  // Pico cebador
-  const spout = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.01, 0.03, 16), cap);
-  spout.rotation.z = Math.PI / 2;
-  spout.position.set(-0.038, h - 0.03, 0);
-  g.add(spout);
-  // Manija
-  const handle = new THREE.Mesh(new THREE.TorusGeometry(bodyH * 0.32, 0.008, 10, 28, Math.PI), cap);
-  handle.rotation.z = -Math.PI / 2;
-  handle.position.set(r, bodyH * 0.55, 0);
-  handle.scale.x = 0.45;
-  g.add(handle);
-  g.add(hitbox(0.07, h + 0.02));
-  return { group: g, mouth: new THREE.Vector3(-0.054, h - 0.03, 0) };
+  const { group, height, mouth } = buildTermoModel(shape.style);
+  group.add(hitbox(0.07, height + 0.02));
+  return { group, mouth };
 }
 
 // ─── Motor ──────────────────────────────────────────────────────────────────

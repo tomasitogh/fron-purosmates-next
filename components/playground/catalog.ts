@@ -27,14 +27,12 @@ export const CATEGORY_PLURAL: Record<Category, string> = {
 
 export type YerbaBrand = 'donomar' | 'taragui' | 'lamerced' | 'playadito' | 'baldo';
 export type YerbaShape = { kind: 'yerba'; brand: YerbaBrand };
-export type BombillaShape = {
-  kind: 'bombilla';
-  style: 'pico' | 'recta' | 'resorte';
-  metal: string;
-};
+export type BombillaStyle = 'bombillon' | 'inoxCurva' | 'dosBochas';
+export type BombillaShape = { kind: 'bombilla'; style: BombillaStyle };
 export type MateStyle = 'mu' | 'criollo' | 'criolloPremium' | 'imperialAlgarrobo' | 'camionero';
 export type MateShape = { kind: 'mate'; style: MateStyle };
-export type TermoShape = { kind: 'termo'; body: string; cap: string; height: number };
+export type TermoStyle = 'pico' | 'lumilagro' | 'stanley';
+export type TermoShape = { kind: 'termo'; style: TermoStyle };
 
 export type Option = {
   id: string;
@@ -90,28 +88,28 @@ export const OPTIONS: Option[] = [
 
   // ── Bombillas ─────────────────────────────────────────────────────────────
   {
-    id: 'bombilla-pico',
+    id: 'bombilla-bombillon-alpaca',
     category: 'bombilla',
-    name: 'Pico de loro de alpaca',
-    description: 'Curva para tomar cómodo y filtro de paleta que no se tapa.',
+    name: 'Bombillón de alpaca',
+    description: 'Caño torneado en espiral, boquilla dorada y filtro de paleta.',
     shopHref: '/shop?category=bombilla',
-    shape: { kind: 'bombilla', style: 'pico', metal: '#d9d4c7' },
+    shape: { kind: 'bombilla', style: 'bombillon' },
   },
   {
-    id: 'bombilla-recta',
+    id: 'bombilla-acero-inoxidable',
     category: 'bombilla',
-    name: 'Recta de acero inoxidable',
-    description: 'Simple, resistente y fácil de limpiar.',
+    name: 'Acero inoxidable',
+    description: 'Curva para tomar cómodo, agarre moleteado y fácil de lavar.',
     shopHref: '/shop?category=bombilla',
-    shape: { kind: 'bombilla', style: 'recta', metal: '#c4c9cf' },
+    shape: { kind: 'bombilla', style: 'inoxCurva' },
   },
   {
-    id: 'bombilla-resorte',
+    id: 'bombilla-dos-bochas',
     category: 'bombilla',
-    name: 'Con filtro de resorte',
-    description: 'El resorte retiene hasta la yerba con más polvo.',
+    name: 'Dos bochas',
+    description: 'Clásica de alpaca con dos bochas y filtro redondo grande.',
     shopHref: '/shop?category=bombilla',
-    shape: { kind: 'bombilla', style: 'resorte', metal: '#e0c27a' },
+    shape: { kind: 'bombilla', style: 'dosBochas' },
   },
 
   // ── Mates ─────────────────────────────────────────────────────────────────
@@ -158,28 +156,28 @@ export const OPTIONS: Option[] = [
 
   // ── Termos ────────────────────────────────────────────────────────────────
   {
-    id: 'termo-verde',
+    id: 'termo-acero-pico',
     category: 'termo',
-    name: 'Acero verde 1 L',
-    description: 'El clásico de la ruta: 24 horas de agua caliente.',
+    name: 'Acero con pico cebador',
+    description: 'Tapón cebador con gatillo y manija: el chorrito justo.',
     shopHref: '/shop?category=accesorios',
-    shape: { kind: 'termo', body: '#2f6b4f', cap: '#1d3f30', height: 0.36 },
+    shape: { kind: 'termo', style: 'pico' },
   },
   {
-    id: 'termo-negro',
+    id: 'termo-lumilagro',
     category: 'termo',
-    name: 'Negro mate con pico cebador',
-    description: 'El pico cebador te deja tirar el chorrito justo.',
+    name: 'Lumilagro acero',
+    description: 'El clásico argentino, con vaso y base negros.',
     shopHref: '/shop?category=accesorios',
-    shape: { kind: 'termo', body: '#26272b', cap: '#111214', height: 0.34 },
+    shape: { kind: 'termo', style: 'lumilagro' },
   },
   {
-    id: 'termo-crema',
+    id: 'termo-stanley',
     category: 'termo',
-    name: 'Crema compacto 750 ml',
-    description: 'Liviano y fácil de llevar en la mochila.',
+    name: 'Stanley Classic',
+    description: 'Verde martillado, irrompible y con agua caliente todo el día.',
     shopHref: '/shop?category=accesorios',
-    shape: { kind: 'termo', body: '#e9dfc8', cap: '#7a5c3a', height: 0.3 },
+    shape: { kind: 'termo', style: 'stanley' },
   },
 ];
 

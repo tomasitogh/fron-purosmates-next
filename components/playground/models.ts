@@ -5,7 +5,7 @@
  */
 import * as THREE from 'three';
 
-import type { MateStyle, YerbaBrand } from './catalog';
+import type { BombillaStyle, MateStyle, TermoStyle, YerbaBrand } from './catalog';
 
 // ─── Helpers compartidos ────────────────────────────────────────────────────
 
@@ -917,4 +917,403 @@ export function buildMateModel(style: MateStyle) {
   }
 
   return { group: g, profile, top };
+}
+
+// ─── Bombillas ──────────────────────────────────────────────────────────────
+// El origen (0,0,0) es la punta del filtro: así el motor la "clava" en la yerba.
+
+function holesTexture(base: string) {
+  return canvasTexture(128, 128, (ctx, w, h) => {
+    ctx.fillStyle = base;
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(30,30,30,0.85)';
+    for (let y = 14; y < h; y += 16) {
+      for (let x = 10 + ((y / 16) % 2) * 8; x < w; x += 16) {
+        ctx.beginPath();
+        ctx.arc(x, y, 3.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  });
+}
+
+function knurlTexture() {
+  return canvasTexture(128, 256, (ctx, w, h) => {
+    ctx.fillStyle = '#c9ccd0';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(40,40,40,0.55)';
+    ctx.lineWidth = 2;
+    for (let i = -h; i < w + h; i += 9) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i + h, h);
+      ctx.moveTo(i + h, 0);
+      ctx.lineTo(i, h);
+      ctx.stroke();
+    }
+  });
+}
+
+/** Filtro tipo "paleta" (cuchara plana con agujeritos). */
+function paleta(metal: THREE.Material, holes: THREE.Material, r: number, tilt = 0) {
+  const g = new THREE.Group();
+  const shell = new THREE.Mesh(new THREE.SphereGeometry(r, 24, 14), metal);
+  shell.scale.set(1.25, 1.7, 0.42);
+  const face = new THREE.Mesh(new THREE.CircleGeometry(r * 0.92, 24), holes);
+  face.scale.set(1.25, 1.7, 1);
+  face.position.z = r * 0.43;
+  const back = face.clone();
+  back.rotation.y = Math.PI;
+  back.position.z = -r * 0.43;
+  g.add(shell, face, back);
+  g.position.y = r * 1.7;
+  g.rotation.x = tilt;
+  return g;
+}
+
+export function buildBombillaModel(style: BombillaStyle) {
+  const g = new THREE.Group();
+  const alpaca = std('#d9d6cf', { metalness: 0.95, roughness: 0.22 });
+  const inox = std('#c7cbcf', { metalness: 1, roughness: 0.18 });
+  const gold = std('#d2b056', { metalness: 1, roughness: 0.25 });
+
+  if (style === 'bombillon') {
+    // Bombillón de alpaca: caño grueso torneado en espiral y boquilla dorada ancha
+    g.add(
+      paleta(
+        alpaca,
+        std('#ffffff', {
+          map: holesTexture('#d9d6cf'),
+          metalness: 0.9,
+          roughness: 0.3,
+          side: THREE.DoubleSide,
+        }),
+        0.012
+      )
+    );
+    g.add(
+      new THREE.Mesh(
+        new THREE.CylinderGeometry(0.0042, 0.0042, 0.2, 14).translate(0, 0.13, 0),
+        alpaca
+      )
+    );
+    for (let k = 0; k < 3; k++) {
+      const pts: THREE.Vector3[] = [];
+      for (let i = 0; i <= 80; i++) {
+        const t = i / 80;
+        const a = t * Math.PI * 2 * 7 + (k * Math.PI * 2) / 3;
+        pts.push(new THREE.Vector3(Math.cos(a) * 0.0047, 0.06 + t * 0.12, Math.sin(a) * 0.0047));
+      }
+      g.add(
+        new THREE.Mesh(
+          new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 160, 0.0016, 6),
+          alpaca
+        )
+      );
+    }
+    const collar = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.0062, 0.0062, 0.008, 16).translate(0, 0.19, 0),
+      gold
+    );
+    const mouth = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.0085, 0.0055, 0.045, 16).translate(0, 0.217, 0),
+      gold
+    );
+    mouth.scale.z = 0.4;
+    g.add(collar, mouth);
+  } else if (style === 'inoxCurva') {
+    // Acero inoxidable: curva arriba, zona de agarre moleteada y filtro de paleta
+    const curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0.03, 0),
+      new THREE.Vector3(0, 0.18, 0),
+      new THREE.Vector3(0.006, 0.215, 0),
+      new THREE.Vector3(0.026, 0.25, 0),
+    ]);
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 48, 0.0034, 10), inox));
+    g.add(
+      new THREE.Mesh(
+        new THREE.CylinderGeometry(0.0043, 0.0043, 0.075, 16).translate(0, 0.095, 0),
+        std('#ffffff', { map: knurlTexture(), metalness: 0.9, roughness: 0.4 })
+      )
+    );
+    g.add(
+      new THREE.Mesh(
+        new THREE.CylinderGeometry(0.0046, 0.0046, 0.004, 16).translate(0, 0.135, 0),
+        std('#3a3d40', { metalness: 0.8, roughness: 0.4 })
+      )
+    );
+    g.add(
+      paleta(
+        inox,
+        std('#ffffff', {
+          map: holesTexture('#c7cbcf'),
+          metalness: 0.9,
+          roughness: 0.3,
+          side: THREE.DoubleSide,
+        }),
+        0.0105,
+        0.25
+      )
+    );
+  } else {
+    // Dos bochas: caño recto con dos esferas, boquilla plana y filtro redondo grande
+    g.add(
+      new THREE.Mesh(
+        new THREE.CylinderGeometry(0.0034, 0.0034, 0.2, 12).translate(0, 0.13, 0),
+        alpaca
+      )
+    );
+    for (const y of [0.1, 0.165]) {
+      g.add(new THREE.Mesh(new THREE.SphereGeometry(0.0085, 20, 14).translate(0, y, 0), alpaca));
+      for (const dy of [-0.012, 0.012]) {
+        g.add(
+          new THREE.Mesh(
+            new THREE.CylinderGeometry(0.0048, 0.0048, 0.003, 14).translate(0, y + dy, 0),
+            alpaca
+          )
+        );
+      }
+    }
+    const mouth = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.0065, 0.0045, 0.035, 14).translate(0, 0.245, 0),
+      alpaca
+    );
+    mouth.scale.z = 0.4;
+    g.add(mouth);
+    const filtro = paleta(
+      alpaca,
+      std('#ffffff', {
+        map: holesTexture('#d9d6cf'),
+        metalness: 0.9,
+        roughness: 0.3,
+        side: THREE.DoubleSide,
+      }),
+      0.0145
+    );
+    filtro.scale.set(1.05, 0.85, 1);
+    g.add(filtro);
+  }
+  return { group: g };
+}
+
+// ─── Termos ─────────────────────────────────────────────────────────────────
+// El pico (por donde sale el agua) queda del lado -x y la manija del lado +x.
+
+function hammertone(base: string, seed: number) {
+  return canvasTexture(1024, 512, (ctx, w, h) => {
+    ctx.fillStyle = base;
+    ctx.fillRect(0, 0, w, h);
+    const r = rng(seed);
+    for (let i = 0; i < 2600; i++) {
+      ctx.fillStyle = r() > 0.5 ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.08)';
+      ctx.beginPath();
+      ctx.arc(r() * w, r() * h, 3 + r() * 9, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Logo
+    atFront(ctx, w, (x) => {
+      text(ctx, 'STANLEY', x, h * 0.28, 'bold 44px Georgia, serif', '#1d3a2a');
+      ctx.fillStyle = '#1d3a2a';
+      ctx.beginPath();
+      ctx.ellipse(x, h * 0.2, 26, 12, 0, 0, Math.PI * 2);
+      ctx.fill();
+      text(ctx, 'SINCE 1913', x, h * 0.33, '16px Georgia, serif', '#1d3a2a');
+    });
+  });
+}
+
+function brushedSteel(withLumilagro: boolean) {
+  return canvasTexture(1024, 1024, (ctx, w, h) => {
+    const g = ctx.createLinearGradient(0, 0, w, 0);
+    g.addColorStop(0, '#e4e6e8');
+    g.addColorStop(0.25, '#b9bdc1');
+    g.addColorStop(0.5, '#eceef0');
+    g.addColorStop(0.75, '#b5b9bd');
+    g.addColorStop(1, '#e4e6e8');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    const r = rng(81);
+    for (let i = 0; i < 400; i++) {
+      ctx.fillStyle = `rgba(255,255,255,${r() * 0.12})`;
+      ctx.fillRect(r() * w, 0, 1, h);
+    }
+    if (withLumilagro) {
+      ctx.fillStyle = '#1b1b1b';
+      for (const y of [0.06, 0.075, 0.905, 0.92]) ctx.fillRect(0, h * y, w, 6);
+      atFront(ctx, w, (x) => {
+        ctx.strokeStyle = '#2a2a2a';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.roundRect(x - 95, h * 0.74, 190, 62, 14);
+        ctx.stroke();
+        text(ctx, 'LUMILAGRO', x, h * 0.74 + 32, '600 34px system-ui, sans-serif', '#2a2a2a');
+        text(ctx, 'VA CON VOS, SIEMPRE.', x, h * 0.74 + 82, '15px system-ui', '#3a3a3a');
+      });
+    }
+  });
+}
+
+function loopHandle(points: [number, number][], radius: number, mat: THREE.Material) {
+  const curve = new THREE.CatmullRomCurve3(points.map(([x, y]) => new THREE.Vector3(x, y, 0)));
+  return new THREE.Mesh(new THREE.TubeGeometry(curve, 40, radius, 10), mat);
+}
+
+export function buildTermoModel(style: TermoStyle) {
+  const g = new THREE.Group();
+  const black = std('#151617', { roughness: 0.45 });
+  let h: number;
+
+  if (style === 'pico') {
+    // Acero con tapón cebador negro, gatillo rojo y manija negra
+    h = 0.33;
+    const r = 0.043;
+    const bodyH = 0.25;
+    const steel = std('#ffffff', { map: brushedSteel(false), metalness: 0.9, roughness: 0.25 });
+    g.add(
+      new THREE.Mesh(new THREE.CylinderGeometry(r, r, bodyH, 48).translate(0, bodyH / 2, 0), steel)
+    );
+    g.add(
+      new THREE.Mesh(
+        new THREE.CylinderGeometry(r * 1.01, r * 1.01, 0.006, 48).translate(0, 0.014, 0),
+        std('#8d9196', { metalness: 1, roughness: 0.3 })
+      )
+    );
+    g.add(
+      new THREE.Mesh(
+        new THREE.CylinderGeometry(0.046, 0.046, 0.04, 48).translate(0, bodyH + 0.02, 0),
+        black
+      )
+    );
+    g.add(
+      new THREE.Mesh(
+        new THREE.CylinderGeometry(0.036, 0.044, 0.025, 40).translate(0, bodyH + 0.052, 0),
+        black
+      )
+    );
+    for (let i = 0; i < 4; i++) {
+      g.add(
+        new THREE.Mesh(
+          new THREE.TorusGeometry(0.036, 0.0015, 6, 40)
+            .rotateX(Math.PI / 2)
+            .translate(0, bodyH + 0.045 + i * 0.006, 0),
+          black
+        )
+      );
+    }
+    g.add(
+      new THREE.Mesh(
+        new THREE.CylinderGeometry(0.03, 0.033, 0.012, 32).translate(0, h - 0.006, 0),
+        black
+      )
+    );
+    const gatillo = new THREE.Mesh(
+      new THREE.BoxGeometry(0.03, 0.009, 0.014),
+      std('#c8202a', { roughness: 0.35 })
+    );
+    gatillo.position.set(-0.012, h + 0.006, 0);
+    gatillo.rotation.z = 0.45;
+    g.add(gatillo);
+    g.add(
+      loopHandle(
+        [
+          [0.044, bodyH + 0.03],
+          [0.068, bodyH + 0.02],
+          [0.076, bodyH - 0.03],
+          [0.074, bodyH - 0.12],
+          [0.068, bodyH - 0.13],
+        ],
+        0.0055,
+        black
+      )
+    );
+  } else if (style === 'lumilagro') {
+    // Acero con vaso negro arriba, base negra y filetes negros
+    h = 0.34;
+    const r = 0.042;
+    const steel = std('#ffffff', { map: brushedSteel(true), metalness: 0.9, roughness: 0.25 });
+    const bodyH = 0.25;
+    g.add(
+      new THREE.Mesh(
+        new THREE.CylinderGeometry(r * 0.93, r, bodyH, 48).translate(0, 0.012 + bodyH / 2, 0),
+        steel
+      )
+    );
+    g.add(
+      new THREE.Mesh(
+        new THREE.CylinderGeometry(r * 1.03, r * 1.03, 0.022, 48).translate(0, 0.011, 0),
+        black
+      )
+    );
+    const cupProfile: THREE.Vector2[] = [];
+    for (let i = 0; i <= 16; i++) {
+      const t = i / 16;
+      const y = 0.262 + t * 0.078;
+      const rr = t < 0.7 ? 0.04 : 0.04 * Math.cos(((t - 0.7) / 0.3) * (Math.PI / 2) * 0.85);
+      cupProfile.push(new THREE.Vector2(rr, y));
+    }
+    cupProfile.push(new THREE.Vector2(0, h));
+    g.add(new THREE.Mesh(new THREE.LatheGeometry(cupProfile, 48), black));
+    g.add(
+      new THREE.Mesh(
+        new THREE.CylinderGeometry(0.0405, 0.0405, 0.002, 48).translate(0, 0.29, 0),
+        std('#3a3b3d', { roughness: 0.4 })
+      )
+    );
+  } else {
+    // Stanley Classic: verde martillado, base y cuello de acero, manija negra
+    h = 0.33;
+    const r = 0.05;
+    const green = std('#ffffff', {
+      map: hammertone('#5d8a68', 91),
+      metalness: 0.35,
+      roughness: 0.55,
+    });
+    const steel = std('#c9cdd1', { metalness: 1, roughness: 0.25 });
+    const stopper = std('#4f7a5a', { roughness: 0.6 });
+    g.add(new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.04, 48).translate(0, 0.02, 0), steel));
+    g.add(new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.2, 48).translate(0, 0.14, 0), green));
+    g.add(
+      new THREE.Mesh(new THREE.CylinderGeometry(0.036, r, 0.025, 48).translate(0, 0.2525, 0), green)
+    );
+    g.add(
+      new THREE.Mesh(
+        new THREE.CylinderGeometry(0.034, 0.034, 0.018, 40).translate(0, 0.274, 0),
+        steel
+      )
+    );
+    for (let i = 0; i < 4; i++) {
+      g.add(
+        new THREE.Mesh(
+          new THREE.TorusGeometry(0.031, 0.0035, 8, 40)
+            .rotateX(Math.PI / 2)
+            .translate(0, 0.288 + i * 0.008, 0),
+          stopper
+        )
+      );
+    }
+    g.add(
+      new THREE.Mesh(
+        new THREE.CylinderGeometry(0.026, 0.03, 0.018, 32).translate(0, 0.321, 0),
+        stopper
+      )
+    );
+    const flip = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.012, 0.03), stopper);
+    flip.position.set(-0.008, h + 0.004, 0);
+    g.add(flip);
+    g.add(
+      loopHandle(
+        [
+          [0.05, 0.235],
+          [0.074, 0.225],
+          [0.079, 0.17],
+          [0.077, 0.09],
+          [0.05, 0.075],
+        ],
+        0.007,
+        black
+      )
+    );
+  }
+
+  return { group: g, height: h, mouth: new THREE.Vector3(-0.03, h - 0.005, 0) };
 }
