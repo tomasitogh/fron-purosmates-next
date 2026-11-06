@@ -324,8 +324,8 @@ export default function MateGame() {
 
       {/* ── Fase: preparar ──────────────────────────────────────────────── */}
       {started && phase === 'prepare' && snap && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:p-5">
-          <div className="pointer-events-auto w-full max-w-md rounded-3xl bg-white/90 p-4 shadow-2xl backdrop-blur-md sm:p-5">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:p-5 lg:justify-start">
+          <div className="pointer-events-auto w-full max-w-md rounded-3xl bg-white/90 p-4 shadow-2xl backdrop-blur-md sm:p-5 lg:max-w-sm">
             <p className="text-[11px] font-black tracking-widest text-[#D4AF37] uppercase">
               Paso {stepIdx + 1} de {STEPS.length}
             </p>

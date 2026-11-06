@@ -114,7 +114,7 @@ const PREP = {
   bombilla: new THREE.Vector3(-0.13, MAT_Y + 0.006, 0.45),
 };
 
-const PREP_LOOK = new THREE.Vector3(0, TABLE_Y - 0.05, 0.3);
+const PREP_LOOK = new THREE.Vector3(0, TABLE_Y + 0.04, 0.26);
 
 const YERBA_DRY = new THREE.Color('#a9ad4e');
 const YERBA_WET = new THREE.Color('#4d6a26');

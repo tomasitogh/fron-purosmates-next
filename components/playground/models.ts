@@ -1051,22 +1051,51 @@ type MateDef = {
 
 const ALPACA = '#d8d6d0';
 
-function chisel(ctx: CanvasRenderingContext2D, w: number, h: number, seed: number) {
-  ctx.fillStyle = ALPACA;
+/**
+ * Alpaca cincelada: dos guardas de perlitas (arriba y abajo) y al medio un motivo
+ * repetido de florcitas y volutas, en grabado fino y prolijo.
+ */
+function chisel(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, '#eceae4');
+  g.addColorStop(0.5, '#d2d0c9');
+  g.addColorStop(1, '#e6e4de');
+  ctx.fillStyle = g;
   ctx.fillRect(0, 0, w, h);
-  const r = rng(seed);
-  ctx.strokeStyle = 'rgba(60,60,60,0.55)';
-  ctx.lineWidth = 2;
-  for (let i = 0; i < 120; i++) {
-    const x = r() * w;
-    const y = h * 0.15 + r() * h * 0.7;
-    ctx.beginPath();
-    ctx.arc(x, y, 6 + r() * 14, r() * 6, r() * 6 + 2.5);
-    ctx.stroke();
+  const ink = 'rgba(55,55,55,0.45)';
+  // Filetes y perlitas
+  ctx.fillStyle = ink;
+  for (const y of [0.12, 0.88]) ctx.fillRect(0, h * y - 1, w, 2);
+  for (const y of [0.2, 0.8]) {
+    for (let x = 6; x < w; x += 14) {
+      ctx.beginPath();
+      ctx.arc(x, h * y, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
-  ctx.fillStyle = 'rgba(40,40,40,0.5)';
-  ctx.fillRect(0, h * 0.08, w, 3);
-  ctx.fillRect(0, h * 0.9, w, 3);
+  // Motivo central: florcita + volutas en espejo, cada 64 px
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = 2;
+  const cy = h * 0.5;
+  const ry = h * 0.17;
+  for (let x = 32; x < w + 32; x += 64) {
+    for (let k = 0; k < 4; k++) {
+      ctx.save();
+      ctx.translate(x, cy);
+      ctx.rotate((k * Math.PI) / 2 + Math.PI / 4);
+      ctx.beginPath();
+      ctx.ellipse(0, -ry * 0.45, ry * 0.18, ry * 0.42, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+    for (const dir of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(x + dir * ry * 0.9, cy);
+      ctx.quadraticCurveTo(x + dir * 22, cy - ry, x + dir * 30, cy);
+      ctx.quadraticCurveTo(x + dir * 22, cy + ry * 0.6, x + dir * 17, cy + ry * 0.15);
+      ctx.stroke();
+    }
+  }
 }
 
 function guarda(ctx: CanvasRenderingContext2D, w: number, h: number) {
@@ -1227,7 +1256,7 @@ const MATES: Record<MateStyle, MateDef> = {
           ctx.lineWidth = 4;
           ctx.strokeRect(x - 70, h * 0.2, 140, h * 0.62);
           text(ctx, 'MG', x, h * 0.37, 'bold 56px Georgia, serif', 'rgba(90,55,25,0.75)');
-          text(ctx, 'BC', x, h * 0.66, 'bold 56px Georgia, serif', 'rgba(90,55,25,0.75)');
+          text(ctx, 'RC', x, h * 0.66, 'bold 56px Georgia, serif', 'rgba(90,55,25,0.75)');
         });
       },
     },
@@ -1272,7 +1301,7 @@ const MATES: Record<MateStyle, MateDef> = {
         [0.0428, 0.149],
         [0.0385, 0.147],
       ],
-      draw: (ctx, w, h) => chisel(ctx, w, h, 53),
+      draw: (ctx, w, h) => chisel(ctx, w, h),
     },
   },
 
@@ -1328,7 +1357,7 @@ const MATES: Record<MateStyle, MateDef> = {
         [0.056, 0.1],
         [0.052, 0.098],
       ],
-      draw: (ctx, w, h) => chisel(ctx, w, h, 72),
+      draw: (ctx, w, h) => chisel(ctx, w, h),
     },
   },
   torpedoCriollo: {
@@ -1369,11 +1398,11 @@ const MATES: Record<MateStyle, MateDef> = {
         [0.0395, 0.134],
       ],
       draw: (ctx, w, h) => {
-        chisel(ctx, w, h, 153);
+        chisel(ctx, w, h);
         // Rombos repujados
-        ctx.strokeStyle = 'rgba(50,50,50,0.6)';
-        ctx.lineWidth = 3;
-        for (let x = 20; x < w; x += 64) {
+        ctx.strokeStyle = 'rgba(55,55,55,0.4)';
+        ctx.lineWidth = 2;
+        for (let x = 32; x < w; x += 64) {
           ctx.beginPath();
           ctx.moveTo(x, h * 0.25);
           ctx.lineTo(x + 18, h * 0.5);
@@ -1679,10 +1708,13 @@ export function buildBombillaModel(style: BombillaStyle) {
         )
       );
     }
-    const mouth = new THREE.Mesh(new THREE.CylinderGeometry(0.0055, 0.004, 0.022, 14), inox);
-    mouth.position.set(0.02, 0.242, 0);
-    mouth.rotation.z = -0.9;
-    mouth.scale.z = 0.45;
+    // Boquilla: un óvalo aplanado justo en la punta de la curva, siguiendo su dirección
+    const tip = curve.getPoint(1);
+    const tan = curve.getTangent(1);
+    const mouth = new THREE.Mesh(new THREE.CylinderGeometry(0.0052, 0.0036, 0.018, 14), inox);
+    mouth.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tan);
+    mouth.position.copy(tip).addScaledVector(tan, -0.007);
+    mouth.scale.z = 0.5;
     g.add(mouth);
     g.add(
       paleta(
