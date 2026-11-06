@@ -77,3 +77,18 @@ Los modelos están en `components/playground/models.ts`:
 - **Mates** (`MATES`): cada mate define su altura, una función `radius(t)` con el perfil (de la base
   a la boca), la textura del cuerpo y, opcionalmente, una banda de cuero en relieve y una virola de
   alpaca con su perfil y su cincelado.
+
+## Referencia: cómo se ve el mate cebado (para las texturas de yerba)
+
+Tomado de fotos reales de un criollo premium con yerba y bombilla:
+
+- La yerba llena el mate casi hasta la virola y forma una **montañita** inclinada hacia un costado;
+  del otro lado queda el **hueco** donde va la bombilla.
+- Color: verde oliva grisáceo (`#8a8f4e` a `#6f7a3a`), con muchos **palitos** amarillo pálido
+  (`#d9cf9a`) y hojitas trituradas de distintos tamaños; no es una superficie lisa.
+- Las yerbas **sin palo** (Taragüi, Kalena) casi no tienen palitos y se ven más verdes y finas;
+  las **con palo** (Playadito, Rosamonte, Cósmico) muestran palitos claros bien visibles; las
+  **barbacuá** (La Merced, Sol y Lluvia) son más pardas/ahumadas; las **compuestas con hierbas**
+  (CBSé, Piporé) suman trocitos de hierbas de otro verde.
+- Mojada se oscurece mucho (verde musgo) y pierde los palitos claros a la vista.
+- La bombilla entra en el hueco con una inclinación de ~30°, apoyada contra el borde de la virola.
