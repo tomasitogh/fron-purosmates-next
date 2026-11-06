@@ -2157,33 +2157,13 @@ function paleta(metal: THREE.Material, holes: THREE.Material, r: number, tilt = 
 export function buildBombillaModel(style: BombillaStyle) {
   const g = new THREE.Group();
   const inox = std('#c7cbcf', { metalness: 1, roughness: 0.18 });
-  const gold = std('#d2b056', { metalness: 1, roughness: 0.25 });
 
   if (style === 'bombillon') {
     buildBombillon(g);
   } else if (style === 'inoxCurva') {
     buildInoxCurva(g);
   } else if (style === 'chata') {
-    // Chata: caño aplanado de acero con anillo dorado y ranuras abajo
-    const tube = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.0045, 0.0045, 0.24, 16).translate(0, 0.12, 0),
-      inox
-    );
-    tube.scale.set(1.5, 1, 0.45);
-    const ring = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.0049, 0.0049, 0.012, 16).translate(0, 0.13, 0),
-      gold
-    );
-    ring.scale.set(1.5, 1, 0.5);
-    g.add(tube, ring);
-    const slot = std('#2a2c2e', { roughness: 0.6 });
-    for (let k = 0; k < 4; k++) {
-      for (const z of [-0.0021, 0.0021]) {
-        const sl = new THREE.Mesh(new THREE.BoxGeometry(0.0045, 0.006, 0.0004), slot);
-        sl.position.set(0, 0.008 + k * 0.008, z);
-        g.add(sl);
-      }
-    }
+    buildChata(g);
   } else if (style === 'bohr') {
     // Bohr: acero, curva suave, boquilla aplanada con dos anillos y filtro redondo
     const curve = new THREE.CatmullRomCurve3([
@@ -2505,6 +2485,103 @@ function buildBombillon(g: THREE.Group) {
     std('#3a2e12', { roughness: 0.6 })
   );
   hole.scale.z = 0.32;
+}
+
+/**
+ * Bombilla chata: caño de acero aplanado (óvalo) con una curva suave hacia
+ * atrás, boca abierta arriba, anillo de tiento dorado cerca de la boca y
+ * ranuras de filtro en la punta de abajo.
+ */
+function buildChata(g: THREE.Group) {
+  const N = 40;
+  const L = 0.24;
+  // Eje curvo (curva en el plano X: de perfil se ve el arco)
+  const axis = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0.004, 0.08, 0),
+    new THREE.Vector3(0.006, 0.16, 0),
+    new THREE.Vector3(0.0, L, 0),
+  ]);
+  // Sección ovalada (ancha en Z = de frente se ve plana y ancha)
+  const pos: number[] = [];
+  const idx: number[] = [];
+  const seg = 20;
+  const ry = 0.0062;
+  const rx = 0.0026;
+  const frames = axis.computeFrenetFrames(N, false);
+  for (let i = 0; i <= N; i++) {
+    const c = axis.getPointAt(i / N);
+    const nrm = frames.normals[i];
+    const bin = frames.binormals[i];
+    const taper = i === 0 ? 0.6 : 1;
+    for (let j = 0; j <= seg; j++) {
+      const a = (j / seg) * Math.PI * 2;
+      const p = c
+        .clone()
+        .addScaledVector(nrm, Math.cos(a) * rx * taper)
+        .addScaledVector(bin, Math.sin(a) * ry * taper);
+      pos.push(p.x, p.y, p.z);
+    }
+  }
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < seg; j++) {
+      const a = i * (seg + 1) + j;
+      const b = a + seg + 1;
+      idx.push(a, b, a + 1, a + 1, b, b + 1);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  g.add(
+    new THREE.Mesh(
+      geo,
+      new THREE.MeshStandardMaterial({
+        color: '#dcdcda',
+        metalness: 1,
+        roughness: 0.12,
+        side: THREE.DoubleSide,
+      })
+    )
+  );
+
+  // Boca abierta (interior oscuro)
+  const top = axis.getPointAt(1);
+  const hole = new THREE.Mesh(
+    new THREE.CircleGeometry(1, 20).rotateX(-Math.PI / 2),
+    std('#202122', { roughness: 0.6 })
+  );
+  hole.scale.set(rx * 0.75, 1, ry * 0.8);
+  hole.position.copy(top).add(new THREE.Vector3(0, -0.0005, 0));
+  g.add(hole);
+
+  // Anillo de tiento dorado cerca de la boca
+  const ringT = 0.82;
+  const rc = axis.getPointAt(ringT);
+  const tan = axis.getTangentAt(ringT);
+  const braid = std('#ffffff', { map: braidTexture(), roughness: 0.6 });
+  braid.color.set('#d8b46a');
+  for (let k = 0; k < 4; k++) {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(1, 0.2, 10, 32), braid);
+    ring.scale.set(rx * 1.05, ry * 1.03, 0.008);
+    ring.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), tan);
+    ring.rotateZ(Math.PI / 2);
+    ring.position.copy(rc).addScaledVector(tan, (k - 1.5) * 0.0022);
+    g.add(ring);
+  }
+
+  // Ranuras del filtro en la punta de abajo (en ambas caras)
+  const slot = std('#2a2c2e', { roughness: 0.6 });
+  for (let k = 0; k < 5; k++) {
+    const t = 0.012 + k * 0.007;
+    const c = axis.getPointAt(t / L);
+    for (const dir of [-1, 1]) {
+      const sl = new THREE.Mesh(new THREE.BoxGeometry(0.0004, 0.0028, ry * 1.3), slot);
+      sl.position.copy(c).add(new THREE.Vector3(dir * rx * 1.02, 0, 0));
+      g.add(sl);
+    }
+  }
 }
 
 function buildInoxCurva(g: THREE.Group) {
