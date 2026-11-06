@@ -1730,44 +1730,188 @@ export function buildBombillaModel(style: BombillaStyle) {
       )
     );
   } else {
-    // Dos bochas: caño recto con dos esferas, boquilla plana y filtro redondo grande
-    g.add(
-      new THREE.Mesh(
-        new THREE.CylinderGeometry(0.0034, 0.0034, 0.2, 12).translate(0, 0.13, 0),
-        alpaca
-      )
-    );
-    for (const y of [0.1, 0.165]) {
-      g.add(new THREE.Mesh(new THREE.SphereGeometry(0.0085, 20, 14).translate(0, y, 0), alpaca));
-      for (const dy of [-0.012, 0.012]) {
-        g.add(
-          new THREE.Mesh(
-            new THREE.CylinderGeometry(0.0048, 0.0048, 0.003, 14).translate(0, y + dy, 0),
-            alpaca
-          )
-        );
-      }
-    }
-    const mouth = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.0065, 0.0045, 0.035, 14).translate(0, 0.245, 0),
-      alpaca
-    );
-    mouth.scale.z = 0.4;
-    g.add(mouth);
-    const filtro = paleta(
-      alpaca,
-      std('#ffffff', {
-        map: holesTexture('#d9d6cf'),
-        metalness: 0.9,
-        roughness: 0.3,
-        side: THREE.DoubleSide,
-      }),
-      0.0145
-    );
-    filtro.scale.set(1.05, 0.85, 1);
-    g.add(filtro);
+    buildDosBochas(g);
   }
   return { group: g };
+}
+
+// ─── Bombilla dos bochas (modelo detallado) ─────────────────────────────────
+
+const CHROME = () => std('#e4e4e2', { metalness: 1, roughness: 0.12 });
+
+/** Anillo cincelado: filetes en los bordes y trama de rombos al medio. */
+function engravedBandTexture() {
+  return canvasTexture(256, 64, (ctx, w, h) => {
+    const g = ctx.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, '#f1f0ec');
+    g.addColorStop(0.5, '#c9c7c1');
+    g.addColorStop(1, '#ecebe6');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(40,40,40,0.6)';
+    ctx.lineWidth = 2;
+    for (const y of [h * 0.14, h * 0.86]) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+    ctx.lineWidth = 1.5;
+    for (let x = -h; x < w + h; x += 12) {
+      ctx.beginPath();
+      ctx.moveTo(x, h * 0.22);
+      ctx.lineTo(x + h * 0.56, h * 0.78);
+      ctx.moveTo(x + h * 0.56, h * 0.22);
+      ctx.lineTo(x, h * 0.78);
+      ctx.stroke();
+    }
+  });
+}
+
+/** Frente de la cuchara: cromo con un óvalo de agujeritos. v=0 es la punta. */
+function spoonTexture() {
+  return canvasTexture(256, 512, (ctx, w, h) => {
+    const g = ctx.createRadialGradient(w * 0.4, h * 0.55, 10, w * 0.5, h * 0.55, w * 0.9);
+    g.addColorStop(0, '#f4f4f2');
+    g.addColorStop(1, '#a9aaa8');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    // Óvalo perforado (en el canvas la punta queda abajo)
+    const cx = w * 0.5;
+    const cy = h * 0.6;
+    const rx = w * 0.38;
+    const ry = h * 0.3;
+    ctx.fillStyle = '#1f2021';
+    for (let y = cy - ry; y <= cy + ry; y += 17) {
+      const row = Math.round((y - cy) / 17);
+      for (let x = cx - rx + (row % 2 ? 8 : 0); x <= cx + rx; x += 17) {
+        const nx = (x - cx) / rx;
+        const ny = (y - cy) / ry;
+        if (nx * nx + ny * ny > 1) continue;
+        ctx.beginPath();
+        ctx.arc(x, y, 4.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  });
+}
+
+/** Superficie de cuchara cóncava con forma de gota (punta redondeada abajo). */
+function spoonGeometry(
+  length: number,
+  maxHalfW: number,
+  neckHalfW: number,
+  depth: number,
+  offsetZ = 0
+) {
+  const nu = 24;
+  const nt = 48;
+  const pos: number[] = [];
+  const uv: number[] = [];
+  const idx: number[] = [];
+  const halfW = (t: number) => {
+    const split = 0.42;
+    if (t < split) return maxHalfW * Math.sqrt(Math.max(0, 1 - ((split - t) / split) ** 2));
+    const k = (t - split) / (1 - split);
+    const smooth = k * k * (3 - 2 * k);
+    return maxHalfW + (neckHalfW - maxHalfW) * smooth;
+  };
+  const bowl = (t: number) => Math.sin(Math.min(t / 0.88, 1) * Math.PI);
+  for (let j = 0; j <= nt; j++) {
+    const t = j / nt;
+    for (let i = 0; i <= nu; i++) {
+      const u = (i / nu) * 2 - 1;
+      pos.push(halfW(t) * u, t * length, offsetZ - depth * (1 - u * u) * bowl(t));
+      uv.push((u + 1) / 2, t);
+    }
+  }
+  for (let j = 0; j < nt; j++) {
+    for (let i = 0; i < nu; i++) {
+      const a = j * (nu + 1) + i;
+      const b = a + nu + 1;
+      idx.push(a, a + 1, b, a + 1, b + 1, b);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+function buildDosBochas(g: THREE.Group) {
+  const chrome = CHROME();
+  const band = std('#ffffff', { map: engravedBandTexture(), metalness: 1, roughness: 0.25 });
+  const add = (geo: THREE.BufferGeometry, mat: THREE.Material) => {
+    const m = new THREE.Mesh(geo, mat);
+    g.add(m);
+    return m;
+  };
+  const cyl = (rTop: number, rBot: number, y0: number, y1: number, seg = 20) =>
+    new THREE.CylinderGeometry(rTop, rBot, y1 - y0, seg).translate(0, (y0 + y1) / 2, 0);
+
+  // Filtro tipo cuchara: frente perforado y dorso cromado
+  const L = 0.06;
+  add(
+    spoonGeometry(L, 0.0122, 0.0042, 0.0046),
+    std('#ffffff', { map: spoonTexture(), metalness: 1, roughness: 0.18, side: THREE.DoubleSide })
+  );
+  add(
+    spoonGeometry(L, 0.0122, 0.0042, 0.0046, -0.0011),
+    new THREE.MeshStandardMaterial({
+      color: '#dcdcda',
+      metalness: 1,
+      roughness: 0.15,
+      side: THREE.DoubleSide,
+    })
+  );
+  // Cuello donde el caño entra a la cuchara
+  add(cyl(0.0035, 0.0043, L - 0.004, L + 0.008), chrome);
+
+  // Caño inferior liso
+  add(cyl(0.0034, 0.0034, L + 0.008, 0.129), chrome);
+
+  // Anillos cincelados + bochas + tramo retorcido
+  const ring = (y0: number, y1: number) => {
+    add(cyl(0.0045, 0.0045, y0, y1), band);
+    for (const y of [y0, y1])
+      add(
+        new THREE.TorusGeometry(0.0045, 0.0007, 8, 24).rotateX(Math.PI / 2).translate(0, y, 0),
+        chrome
+      );
+  };
+  const bocha = (y: number) =>
+    add(new THREE.SphereGeometry(0.0088, 32, 24).translate(0, y, 0), chrome);
+
+  ring(0.128, 0.135);
+  bocha(0.1438);
+  ring(0.1526, 0.1596);
+
+  // Tramo retorcido (torzado) entre las dos bochas
+  add(cyl(0.0027, 0.0027, 0.1596, 0.1926), chrome);
+  for (let k = 0; k < 3; k++) {
+    const pts: THREE.Vector3[] = [];
+    for (let i = 0; i <= 60; i++) {
+      const t = i / 60;
+      const a = t * Math.PI * 2 * 2.5 + (k * Math.PI * 2) / 3;
+      pts.push(new THREE.Vector3(Math.cos(a) * 0.0024, 0.1596 + t * 0.033, Math.sin(a) * 0.0024));
+    }
+    add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 90, 0.0013, 8), chrome);
+  }
+
+  ring(0.1926, 0.1996);
+  bocha(0.2084);
+  ring(0.2172, 0.2242);
+
+  // Boquilla aplanada que se ensancha hacia arriba, con la boca abierta
+  const mouth = add(cyl(0.0057, 0.0037, 0.2242, 0.262, 24), chrome);
+  mouth.scale.z = 0.45;
+  const hole = add(
+    new THREE.CircleGeometry(0.0048, 20).rotateX(-Math.PI / 2).translate(0, 0.2621, 0),
+    std('#202122', { roughness: 0.6 })
+  );
+  hole.scale.z = 0.38;
 }
 
 // ─── Termos ─────────────────────────────────────────────────────────────────
