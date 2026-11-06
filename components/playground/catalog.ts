@@ -1,6 +1,7 @@
 /**
  * Catálogo del playground "Cebá tu mate".
  *
+ * Cada categoría puede tener hasta 5 opciones (la mesa las acomoda en dos filas).
  * Cada opción describe cómo se dibuja en 3D (forma + colores) y a qué parte
  * de la tienda lleva cuando el usuario termina de jugar. Las formas se generan
  * por código en `engine.ts` (no hay modelos 3D externos que descargar).
@@ -24,18 +25,15 @@ export const CATEGORY_PLURAL: Record<Category, string> = {
   termo: 'Termos',
 };
 
-export type YerbaShape = { kind: 'yerba'; pack: string; band: string; leaf: string };
+export type YerbaBrand = 'donomar' | 'taragui' | 'lamerced' | 'playadito' | 'baldo';
+export type YerbaShape = { kind: 'yerba'; brand: YerbaBrand };
 export type BombillaShape = {
   kind: 'bombilla';
   style: 'pico' | 'recta' | 'resorte';
   metal: string;
 };
-export type MateShape = {
-  kind: 'mate';
-  style: 'imperial' | 'camionero' | 'torpedo';
-  body: string;
-  rim: string;
-};
+export type MateStyle = 'mu' | 'criollo' | 'criolloPremium' | 'imperialAlgarrobo' | 'camionero';
+export type MateShape = { kind: 'mate'; style: MateStyle };
 export type TermoShape = { kind: 'termo'; body: string; cap: string; height: number };
 
 export type Option = {
@@ -50,28 +48,44 @@ export type Option = {
 export const OPTIONS: Option[] = [
   // ── Yerbas ────────────────────────────────────────────────────────────────
   {
-    id: 'yerba-tradicional',
+    id: 'yerba-donomar',
     category: 'yerba',
-    name: 'Tradicional con palo',
-    description: 'Sabor clásico y parejo. La que no falla en ninguna ronda.',
+    name: 'Don Omar',
+    description: 'Estacionamiento natural y bajo contenido de polvo.',
     shopHref: '/shop',
-    shape: { kind: 'yerba', pack: '#f4efe2', band: '#c0392b', leaf: '#2f7d32' },
+    shape: { kind: 'yerba', brand: 'donomar' },
   },
   {
-    id: 'yerba-suave',
+    id: 'yerba-taragui',
     category: 'yerba',
-    name: 'Suave despalada',
-    description: 'Menos amarga y con poco polvo. Ideal para empezar a cebar.',
+    name: 'Taragüi sin palo',
+    description: 'Despalada, de sabor intenso y rendidor.',
     shopHref: '/shop',
-    shape: { kind: 'yerba', pack: '#fff7d6', band: '#1f6fb2', leaf: '#4caf50' },
+    shape: { kind: 'yerba', brand: 'taragui' },
   },
   {
-    id: 'yerba-barbacua',
+    id: 'yerba-lamerced-barbacua',
     category: 'yerba',
-    name: 'Barbacuá ahumada',
-    description: 'Secada con humo de leña: intensa, con aroma a fogón.',
+    name: 'La Merced Barbacuá',
+    description: 'Ahumada y robusta, de cosecha limitada.',
     shopHref: '/shop',
-    shape: { kind: 'yerba', pack: '#2b2b2b', band: '#d4af37', leaf: '#8bc34a' },
+    shape: { kind: 'yerba', brand: 'lamerced' },
+  },
+  {
+    id: 'yerba-playadito',
+    category: 'yerba',
+    name: 'Playadito',
+    description: 'Con palo y suave: la preferida para empezar la ronda.',
+    shopHref: '/shop',
+    shape: { kind: 'yerba', brand: 'playadito' },
+  },
+  {
+    id: 'yerba-baldo',
+    category: 'yerba',
+    name: 'Baldo',
+    description: 'Molienda fina estilo brasilero, verde y fresca.',
+    shopHref: '/shop',
+    shape: { kind: 'yerba', brand: 'baldo' },
   },
 
   // ── Bombillas ─────────────────────────────────────────────────────────────
@@ -102,28 +116,44 @@ export const OPTIONS: Option[] = [
 
   // ── Mates ─────────────────────────────────────────────────────────────────
   {
-    id: 'mate-imperial',
+    id: 'mate-mu',
     category: 'mate',
-    name: 'Imperial de calabaza',
-    description: 'Calabaza forrada en cuero con virola de alpaca cincelada.',
+    name: 'Mate Mu',
+    description: 'Madera torneada y pintada a mano con manchas de vaca.',
     shopHref: '/shop?category=mate',
-    shape: { kind: 'mate', style: 'imperial', body: '#5b3a24', rim: '#d9d4c7' },
+    shape: { kind: 'mate', style: 'mu' },
   },
   {
-    id: 'mate-camionero',
+    id: 'mate-criollo',
     category: 'mate',
-    name: 'Camionero',
-    description: 'Boca ancha y gran capacidad, para rondas largas.',
+    name: 'Criollo',
+    description: 'Calabaza con base de cuero grabada. Se puede personalizar.',
     shopHref: '/shop?category=mate',
-    shape: { kind: 'mate', style: 'camionero', body: '#8a5a33', rim: '#c9c4b8' },
+    shape: { kind: 'mate', style: 'criollo' },
   },
   {
-    id: 'mate-torpedo',
+    id: 'mate-criollo-premium',
     category: 'mate',
-    name: 'Torpedo de algarrobo',
-    description: 'Madera noble, alto y estilizado. Mantiene el calor.',
+    name: 'Criollo Premium',
+    description: 'Calabaza, cuero cosido en X con tiento crudo y virola de alpaca.',
     shopHref: '/shop?category=mate',
-    shape: { kind: 'mate', style: 'torpedo', body: '#9c6b3f', rim: '#b8b2a6' },
+    shape: { kind: 'mate', style: 'criolloPremium' },
+  },
+  {
+    id: 'mate-imperial-algarrobo',
+    category: 'mate',
+    name: 'Imperial de algarrobo',
+    description: 'Madera de algarrobo con virola de alpaca y guarda pampa.',
+    shopHref: '/shop?category=mate',
+    shape: { kind: 'mate', style: 'imperialAlgarrobo' },
+  },
+  {
+    id: 'mate-camionero-virola-volcada',
+    category: 'mate',
+    name: 'Camionero virola volcada',
+    description: 'Cuero negro y virola de alpaca cincelada, bien ancha.',
+    shopHref: '/shop?category=mate',
+    shape: { kind: 'mate', style: 'camionero' },
   },
 
   // ── Termos ────────────────────────────────────────────────────────────────

@@ -13,6 +13,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
+import { buildMateModel, buildYerbaPack, canvasTexture, rng, std, woodTexture } from './models';
 import {
   CATEGORY_ORDER,
   OPTIONS,
@@ -24,7 +25,6 @@ import {
   type Option,
   type Step,
   type TermoShape,
-  type YerbaShape,
 } from './catalog';
 
 // ─── Tipos públicos ──────────────────────────────────────────────────────────
@@ -65,9 +65,9 @@ const MAT_Y = TABLE_Y + 0.006;
 
 /** Ángulo (respecto a mirar de frente) y distancia de cada zona sobre la mesa. */
 const ZONES: Record<Category, { angle: number; spacing: number; anchorH: number }> = {
-  yerba: { angle: THREE.MathUtils.degToRad(34), spacing: 0.15, anchorH: 0.3 },
+  yerba: { angle: THREE.MathUtils.degToRad(33), spacing: 0.155, anchorH: 0.3 },
   bombilla: { angle: THREE.MathUtils.degToRad(12), spacing: 0.085, anchorH: 0.31 },
-  mate: { angle: THREE.MathUtils.degToRad(-11), spacing: 0.17, anchorH: 0.22 },
+  mate: { angle: THREE.MathUtils.degToRad(-12), spacing: 0.165, anchorH: 0.22 },
   termo: { angle: THREE.MathUtils.degToRad(-33), spacing: 0.15, anchorH: 0.44 },
 };
 const ZONE_RADIUS = 1.1;
@@ -100,56 +100,6 @@ function yawPitchTo(p: THREE.Vector3) {
 
 function quatZ(rad: number, yaw = 0) {
   return new THREE.Quaternion().setFromEuler(new THREE.Euler(0, yaw, rad, 'YXZ'));
-}
-
-function canvasTexture(w: number, h: number, draw: (ctx: CanvasRenderingContext2D) => void) {
-  const c = document.createElement('canvas');
-  c.width = w;
-  c.height = h;
-  const ctx = c.getContext('2d')!;
-  draw(ctx);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
-  return tex;
-}
-
-/** Pseudo-aleatorio determinístico para que la escena se vea igual siempre. */
-function rng(seed: number) {
-  let s = seed;
-  return () => {
-    s = (s * 16807) % 2147483647;
-    return (s - 1) / 2147483646;
-  };
-}
-
-function woodTexture(base: string, dark: string, planks = 1, seed = 7) {
-  const r = rng(seed);
-  return canvasTexture(1024, 512, (ctx) => {
-    ctx.fillStyle = base;
-    ctx.fillRect(0, 0, 1024, 512);
-    const plankH = 512 / planks;
-    for (let p = 0; p < planks; p++) {
-      for (let i = 0; i < 70; i++) {
-        const y = p * plankH + r() * plankH;
-        ctx.strokeStyle = dark;
-        ctx.globalAlpha = 0.05 + r() * 0.18;
-        ctx.lineWidth = 0.6 + r() * 2.2;
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        for (let x = 0; x <= 1024; x += 64) {
-          ctx.lineTo(x, y + Math.sin(x * 0.006 + i) * (2 + r() * 5));
-        }
-        ctx.stroke();
-      }
-      if (planks > 1) {
-        ctx.globalAlpha = 0.35;
-        ctx.fillStyle = dark;
-        ctx.fillRect(0, p * plankH, 1024, 2);
-      }
-    }
-    ctx.globalAlpha = 1;
-  });
 }
 
 function skyTexture() {
@@ -249,44 +199,6 @@ function skyTexture() {
   });
 }
 
-function yerbaLabelTexture(opt: Option, shape: YerbaShape) {
-  const dark = shape.pack === '#2b2b2b';
-  return canvasTexture(256, 512, (ctx) => {
-    ctx.fillStyle = shape.pack;
-    ctx.fillRect(0, 0, 256, 512);
-    ctx.fillStyle = shape.band;
-    ctx.fillRect(0, 60, 256, 70);
-    ctx.fillStyle = dark ? '#111' : '#fff';
-    ctx.font = 'bold 34px system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('YERBA', 128, 108);
-    ctx.fillStyle = dark ? '#f5f5dc' : '#254642';
-    ctx.font = 'bold 40px system-ui, sans-serif';
-    ctx.fillText('MATE', 128, 190);
-    // Hojita
-    ctx.fillStyle = shape.leaf;
-    ctx.beginPath();
-    ctx.ellipse(128, 285, 34, 62, 0.6, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = dark ? '#2b2b2b' : shape.pack;
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(100, 330);
-    ctx.lineTo(158, 240);
-    ctx.stroke();
-    ctx.fillStyle = dark ? '#f5f5dc' : '#333';
-    ctx.font = '600 24px system-ui, sans-serif';
-    const words = opt.name.split(' ');
-    ctx.fillText(words.slice(0, 2).join(' '), 128, 400);
-    if (words.length > 2) ctx.fillText(words.slice(2).join(' '), 128, 432);
-    ctx.fillStyle = shape.band;
-    ctx.fillRect(0, 470, 256, 42);
-    ctx.fillStyle = dark ? '#111' : '#fff';
-    ctx.font = 'bold 22px system-ui, sans-serif';
-    ctx.fillText('1 kg', 128, 499);
-  });
-}
-
 // ─── Partículas (yerba que cae, gotas) ──────────────────────────────────────
 
 class Particles {
@@ -370,10 +282,6 @@ type Item = {
   mouth?: THREE.Vector3;
 };
 
-function std(color: string, opts: Partial<THREE.MeshStandardMaterialParameters> = {}) {
-  return new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: 0, ...opts });
-}
-
 function shadowed<T extends THREE.Object3D>(o: T): T {
   o.traverse((c) => {
     if ((c as THREE.Mesh).isMesh) {
@@ -392,32 +300,6 @@ function hitbox(radius: number, height: number) {
   );
   m.userData.hitbox = true;
   return m;
-}
-
-function buildYerba(opt: Option, shape: YerbaShape) {
-  const g = new THREE.Group();
-  const w = 0.11;
-  const h = 0.21;
-  const d = 0.065;
-  const label = yerbaLabelTexture(opt, shape);
-  const side = std(shape.band, { roughness: 0.8 });
-  const front = std('#ffffff', { map: label, roughness: 0.75 });
-  const top = std(shape.pack, { roughness: 0.85 });
-  const box = new THREE.Mesh(new THREE.BoxGeometry(w, h, d).translate(0, h / 2, 0), [
-    side,
-    side,
-    top,
-    top,
-    front,
-    front,
-  ]);
-  // Pliegue superior del paquete
-  const fold = new THREE.Mesh(
-    new THREE.BoxGeometry(w * 0.98, 0.02, d * 0.4).translate(0, h + 0.01, 0),
-    top
-  );
-  g.add(box, fold, hitbox(0.07, 0.24));
-  return { group: g, mouth: new THREE.Vector3(w * 0.42, h + 0.01, 0) };
 }
 
 function buildBombilla(shape: BombillaShape) {
@@ -479,65 +361,6 @@ function buildBombilla(shape: BombillaShape) {
   return { group: g };
 }
 
-const MATE_PROFILES: Record<MateShape['style'], { body: number[][]; rim: number[][] }> = {
-  imperial: {
-    body: [
-      [0, 0.012],
-      [0.03, 0.012],
-      [0.04, 0.02],
-      [0.055, 0.04],
-      [0.063, 0.065],
-      [0.062, 0.09],
-      [0.054, 0.112],
-      [0.044, 0.126],
-      [0.04, 0.13],
-    ],
-    rim: [
-      [0.039, 0.124],
-      [0.046, 0.127],
-      [0.048, 0.142],
-      [0.043, 0.147],
-      [0.039, 0.146],
-    ],
-  },
-  camionero: {
-    body: [
-      [0, 0.01],
-      [0.045, 0.01],
-      [0.052, 0.018],
-      [0.064, 0.045],
-      [0.067, 0.075],
-      [0.064, 0.098],
-      [0.059, 0.108],
-    ],
-    rim: [
-      [0.057, 0.102],
-      [0.065, 0.105],
-      [0.066, 0.12],
-      [0.061, 0.123],
-      [0.057, 0.122],
-    ],
-  },
-  torpedo: {
-    body: [
-      [0, 0.008],
-      [0.03, 0.008],
-      [0.035, 0.018],
-      [0.043, 0.055],
-      [0.045, 0.1],
-      [0.041, 0.14],
-      [0.035, 0.16],
-      [0.032, 0.166],
-    ],
-    rim: [
-      [0.031, 0.161],
-      [0.036, 0.164],
-      [0.036, 0.174],
-      [0.031, 0.175],
-    ],
-  },
-};
-
 function radiusAt(profile: THREE.Vector2[], y: number) {
   for (let i = 1; i < profile.length; i++) {
     const a = profile[i - 1];
@@ -551,53 +374,7 @@ function radiusAt(profile: THREE.Vector2[], y: number) {
 }
 
 function buildMate(shape: MateShape) {
-  const g = new THREE.Group();
-  const def = MATE_PROFILES[shape.style];
-  const profile = def.body.map(([x, y]) => new THREE.Vector2(x, y));
-  const bodyMat =
-    shape.style === 'torpedo'
-      ? std('#ffffff', {
-          map: woodTexture(shape.body, '#4a2c16', 1, 11),
-          roughness: 0.55,
-          side: THREE.DoubleSide,
-        })
-      : std(shape.body, { roughness: 0.78, side: THREE.DoubleSide });
-  const metal = std(shape.rim, { metalness: 0.95, roughness: 0.25, side: THREE.DoubleSide });
-  g.add(new THREE.Mesh(new THREE.LatheGeometry(profile, 48), bodyMat));
-  g.add(
-    new THREE.Mesh(
-      new THREE.LatheGeometry(
-        def.rim.map(([x, y]) => new THREE.Vector2(x, y)),
-        48
-      ),
-      metal
-    )
-  );
-  // Pie (base metálica)
-  const baseR = def.body[1][0];
-  g.add(
-    new THREE.Mesh(
-      new THREE.CylinderGeometry(baseR * 0.9, baseR, def.body[0][1], 32).translate(
-        0,
-        def.body[0][1] / 2,
-        0
-      ),
-      metal
-    )
-  );
-  // Costura decorativa en el cuero
-  if (shape.style !== 'torpedo') {
-    const ringY = profile[4].y;
-    const stitch = new THREE.Mesh(
-      new THREE.TorusGeometry(radiusAt(profile, ringY) + 0.0008, 0.0012, 6, 64),
-      std('#e8dcc0', { roughness: 0.9 })
-    );
-    stitch.rotation.x = Math.PI / 2;
-    stitch.position.y = ringY;
-    g.add(stitch);
-  }
-
-  const top = def.rim[def.rim.length - 1][1];
+  const { group: g, profile, top } = buildMateModel(shape.style);
 
   // Superficie de la yerba (un disco que sube con el llenado y se inclina)
   const yerbaMat = std('#ffffff', { color: YERBA_DRY.clone(), roughness: 1 });
@@ -1024,15 +801,25 @@ export class MateEngine {
       opts.forEach((opt, i) => {
         let built: { group: THREE.Group; mouth?: THREE.Vector3; mate?: MateParts };
         const sh = opt.shape;
-        if (sh.kind === 'yerba') built = buildYerba(opt, sh);
-        else if (sh.kind === 'bombilla') built = buildBombilla(sh);
+        if (sh.kind === 'yerba') {
+          const pack = buildYerbaPack(sh.brand);
+          pack.group.add(hitbox(0.055, 0.22));
+          built = pack;
+        } else if (sh.kind === 'bombilla') built = buildBombilla(sh);
         else if (sh.kind === 'mate') built = buildMate(sh);
         else built = buildTermo(sh);
 
-        const pos = center
-          .clone()
-          .addScaledVector(right, (i - 1) * zone.spacing)
-          .addScaledVector(fwd, i === 1 ? 0.05 : 0);
+        const pos = center.clone();
+        if (opts.length <= 3) {
+          pos
+            .addScaledVector(right, (i - 1) * zone.spacing)
+            .addScaledVector(fwd, i === 1 ? 0.05 : 0);
+        } else {
+          // 5 opciones: 3 atrás y 2 adelante, intercaladas para que se vean todas
+          const back = i < 3;
+          const col = back ? i - 1 : i - 3.5;
+          pos.addScaledVector(right, col * zone.spacing).addScaledVector(fwd, back ? 0.1 : -0.08);
+        }
         const faceYaw = Math.atan2(EYE.x - pos.x, EYE.z - pos.z);
         let quat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, faceYaw, 0));
         if (cat === 'bombilla') {
@@ -1059,7 +846,7 @@ export class MateEngine {
           opacity: 0,
           depthWrite: false,
         });
-        const ringR = cat === 'bombilla' ? 0.035 : cat === 'termo' ? 0.068 : 0.08;
+        const ringR = cat === 'bombilla' ? 0.035 : cat === 'termo' ? 0.068 : 0.07;
         const ring = new THREE.Mesh(
           new THREE.RingGeometry(ringR, ringR + 0.012, 48).rotateX(-Math.PI / 2),
           ringMat

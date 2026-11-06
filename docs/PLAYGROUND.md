@@ -66,5 +66,14 @@ Se empujan eventos a `window.dataLayer` (GTM ya está en el sitio): `playground_
 
 ## Cómo agregar o cambiar opciones
 
-Editar `components/playground/catalog.ts`. Cada categoría muestra 3 opciones (el layout de la mesa
-está pensado para 3). `shopHref` define a qué parte de la tienda lleva el botón "Ver en la tienda".
+Editar `components/playground/catalog.ts`. Cada categoría admite hasta 5 opciones: con más de 3, la
+mesa las acomoda en dos filas (3 atrás y 2 adelante). `shopHref` define a qué parte de la tienda
+lleva el botón "Ver en la tienda".
+
+Los modelos están en `components/playground/models.ts`:
+
+- **Yerbas** (`PACKS`): cada marca define si es bolsa o caja, sus medidas y dos funciones que pintan
+  el frente y el costado en un `<canvas>` (colores, textos y dibujos de la etiqueta).
+- **Mates** (`MATES`): cada mate define su altura, una función `radius(t)` con el perfil (de la base
+  a la boca), la textura del cuerpo y, opcionalmente, una banda de cuero en relieve y una virola de
+  alpaca con su perfil y su cincelado.

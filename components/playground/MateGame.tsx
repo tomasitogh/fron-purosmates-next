@@ -540,7 +540,7 @@ function FocusPanel({
 }) {
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:p-5">
-      <div className="pointer-events-auto w-full max-w-3xl animate-[pmPop_.3s_ease-out] rounded-3xl bg-white/90 p-4 shadow-2xl backdrop-blur-md">
+      <div className="pointer-events-auto w-full max-w-5xl animate-[pmPop_.3s_ease-out] rounded-3xl bg-white/90 p-4 shadow-2xl backdrop-blur-md">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-black text-[#254642]">
             Elegí tu {CATEGORY_LABEL[category].toLowerCase()}
@@ -553,7 +553,7 @@ function FocusPanel({
             <X className="h-4 w-4" /> Volver
           </button>
         </div>
-        <div className="-mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 sm:pb-0">
+        <div className="-mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:grid lg:grid-cols-5 lg:overflow-visible lg:px-0 lg:pb-0">
           {optionsFor(category).map((o) => {
             const sel = o.id === selectedId;
             return (
@@ -561,7 +561,7 @@ function FocusPanel({
                 key={o.id}
                 type="button"
                 onClick={() => onSelect(o.id)}
-                className={`w-[78%] shrink-0 snap-start rounded-2xl border-2 p-3 text-left transition sm:w-auto ${
+                className={`w-[78%] shrink-0 snap-start rounded-2xl border-2 p-3 text-left transition sm:w-[38%] lg:w-auto ${
                   sel
                     ? 'border-[#D4AF37] bg-[#D4AF37]/15'
                     : hovered === o.id
