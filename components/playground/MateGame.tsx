@@ -412,6 +412,35 @@ export default function MateGame() {
         </div>
       )}
 
+      {/* ── Fase: ¿otro mate? ──────────────────────────────────────────── */}
+      {started && phase === 'again' && snap && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:p-5 lg:justify-start">
+          <div className="pointer-events-auto w-full max-w-md animate-[pmPop_.3s_ease-out] rounded-3xl bg-white/90 p-4 shadow-2xl backdrop-blur-md sm:p-5 lg:max-w-sm">
+            <p className="text-[11px] font-black tracking-widest text-[#D4AF37] uppercase">
+              {snap.rounds === 1 ? 'Primer mate' : `Llevás ${snap.rounds} mates`}
+            </p>
+            <h2 className="text-xl font-black text-[#254642]">¿Otro mate?</h2>
+            <p className="mt-0.5 text-sm text-gray-600">
+              La yerba y la bombilla quedan como están: solo hay que volver a cebar.
+            </p>
+            <button
+              type="button"
+              onClick={() => engine()?.anotherMate()}
+              className="mt-3 w-full rounded-2xl bg-[#254642] py-4 text-base font-black text-[#F5F5DC] shadow-lg transition hover:bg-[#1c3632] active:scale-[0.98]"
+            >
+              Cebar otro mate
+            </button>
+            <button
+              type="button"
+              onClick={() => engine()?.stopDrinking()}
+              className="mt-2 w-full rounded-2xl border-2 border-[#254642]/20 py-3 text-sm font-bold text-[#254642] hover:bg-[#254642]/5"
+            >
+              Ya está, no quiero más
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Fase: terminado ─────────────────────────────────────────────── */}
       {started && phase === 'done' && snap && (
         <DonePanel
@@ -657,7 +686,7 @@ function DonePanel({
           </div>
           <div>
             <p className="text-xs font-black tracking-widest text-[#D4AF37] uppercase">
-              ¡Mate listo!
+              {snap.rounds > 1 ? `¡${snap.rounds} mates tomados!` : '¡Mate listo!'}
             </p>
             <h2 className="text-2xl leading-tight font-black text-[#254642]">
               {scoreTitle(score)}
@@ -706,7 +735,7 @@ function DonePanel({
             onClick={onReplay}
             className="flex items-center justify-center gap-1.5 rounded-2xl bg-[#254642] py-3 text-sm font-black text-[#F5F5DC] hover:bg-[#1c3632]"
           >
-            <RotateCcw className="h-4 w-4" /> Cebar otro
+            <RotateCcw className="h-4 w-4" /> Armar otro mate
           </button>
           <button
             type="button"

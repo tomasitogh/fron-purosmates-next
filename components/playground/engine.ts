@@ -12,6 +12,7 @@
  */
 import * as THREE from 'three';
 import { buildMedialunasBoard, buildPortrait, buildTortitasPlate } from './decor';
+import { buildDogBed, Dog } from './dog';
 import { playChew, type Snack } from './sound';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
@@ -43,7 +44,7 @@ import {
 
 // ─── Tipos públicos ──────────────────────────────────────────────────────────
 
-export type Phase = 'choose' | 'prepare' | 'done';
+export type Phase = 'choose' | 'prepare' | 'again' | 'done';
 
 export type Snapshot = {
   phase: Phase;
@@ -58,6 +59,8 @@ export type Snapshot = {
   toast: { id: number; text: string; tone: 'info' | 'good' | 'warn' } | null;
   scores: Partial<Record<Step, number>>;
   finalScore: number | null;
+  /** Mates tomados en esta ronda (se puede seguir cebando sin rearmar). */
+  rounds: number;
   /** Color elegido por artículo (id de opción → id de color). */
   colors: Record<string, string>;
 };
@@ -66,6 +69,7 @@ export type EngineEvent =
   | { name: 'select'; category: Category; optionId: string }
   | { name: 'color'; optionId: string; colorId: string }
   | { name: 'eat'; kind: Snack }
+  | { name: 'round'; rounds: number }
   | { name: 'prepare_start' }
   | { name: 'step'; step: Step }
   | { name: 'complete'; score: number };
@@ -422,6 +426,7 @@ export class MateEngine {
   private yerbaFx = new Particles(500, '#8c9a3a', 0.006);
   private dropFx = new Particles(300, '#cfe8ff', 0.005);
   private crumbFx = new Particles(240, '#d8b07a', 0.0045);
+  private dog: Dog | null = null;
   /** Medialunas y tortitas que se pueden comer. */
   private edibles: Edible[] = [];
   private restockTimers: number[] = [];
@@ -463,6 +468,7 @@ export class MateEngine {
     toast: null,
     scores: {},
     finalScore: null,
+    rounds: 0,
     colors: {},
   };
   private toastSeq = 0;
@@ -726,6 +732,21 @@ export class MateEngine {
       sc.add(leg);
     }
     shadowed(top);
+
+    // La perrita y su almohadón (a la derecha, cerca del cuadro)
+    const bed = buildDogBed();
+    const bedPos = new THREE.Vector3(2.35, 0, 1.25);
+    bed.group.position.copy(bedPos);
+    bed.group.rotation.y = -0.5;
+    sc.add(shadowed(bed.group));
+    this.dog = new Dog(
+      { minX: -2.6, maxX: 2.6, minZ: -0.75, maxZ: 2.8 },
+      { pos: bedPos, top: bed.top, yaw: -0.5 },
+      // No pasar por abajo de la mesa ni por donde está sentada la persona
+      (q) => (Math.abs(q.x) < 1.42 && q.z < 0.72) || (Math.abs(q.x) < 0.5 && q.z < 1.35)
+    );
+    this.dog.group.traverse((o) => (o.castShadow = true));
+    sc.add(this.dog.group);
 
     // Para acompañar los mates: tortitas negras y medialunas
     const tortitas = shadowed(buildTortitasPlate());
@@ -1141,6 +1162,7 @@ export class MateEngine {
     this.drinkT = 0;
     this.s.scores = {};
     this.s.finalScore = null;
+    this.s.rounds = 0;
     this.s.meter = 0;
     this.s.tiltDeg = 0;
     this.s.holding = false;
@@ -1228,6 +1250,36 @@ export class MateEngine {
     if (st === 'water1') this.wetT = 0.45;
     if (st === 'water2') this.wetT = 0.8;
     this.advanceSoon(this.nextOf(st));
+  }
+
+  /** Terminó un mate: el mate vuelve a la mesa y se pregunta si quiere otro. */
+  private askAnother() {
+    this.s.rounds++;
+    this.s.phase = 'again';
+    const sel = this.selected();
+    sel.mate.tPos.copy(PREP.mate);
+    sel.mate.tQuat.copy(quatZ(0, 0.25));
+    const { yaw, pitch } = yawPitchTo(PREP_LOOK);
+    this.yawT = yaw;
+    this.pitchT = pitch;
+    this.cb.onEvent?.({ name: 'round', rounds: this.s.rounds });
+    // Después de muchos mates la yerba se lava
+    if (this.s.rounds === 8)
+      this.toast('La yerba se está lavando… ¡quizás es hora de cambiarla!', 'warn');
+    this.dirty = true;
+  }
+
+  /** Cebar otro con la misma yerba y la bombilla puesta (no se rearma nada). */
+  anotherMate() {
+    if (this.s.phase !== 'again') return;
+    this.s.phase = 'prepare';
+    this.setStep('cebar');
+  }
+
+  /** "Ya está, no quiero más": recién ahí se termina y se ve el resumen. */
+  stopDrinking() {
+    if (this.s.phase !== 'again') return;
+    this.finish();
   }
 
   private finish() {
@@ -1330,6 +1382,7 @@ export class MateEngine {
     this.dropFx.update(dt);
     this.crumbFx.update(dt);
     this.updateEating(dt);
+    this.dog?.update(dt);
     for (const ed of this.edibles) {
       const sc = damp(ed.obj.scale.x, ed.target, 12, dt);
       ed.obj.scale.setScalar(sc);
@@ -1487,7 +1540,7 @@ export class MateEngine {
       this.dirty = true;
       if (this.drinkT > 3.1) {
         this.drinkT = 0;
-        this.finish();
+        this.askAnother();
       }
     }
 
