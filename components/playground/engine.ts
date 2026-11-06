@@ -11,6 +11,7 @@
  * entera de lo que pasa acá a través de `onChange(snapshot)`.
  */
 import * as THREE from 'three';
+import { buildMedialunasBoard, buildPortrait, buildTortitasPlate } from './decor';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
 import {
@@ -683,6 +684,12 @@ export class MateEngine {
     frame.position.set(-2.97, 1.75, 0.3);
     sc.add(frame);
 
+    // Cuadro de los dueños en la pared derecha (la foto se descarga solo en esta página)
+    const portrait = shadowed(buildPortrait('/playground/duenos.webp'));
+    portrait.position.set(2.93, 1.62, 0.25);
+    portrait.rotation.y = -Math.PI / 2;
+    sc.add(portrait);
+
     // Mesa
     const tableTex = woodTexture('#b07a4c', '#5a3820', 1, 5);
     tableTex.wrapS = THREE.RepeatWrapping;
@@ -702,6 +709,15 @@ export class MateEngine {
       sc.add(leg);
     }
     shadowed(top);
+
+    // Para acompañar los mates: tortitas negras y medialunas
+    const tortitas = shadowed(buildTortitasPlate());
+    tortitas.position.set(-0.82, TABLE_Y, 0.28);
+    sc.add(tortitas);
+    const medialunas = shadowed(buildMedialunasBoard());
+    medialunas.position.set(0.86, TABLE_Y, 0.3);
+    medialunas.rotation.y = 0.4;
+    sc.add(medialunas);
 
     // Individual / tapete donde se arma el mate
     const mat = new THREE.Mesh(
@@ -1508,7 +1524,10 @@ export class MateEngine {
     for (const h of hits) {
       let o: THREE.Object3D | null = h.object;
       while (o && !o.userData.optionId) o = o.parent;
-      if (o) return this.items.find((i) => i.opt.id === o!.userData.optionId) ?? null;
+      if (o) {
+        const id = o.userData.optionId as string;
+        return this.items.find((i) => i.opt.id === id) ?? null;
+      }
     }
     return null;
   }
