@@ -227,6 +227,7 @@ export function buildTortitasPlate() {
       r() * Math.PI,
       -Math.cos(a) * tilt
     );
+    t.group.userData.edible = 'tortita';
     g.add(t.group);
   }
   return g;
@@ -291,6 +292,7 @@ export function buildMedialunasBoard() {
     m.position.set(x, 0.018 + y, z);
     m.rotation.y = ry;
     if (y) m.rotation.z = 0.12;
+    m.userData.edible = 'medialuna';
     g.add(m);
   }
   return g;

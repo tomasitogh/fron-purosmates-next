@@ -12,6 +12,7 @@
  */
 import * as THREE from 'three';
 import { buildMedialunasBoard, buildPortrait, buildTortitasPlate } from './decor';
+import { playChew, type Snack } from './sound';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
 import {
@@ -64,6 +65,7 @@ export type Snapshot = {
 export type EngineEvent =
   | { name: 'select'; category: Category; optionId: string }
   | { name: 'color'; optionId: string; colorId: string }
+  | { name: 'eat'; kind: Snack }
   | { name: 'prepare_start' }
   | { name: 'step'; step: Step }
   | { name: 'complete'; score: number };
@@ -416,6 +418,10 @@ export class MateEngine {
   private hotspots: Partial<Record<Category, HTMLElement>> = {};
   private yerbaFx = new Particles(500, '#8c9a3a', 0.006);
   private dropFx = new Particles(300, '#cfe8ff', 0.005);
+  private crumbFx = new Particles(240, '#d8b07a', 0.0045);
+  /** Medialunas y tortitas que se pueden comer. */
+  private edibles: { obj: THREE.Object3D; kind: Snack; bites: number; target: number }[] = [];
+  private restockTimers: number[] = [];
   private stream: THREE.Mesh;
   private dust: THREE.Points;
   private resizeObs: ResizeObserver;
@@ -490,7 +496,7 @@ export class MateEngine {
       std('#d9eeff', { transparent: true, opacity: 0.65, roughness: 0.05 })
     );
     this.stream.visible = false;
-    this.scene.add(this.stream, this.yerbaFx.points, this.dropFx.points);
+    this.scene.add(this.stream, this.yerbaFx.points, this.dropFx.points, this.crumbFx.points);
 
     this.dust = this.buildDust();
     this.scene.add(this.dust);
@@ -718,6 +724,13 @@ export class MateEngine {
     medialunas.position.set(0.86, TABLE_Y, 0.3);
     medialunas.rotation.y = 0.4;
     sc.add(medialunas);
+    for (const root of [tortitas, medialunas]) {
+      root.traverse((o) => {
+        if (o.userData.edible) {
+          this.edibles.push({ obj: o, kind: o.userData.edible as Snack, bites: 0, target: 1 });
+        }
+      });
+    }
 
     // Individual / tapete donde se arma el mate
     const mat = new THREE.Mesh(
@@ -934,6 +947,7 @@ export class MateEngine {
    */
   private scheduleAdvance(cat: Category, delay: number) {
     window.clearTimeout(this.advanceTimer);
+    for (const t of this.restockTimers) window.clearTimeout(t);
     this.advanceTimer = window.setTimeout(() => {
       if (this.disposed || this.s.phase !== 'choose' || this.s.focus !== cat) return;
       const next = CATEGORY_ORDER.find((c) => !this.s.selection[c]);
@@ -1303,6 +1317,11 @@ export class MateEngine {
 
     this.yerbaFx.update(dt);
     this.dropFx.update(dt);
+    this.crumbFx.update(dt);
+    for (const ed of this.edibles) {
+      const sc = damp(ed.obj.scale.x, ed.target, 12, dt);
+      ed.obj.scale.setScalar(sc);
+    }
 
     // Polvito flotando en la luz
     const p = this.dust.geometry.attributes.position as THREE.BufferAttribute;
@@ -1510,6 +1529,102 @@ export class MateEngine {
 
   // ── Input ────────────────────────────────────────────────────────────────
 
+  private pickEdible(clientX: number, clientY: number) {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const ndc = new THREE.Vector2(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1
+    );
+    this.raycaster.setFromCamera(ndc, this.camera);
+    const live = this.edibles.filter((e) => e.obj.visible);
+    const hits = this.raycaster.intersectObjects(
+      live.map((e) => e.obj),
+      true
+    );
+    for (const h of hits) {
+      if (!h.object.visible) continue;
+      let o: THREE.Object3D | null = h.object;
+      while (o && !o.userData.edible) o = o.parent;
+      if (o) {
+        const found = o;
+        return live.find((e) => e.obj === found) ?? null;
+      }
+    }
+    return null;
+  }
+
+  /** Una mordida: sonido, miguitas y el pedazo que desaparece. */
+  private eat(ed: (typeof this.edibles)[number]) {
+    ed.bites++;
+    playChew(ed.kind);
+    this.cb.onEvent?.({ name: 'eat', kind: ed.kind });
+    const at = ed.obj.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.03, 0));
+    for (let k = 0; k < 26; k++) {
+      this.crumbFx.spawn(
+        at
+          .clone()
+          .add(new THREE.Vector3((Math.random() - 0.5) * 0.04, 0, (Math.random() - 0.5) * 0.04)),
+        new THREE.Vector3(
+          (Math.random() - 0.5) * 0.5,
+          0.3 + Math.random() * 0.5,
+          (Math.random() - 0.5) * 0.5
+        ),
+        TABLE_Y + 0.004
+      );
+    }
+    if (ed.kind === 'medialuna') {
+      // Se come desde una punta: [seg0..seg6, puntaIzq, puntaDer]
+      const parts = ed.obj.children;
+      const hide =
+        ed.bites === 1
+          ? [parts.length - 1, parts.length - 3, parts.length - 4]
+          : [2, 3, 4, parts.length - 2];
+      for (const i of hide) if (parts[i]) parts[i].visible = false;
+      ed.target = 1;
+    } else {
+      ed.target = ed.bites === 1 ? 0.72 : 0.45;
+    }
+    const msgs =
+      ed.kind === 'medialuna'
+        ? ['¡Ñam! Medialuna de manteca', 'Mmm… con el mate, lo más', '¡Crujiente!']
+        : ['¡Ñam! Tortita negra', 'Mmm… azúcar negra', '¡Qué rica la tortita!'];
+    if (ed.bites >= 3) {
+      ed.obj.visible = false;
+      this.toast(
+        ed.kind === 'medialuna' ? '¡Te comiste una medialuna!' : '¡Te comiste una tortita negra!',
+        'good'
+      );
+      if (this.edibles.filter((e) => e.kind === ed.kind).every((e) => !e.obj.visible))
+        this.restock(ed.kind);
+    } else {
+      this.toast(msgs[(ed.bites - 1) % msgs.length], 'info');
+    }
+    this.dirty = true;
+  }
+
+  /** Cuando se termina un plato, al ratito llega otra tanda. */
+  private restock(kind: Snack) {
+    this.restockTimers.push(
+      window.setTimeout(() => {
+        if (this.disposed) return;
+        for (const e of this.edibles) {
+          if (e.kind !== kind) continue;
+          e.bites = 0;
+          e.target = 1;
+          e.obj.scale.setScalar(0.01);
+          e.obj.visible = true;
+          for (const c of e.obj.children) c.visible = true;
+        }
+        this.toast(
+          kind === 'medialuna'
+            ? '¡Llegó otra tanda de medialunas!'
+            : '¡Llegaron más tortitas negras!',
+          'good'
+        );
+      }, 6000)
+    );
+  }
+
   private pick(clientX: number, clientY: number): Item | null {
     const rect = this.renderer.domElement.getBoundingClientRect();
     const ndc = new THREE.Vector2(
@@ -1566,6 +1681,11 @@ export class MateEngine {
         this.dirty = true;
       }
       this.renderer.domElement.style.cursor = id ? 'pointer' : 'grab';
+      if (id) return;
+    }
+    if (e.pointerType === 'mouse') {
+      const ed = this.pickEdible(e.clientX, e.clientY);
+      this.renderer.domElement.style.cursor = ed ? 'pointer' : 'grab';
     }
   };
 
@@ -1574,6 +1694,13 @@ export class MateEngine {
     this.pointer = null;
     if (!p || p.id !== e.pointerId || p.dragged || e.type === 'pointercancel') return;
     const it = this.pick(e.clientX, e.clientY);
+    if (!it && !this.s.holding) {
+      const ed = this.pickEdible(e.clientX, e.clientY);
+      if (ed) {
+        this.eat(ed);
+        return;
+      }
+    }
     if (this.s.phase === 'choose') {
       if (!it) {
         if (this.s.focus) this.focus(null);

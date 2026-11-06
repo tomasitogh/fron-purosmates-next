@@ -441,7 +441,7 @@ export default function MateGame() {
             <p className="mt-2 text-sm leading-relaxed text-gray-700 sm:text-base">
               Sentate a la mesa, mirá alrededor y elegí tu equipo:{' '}
               <strong>termo, mate, bombilla y yerba</strong>. Después cebá el mate paso a paso, como
-              se hace de verdad.
+              se hace de verdad. Y si te da hambre, tocá las medialunas o las tortitas negras.
             </p>
             <ol className="mt-4 grid grid-cols-1 gap-x-4 gap-y-1 text-sm text-gray-700 sm:grid-cols-2">
               {STEPS.map((s, i) => (

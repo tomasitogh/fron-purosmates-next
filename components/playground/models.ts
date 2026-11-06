@@ -1962,7 +1962,7 @@ const MATES: Record<MateStyle, MateDef> = {
     radius: (t) => 0.034 + 0.022 * Math.sin(Math.min(t / 0.7, 1) * (Math.PI / 2)),
     bodyRough: 0.6,
     inner: '#a8743f',
-    feet: true,
+    legs: true,
     colors: [LEATHER.negro, LEATHER.chocolate],
     body: (ctx, w, h, c) => {
       leather(ctx, w, h, c.leather ?? '#2b2321', 161);
@@ -2200,52 +2200,95 @@ export function buildMateModel(style: MateStyle) {
   }
 
   if (def.legs) {
-    // 4 patas de cuero: aletas que bajan desde la costura y apoyan en la mesa
-    const shape = new THREE.Shape();
-    shape.moveTo(0, 0);
-    shape.lineTo(0.054, 0);
-    shape.lineTo(0.057, 0.004);
-    shape.quadraticCurveTo(0.05, 0.012, 0.043, 0.018);
-    shape.quadraticCurveTo(0.044, 0.032, def.radius(0.42) - 0.002, 0.04);
-    shape.lineTo(0, 0.04);
-    shape.closePath();
-    const finGeo = new THREE.ExtrudeGeometry(shape, {
-      depth: 0.0045,
+    // Base de cuero en cruz: 4 aletas gruesas que bajan pegadas al cuerpo y
+    // terminan en patas planas que se juntan abajo formando una "X".
+    const FOOT_H = 0.0075;
+    const reach = def.radius(0.3) + 0.012;
+    const topY = Math.min(0.046, H * 0.42);
+    // Perfil de la aleta (x = hacia afuera, y = arriba): el borde de adentro sigue el cuerpo
+    const fin = new THREE.Shape();
+    fin.moveTo(0, 0);
+    fin.lineTo(reach, 0);
+    fin.lineTo(reach, FOOT_H * 0.9);
+    fin.quadraticCurveTo(reach - 0.003, FOOT_H + 0.002, reach - 0.008, FOOT_H + 0.004);
+    fin.bezierCurveTo(
+      reach - 0.016,
+      FOOT_H + 0.006,
+      def.radius(topY / H) + 0.004,
+      topY * 0.6,
+      def.radius(topY / H) - 0.001,
+      topY
+    );
+    for (let i = 12; i >= 0; i--) {
+      const y = (i / 12) * topY;
+      fin.lineTo(Math.max(0, def.radius(y / H) - 0.002), y);
+    }
+    fin.closePath();
+    const finGeo = new THREE.ExtrudeGeometry(fin, {
+      depth: 0.0095,
       bevelEnabled: true,
-      bevelThickness: 0.0008,
-      bevelSize: 0.0008,
+      bevelThickness: 0.0024,
+      bevelSize: 0.0022,
+      bevelSegments: 4,
+      curveSegments: 10,
+    }).translate(0, 0, -0.00475);
+    // Pata plana que asoma un poco a los costados de la aleta
+    const pad = new THREE.Shape();
+    pad.moveTo(0, -0.0085);
+    pad.lineTo(reach - 0.004, -0.0085);
+    pad.quadraticCurveTo(reach + 0.0015, -0.0085, reach + 0.0015, -0.002);
+    pad.lineTo(reach + 0.0015, 0.002);
+    pad.quadraticCurveTo(reach + 0.0015, 0.0085, reach - 0.004, 0.0085);
+    pad.lineTo(0, 0.0085);
+    pad.closePath();
+    const padGeo = new THREE.ExtrudeGeometry(pad, {
+      depth: FOOT_H * 0.6,
+      bevelEnabled: true,
+      bevelThickness: 0.0012,
+      bevelSize: 0.0012,
       bevelSegments: 2,
-    }).translate(0, 0, -0.00225);
+    })
+      .rotateX(Math.PI / 2)
+      .translate(0, FOOT_H * 0.6 + 0.0012, 0);
+    const legMat = leatherMat;
     for (let k = 0; k < 4; k++) {
       const a = Math.PI / 4 + (k * Math.PI) / 2;
       const leg = new THREE.Group();
       leg.rotation.y = a - Math.PI / 2;
-      leg.add(new THREE.Mesh(finGeo, leatherMat));
-      // Puntadas a lo largo del borde de la pata
-      for (let i = 0; i < 7; i++) {
-        const t = i / 6;
-        const st = new THREE.Mesh(new THREE.BoxGeometry(0.0035, 0.0012, 0.0062), threadMat);
-        st.position.set(0.012 + t * 0.034, 0.006 + Math.sin(t * Math.PI) * 0.006, 0);
-        leg.add(st);
-      }
-      // Costura vertical que sube por el cuerpo hasta la virola
-      const pts: THREE.Vector3[] = [];
-      for (let i = 0; i <= 12; i++) {
-        const y = 0.04 + (i / 12) * 0.036;
-        const r = def.radius(y / H) + 0.0006;
-        pts.push(new THREE.Vector3(r, y, 0));
-      }
-      const curve = new THREE.CatmullRomCurve3(pts);
-      leg.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 24, 0.0016, 8), leatherMat));
+      leg.add(new THREE.Mesh(finGeo, legMat), new THREE.Mesh(padGeo, legMat));
+      // Pespunte a lo largo del borde de la aleta
       for (let i = 0; i < 6; i++) {
-        const p = curve.getPoint(i / 5);
-        for (const z of [-0.0028, 0.0028]) {
-          const st = new THREE.Mesh(new THREE.SphereGeometry(0.0009, 6, 4), threadMat);
-          st.position.set(p.x + 0.0004, p.y, z);
+        const t = (i + 0.5) / 6;
+        const x = THREE.MathUtils.lerp(reach - 0.009, def.radius(topY / H), t);
+        const y =
+          THREE.MathUtils.lerp(FOOT_H + 0.005, topY - 0.003, t) - Math.sin(t * Math.PI) * 0.006;
+        for (const z of [-0.0072, 0.0072]) {
+          const st = new THREE.Mesh(new THREE.BoxGeometry(0.0028, 0.0009, 0.0006), threadMat);
+          st.position.set(x, y, z);
+          st.rotation.z = -0.9;
           leg.add(st);
         }
       }
       g.add(leg);
+    }
+    // Costuras en "U" sobre el cuerpo, uniendo la parte de arriba de cada aleta
+    for (let k = 0; k < 4; k++) {
+      const a0 = Math.PI / 4 + (k * Math.PI) / 2;
+      const pts: THREE.Vector3[] = [];
+      for (let i = 0; i <= 24; i++) {
+        const t = i / 24;
+        const a = a0 + t * (Math.PI / 2);
+        const y = topY - Math.sin(t * Math.PI) * topY * 0.3;
+        const r = def.radius(y / H) + 0.0003;
+        pts.push(new THREE.Vector3(Math.sin(a) * r, y, Math.cos(a) * r));
+      }
+      const seam = new THREE.CatmullRomCurve3(pts);
+      g.add(new THREE.Mesh(new THREE.TubeGeometry(seam, 48, 0.0007, 6), legMat));
+      for (let i = 1; i < 14; i++) {
+        const st = new THREE.Mesh(new THREE.SphereGeometry(0.0008, 6, 4), threadMat);
+        st.position.copy(seam.getPoint(i / 14)).multiplyScalar(1.004);
+        g.add(st);
+      }
     }
   }
 
@@ -2276,41 +2319,8 @@ export function buildMateModel(style: MateStyle) {
 // ─── Bombillas ──────────────────────────────────────────────────────────────
 // El origen (0,0,0) es la punta del filtro: así el motor la "clava" en la yerba.
 
-function holesTexture(base: string) {
-  return canvasTexture(128, 128, (ctx, w, h) => {
-    ctx.fillStyle = base;
-    ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = 'rgba(30,30,30,0.85)';
-    for (let y = 14; y < h; y += 16) {
-      for (let x = 10 + ((y / 16) % 2) * 8; x < w; x += 16) {
-        ctx.beginPath();
-        ctx.arc(x, y, 3.2, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-  });
-}
-
-/** Filtro tipo "paleta" (cuchara plana con agujeritos). */
-function paleta(metal: THREE.Material, holes: THREE.Material, r: number, tilt = 0) {
-  const g = new THREE.Group();
-  const shell = new THREE.Mesh(new THREE.SphereGeometry(r, 24, 14), metal);
-  shell.scale.set(1.25, 1.7, 0.42);
-  const face = new THREE.Mesh(new THREE.CircleGeometry(r * 0.92, 24), holes);
-  face.scale.set(1.25, 1.7, 1);
-  face.position.z = r * 0.43;
-  const back = face.clone();
-  back.rotation.y = Math.PI;
-  back.position.z = -r * 0.43;
-  g.add(shell, face, back);
-  g.position.y = r * 1.7;
-  g.rotation.x = tilt;
-  return g;
-}
-
 export function buildBombillaModel(style: BombillaStyle) {
   const g = new THREE.Group();
-  const inox = std('#c7cbcf', { metalness: 1, roughness: 0.18 });
 
   if (style === 'bombillon') {
     buildBombillon(g);
@@ -2319,44 +2329,7 @@ export function buildBombillaModel(style: BombillaStyle) {
   } else if (style === 'chata') {
     buildChata(g);
   } else if (style === 'bohr') {
-    // Bohr: acero, curva suave, boquilla aplanada con dos anillos y filtro redondo
-    const curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, 0.03, 0),
-      new THREE.Vector3(0, 0.17, 0),
-      new THREE.Vector3(0.004, 0.205, 0),
-      new THREE.Vector3(0.018, 0.235, 0),
-    ]);
-    g.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 48, 0.0034, 10), inox));
-    const dark = std('#3a3d40', { metalness: 0.8, roughness: 0.4 });
-    for (const y of [0.15, 0.158]) {
-      g.add(
-        new THREE.Mesh(
-          new THREE.CylinderGeometry(0.0041, 0.0041, 0.0025, 16).translate(0, y, 0),
-          dark
-        )
-      );
-    }
-    // Boquilla: un óvalo aplanado justo en la punta de la curva, siguiendo su dirección
-    const tip = curve.getPoint(1);
-    const tan = curve.getTangent(1);
-    const mouth = new THREE.Mesh(new THREE.CylinderGeometry(0.0052, 0.0036, 0.018, 14), inox);
-    mouth.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tan);
-    mouth.position.copy(tip).addScaledVector(tan, -0.007);
-    mouth.scale.z = 0.5;
-    g.add(mouth);
-    g.add(
-      paleta(
-        inox,
-        std('#ffffff', {
-          map: holesTexture('#c7cbcf'),
-          metalness: 0.9,
-          roughness: 0.3,
-          side: THREE.DoubleSide,
-        }),
-        0.0125,
-        0.15
-      )
-    );
+    buildBohr(g);
   } else {
     buildDosBochas(g);
   }
@@ -2736,6 +2709,106 @@ function buildChata(g: THREE.Group) {
       g.add(sl);
     }
   }
+}
+
+/** Paleta de la Bohr: flor de lis y "ALPACA" grabados arriba, agujeritos abajo. */
+function bohrSpoonTexture() {
+  return canvasTexture(256, 512, (ctx, w, h) => {
+    const g = ctx.createLinearGradient(0, 0, w, h);
+    g.addColorStop(0, '#f3eee2');
+    g.addColorStop(0.5, '#c9c2b2');
+    g.addColorStop(1, '#ebe5d7');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    const ink = 'rgba(70,64,52,0.75)';
+    // Flor de lis
+    const cx = w * 0.5;
+    const cy = h * 0.27;
+    ctx.fillStyle = ink;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, 6, 15, 0, 0, Math.PI * 2);
+    ctx.fill();
+    for (const d of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(cx + d * 12, cy + 4, 4, 11, d * 0.7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillRect(cx - 14, cy + 12, 28, 3);
+    text(ctx, 'ALPACA', cx, h * 0.36, 'bold 22px Georgia, serif', ink);
+    // Agujeritos en la parte baja de la gota
+    ctx.fillStyle = '#26241f';
+    const hy = h * 0.68;
+    for (let row = -4; row <= 4; row++) {
+      const n = 7 - Math.abs(row) * 0.6;
+      for (let k = 0; k < n; k++) {
+        const x = cx + (k - (n - 1) / 2) * 20;
+        const y = hy + row * 22;
+        ctx.beginPath();
+        ctx.arc(x, y, 4.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  });
+}
+
+/**
+ * Bombilla Bohr de alpaca: caño liso con una curva larga y suave en el tercio
+ * de arriba, tres anillos bajo una boquilla plana que se ensancha, y paleta
+ * casi plana con la flor de lis grabada. Sin moleteado ni anillos oscuros.
+ */
+function buildBohr(g: THREE.Group) {
+  const alpaca = std('#e6e0d1', { metalness: 1, roughness: 0.16 });
+  const add = (geo: THREE.BufferGeometry, mat: THREE.Material) => {
+    const m = new THREE.Mesh(geo, mat);
+    g.add(m);
+    return m;
+  };
+  // Paleta casi plana con el cuello que abraza el caño
+  const L = 0.052;
+  add(
+    spoonGeometry(L, 0.0132, 0.0046, 0.0016),
+    std('#ffffff', {
+      map: bohrSpoonTexture(),
+      metalness: 1,
+      roughness: 0.22,
+      side: THREE.DoubleSide,
+    })
+  );
+  add(spoonGeometry(L, 0.0132, 0.0046, 0.0016, -0.0012), alpaca);
+  add(new THREE.CylinderGeometry(0.0042, 0.0054, 0.012, 18).translate(0, L - 0.002, 0), alpaca);
+
+  // Caño: recto y después una curva larga y suave
+  const curve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, L + 0.002, 0),
+    new THREE.Vector3(0, 0.12, 0),
+    new THREE.Vector3(0.004, 0.165, 0),
+    new THREE.Vector3(0.012, 0.2, 0),
+    new THREE.Vector3(0.022, 0.224, 0),
+  ]);
+  add(new THREE.TubeGeometry(curve, 80, 0.0036, 16), alpaca);
+
+  // Tres anillos y boquilla plana que se ensancha, siguiendo la curva
+  const tip = curve.getPoint(1);
+  const tan = curve.getTangent(1);
+  const orient = (m: THREE.Object3D, along: number) => {
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tan);
+    m.position.copy(tip).addScaledVector(tan, along);
+  };
+  for (let k = 0; k < 3; k++) {
+    const ring = add(new THREE.TorusGeometry(0.0041, 0.0011, 8, 24).rotateX(Math.PI / 2), alpaca);
+    orient(ring, 0.0015 + k * 0.0028);
+  }
+  const collar = add(new THREE.CylinderGeometry(0.0043, 0.0043, 0.009, 18), alpaca);
+  orient(collar, 0.0045);
+  const mouth = add(new THREE.CylinderGeometry(0.0078, 0.0042, 0.032, 20), alpaca);
+  orient(mouth, 0.009 + 0.016);
+  mouth.scale.z = 0.38;
+  const hole = add(
+    new THREE.CircleGeometry(0.0066, 20).rotateX(-Math.PI / 2),
+    std('#24221e', { roughness: 0.6 })
+  );
+  orient(hole, 0.009 + 0.0321);
+  hole.scale.z = 0.3;
 }
 
 function buildInoxCurva(g: THREE.Group) {
