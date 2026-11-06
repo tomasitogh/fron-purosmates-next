@@ -1076,8 +1076,6 @@ type MateDef = {
   feet?: boolean;
 };
 
-const ALPACA = '#d8d6d0';
-
 /**
  * Alpaca cincelada: dos guardas de perlitas (arriba y abajo) y al medio un motivo
  * repetido de florcitas y volutas, en grabado fino y prolijo.
@@ -1125,23 +1123,42 @@ function chisel(ctx: CanvasRenderingContext2D, w: number, h: number) {
   }
 }
 
-function guarda(ctx: CanvasRenderingContext2D, w: number, h: number) {
-  ctx.fillStyle = ALPACA;
+/**
+ * Virola del imperial de algarrobo: banda inferior con guarda pampa escalonada
+ * en relieve (alpaca mate sobre fondo picado) y borde superior liso y pulido.
+ */
+function guardaPampa(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, '#f6f6f3');
+  g.addColorStop(0.3, '#cfcfcb');
+  g.addColorStop(1, '#ecebe7');
+  ctx.fillStyle = g;
   ctx.fillRect(0, 0, w, h);
-  ctx.fillStyle = '#2c2f2e';
-  ctx.fillRect(0, h * 0.2, w, h * 0.6);
-  // Guarda pampa escalonada
-  ctx.fillStyle = '#c9c7c0';
-  const step = w / 18;
-  for (let i = 0; i < 18; i++) {
+  const y0 = h * 0.38;
+  const bh = h - y0;
+  // Fondo picado (más oscuro)
+  ctx.fillStyle = '#c2c0ba';
+  ctx.fillRect(0, y0 + bh * 0.1, w, bh * 0.8);
+  const r = rng(71);
+  ctx.fillStyle = 'rgba(70,70,66,0.35)';
+  for (let i = 0; i < 2200; i++) ctx.fillRect(r() * w, y0 + bh * 0.1 + r() * bh * 0.8, 2, 2);
+  // Escalones de la guarda en relieve
+  ctx.fillStyle = '#f2f1ee';
+  const step = w / 22;
+  const u = (bh * 0.8) / 5;
+  const top = y0 + bh * 0.1;
+  for (let i = 0; i < 22; i++) {
     const x = i * step;
-    const y = h * 0.28;
-    const s = h * 0.11;
-    ctx.fillRect(x + step * 0.1, y, step * 0.25, s * 4);
-    ctx.fillRect(x + step * 0.1, y + s * 1.5, step * 0.7, s);
-    ctx.fillRect(x + step * 0.55, y, step * 0.25, s * 2);
-    ctx.fillRect(x + step * 0.35, y + s * 3, step * 0.45, s);
+    ctx.fillRect(x, top + u * 2, step * 0.18, u);
+    ctx.fillRect(x + step * 0.18, top + u, step * 0.18, u * 3);
+    ctx.fillRect(x + step * 0.36, top, step * 0.28, u);
+    ctx.fillRect(x + step * 0.36, top + u * 4, step * 0.28, u);
+    ctx.fillRect(x + step * 0.64, top + u, step * 0.18, u * 3);
+    ctx.fillRect(x + step * 0.82, top + u * 2, step * 0.18, u);
   }
+  ctx.fillStyle = 'rgba(40,40,38,0.6)';
+  ctx.fillRect(0, y0 + bh * 0.08, w, 2);
+  ctx.fillRect(0, y0 + bh * 0.9, w, 2);
 }
 
 function leather(ctx: CanvasRenderingContext2D, w: number, h: number, base: string, seed: number) {
@@ -1655,34 +1672,50 @@ const MATES: Record<MateStyle, MateDef> = {
   },
 
   imperialAlgarrobo: {
-    height: 0.12,
-    radius: (t) =>
-      0.03 +
-      0.029 * Math.sin(Math.min(t / 0.5, 1) * (Math.PI / 2)) -
-      (t > 0.5 ? (t - 0.5) * 0.03 : 0),
-    bodyRough: 0.5,
-    inner: '#b85a2a',
+    // Algarrobo torneado: panza redonda, cintura y pie ensanchado; virola con guarda
+    height: 0.118,
+    radius: (t) => {
+      if (t < 0.08) return 0.036 + (0.08 - t) * 0.06; // pie
+      if (t < 0.16) return 0.036 - (t - 0.08) * 0.05; // cintura
+      return (
+        0.032 +
+        0.021 * Math.sin(Math.min((t - 0.16) / 0.42, 1) * (Math.PI / 2)) -
+        (t > 0.6 ? (t - 0.6) * 0.03 : 0)
+      );
+    },
+    bodyRough: 0.42,
+    inner: '#c69468',
     body: (ctx, w, h) => {
-      ctx.fillStyle = '#c4632e';
+      ctx.fillStyle = '#7d432b';
       ctx.fillRect(0, 0, w, h);
-      grain(ctx, w, h, '#7a3416', 61, 80);
+      // Vetas del algarrobo en arcos (como torneado)
+      const r = rng(61);
+      for (let i = 0; i < 70; i++) {
+        ctx.strokeStyle = `rgba(${r() > 0.5 ? '70,30,15' : '190,120,80'},${0.12 + r() * 0.2})`;
+        ctx.lineWidth = 1 + r() * 3;
+        const cx = r() * w;
+        const cy = h * (0.3 + r() * 0.5);
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, 30 + r() * 120, 10 + r() * 50, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       const g = ctx.createLinearGradient(0, 0, 0, h);
-      g.addColorStop(0, 'rgba(255,170,110,0.15)');
-      g.addColorStop(1, 'rgba(60,20,5,0.3)');
+      g.addColorStop(0, 'rgba(255,190,150,0.12)');
+      g.addColorStop(1, 'rgba(40,15,5,0.3)');
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w, h);
     },
     virola: {
       points: [
-        [0.0548, 0.082],
-        [0.0488, 0.11],
-        [0.0465, 0.12],
-        [0.048, 0.124],
-        [0.046, 0.13],
-        [0.04, 0.129],
-        [0.038, 0.124],
+        [0.0535, 0.088],
+        [0.0515, 0.106],
+        [0.0505, 0.112],
+        [0.052, 0.1135],
+        [0.052, 0.1185],
+        [0.0372, 0.12],
+        [0.0362, 0.115],
       ],
-      draw: (ctx, w, h) => guarda(ctx, w, h),
+      draw: (ctx, w, h) => guardaPampa(ctx, w, h),
     },
   },
 
@@ -2123,54 +2156,11 @@ function paleta(metal: THREE.Material, holes: THREE.Material, r: number, tilt = 
 
 export function buildBombillaModel(style: BombillaStyle) {
   const g = new THREE.Group();
-  const alpaca = std('#d9d6cf', { metalness: 0.95, roughness: 0.22 });
   const inox = std('#c7cbcf', { metalness: 1, roughness: 0.18 });
   const gold = std('#d2b056', { metalness: 1, roughness: 0.25 });
 
   if (style === 'bombillon') {
-    // Bombillón de alpaca: caño grueso torneado en espiral y boquilla dorada ancha
-    g.add(
-      paleta(
-        alpaca,
-        std('#ffffff', {
-          map: holesTexture('#d9d6cf'),
-          metalness: 0.9,
-          roughness: 0.3,
-          side: THREE.DoubleSide,
-        }),
-        0.012
-      )
-    );
-    g.add(
-      new THREE.Mesh(
-        new THREE.CylinderGeometry(0.0042, 0.0042, 0.2, 14).translate(0, 0.13, 0),
-        alpaca
-      )
-    );
-    for (let k = 0; k < 3; k++) {
-      const pts: THREE.Vector3[] = [];
-      for (let i = 0; i <= 80; i++) {
-        const t = i / 80;
-        const a = t * Math.PI * 2 * 7 + (k * Math.PI * 2) / 3;
-        pts.push(new THREE.Vector3(Math.cos(a) * 0.0047, 0.06 + t * 0.12, Math.sin(a) * 0.0047));
-      }
-      g.add(
-        new THREE.Mesh(
-          new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 160, 0.0016, 6),
-          alpaca
-        )
-      );
-    }
-    const collar = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.0062, 0.0062, 0.008, 16).translate(0, 0.19, 0),
-      gold
-    );
-    const mouth = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.0085, 0.0055, 0.045, 16).translate(0, 0.217, 0),
-      gold
-    );
-    mouth.scale.z = 0.4;
-    g.add(collar, mouth);
+    buildBombillon(g);
   } else if (style === 'inoxCurva') {
     buildInoxCurva(g);
   } else if (style === 'chata') {
@@ -2398,6 +2388,123 @@ function spiralKnurlTexture() {
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.repeat.set(1, 3);
   return tex;
+}
+
+/** Anillo dorado repujado con cruces (collares del bombillón). */
+function goldBandTexture() {
+  return canvasTexture(256, 64, (ctx, w, h) => {
+    const g = ctx.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, '#f3dc8c');
+    g.addColorStop(0.5, '#b58f34');
+    g.addColorStop(1, '#ecd384');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(70,50,10,0.65)';
+    ctx.lineWidth = 2;
+    for (const y of [h * 0.12, h * 0.88]) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+    for (let x = 0; x < w; x += 32) {
+      ctx.strokeRect(x + 4, h * 0.22, 24, h * 0.56);
+      ctx.beginPath();
+      ctx.moveTo(x + 4, h * 0.22);
+      ctx.lineTo(x + 28, h * 0.78);
+      ctx.moveTo(x + 28, h * 0.22);
+      ctx.lineTo(x + 4, h * 0.78);
+      ctx.stroke();
+    }
+  });
+}
+
+/** Cuchara redonda de alpaca con pocos agujeros grandes. */
+function roundSpoonTexture() {
+  return canvasTexture(256, 512, (ctx, w, h) => {
+    const g = ctx.createRadialGradient(w * 0.45, h * 0.5, 10, w * 0.5, h * 0.5, w * 0.9);
+    g.addColorStop(0, '#e9e6de');
+    g.addColorStop(1, '#9e9a90');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#262524';
+    const cx = w * 0.5;
+    const cy = h * 0.68;
+    for (let y = -3; y <= 3; y++) {
+      for (let x = -3; x <= 3; x++) {
+        if (x * x + y * y > 10) continue;
+        ctx.beginPath();
+        ctx.arc(cx + x * 22 + (y % 2 ? 11 : 0), cy + y * 30, 5.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  });
+}
+
+function buildBombillon(g: THREE.Group) {
+  const alpaca = std('#d6d2c8', { metalness: 0.95, roughness: 0.25 });
+  const gold = std('#e2c063', { metalness: 1, roughness: 0.2 });
+  const goldBand = std('#ffffff', { map: goldBandTexture(), metalness: 1, roughness: 0.3 });
+  const add = (geo: THREE.BufferGeometry, mat: THREE.Material) => {
+    const m = new THREE.Mesh(geo, mat);
+    g.add(m);
+    return m;
+  };
+  const cyl = (rTop: number, rBot: number, y0: number, y1: number, seg = 24) =>
+    new THREE.CylinderGeometry(rTop, rBot, y1 - y0, seg).translate(0, (y0 + y1) / 2, 0);
+
+  // Cuchara redonda y ancha
+  const L = 0.05;
+  add(
+    spoonGeometry(L, 0.0145, 0.0045, 0.004),
+    std('#ffffff', {
+      map: roundSpoonTexture(),
+      metalness: 0.95,
+      roughness: 0.28,
+      side: THREE.DoubleSide,
+    })
+  );
+  add(
+    spoonGeometry(L, 0.0145, 0.0045, 0.004, -0.001),
+    std('#cfcbc1', { metalness: 0.95, roughness: 0.25, side: THREE.DoubleSide })
+  );
+  // Caño inferior liso
+  add(cyl(0.0043, 0.0047, L - 0.006, 0.098), alpaca);
+  // Collar dorado inferior
+  add(cyl(0.0058, 0.0058, 0.098, 0.106), goldBand);
+  for (const y of [0.098, 0.106])
+    add(
+      new THREE.TorusGeometry(0.0058, 0.0009, 8, 24).rotateX(Math.PI / 2).translate(0, y, 0),
+      gold
+    );
+  // Tramo trenzado: 3 cordones gruesos entrelazados
+  add(cyl(0.0035, 0.0035, 0.106, 0.178), alpaca);
+  for (let k = 0; k < 3; k++) {
+    const pts: THREE.Vector3[] = [];
+    for (let i = 0; i <= 90; i++) {
+      const t = i / 90;
+      const a = t * Math.PI * 2 * 3 + (k * Math.PI * 2) / 3;
+      const r = 0.0036 + 0.0008 * Math.sin(t * Math.PI * 18 + k);
+      pts.push(new THREE.Vector3(Math.cos(a) * r, 0.106 + t * 0.072, Math.sin(a) * r));
+    }
+    add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 160, 0.0021, 8), alpaca);
+  }
+  // Collar dorado superior (más alto) con molduras
+  add(cyl(0.0062, 0.0062, 0.178, 0.191), goldBand);
+  for (const y of [0.178, 0.1845, 0.191])
+    add(
+      new THREE.TorusGeometry(0.0062, 0.001, 8, 24).rotateX(Math.PI / 2).translate(0, y, 0),
+      gold
+    );
+  add(cyl(0.0052, 0.0062, 0.191, 0.197), gold);
+  // Boquilla dorada ancha y aplanada
+  const mouth = add(cyl(0.0105, 0.0052, 0.197, 0.252, 28), gold);
+  mouth.scale.z = 0.42;
+  const hole = add(
+    new THREE.CircleGeometry(0.0088, 24).rotateX(-Math.PI / 2).translate(0, 0.2521, 0),
+    std('#3a2e12', { roughness: 0.6 })
+  );
+  hole.scale.z = 0.32;
 }
 
 function buildInoxCurva(g: THREE.Group) {
