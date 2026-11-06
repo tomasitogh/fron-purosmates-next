@@ -1546,45 +1546,67 @@ const MATES: Record<MateStyle, MateDef> = {
   },
 
   criollo: {
+    // Calabaza alta con boca en trompeta y funda recta de cuero crudo cosida en X
     height: 0.125,
     radius: (t) =>
-      0.041 +
-      0.003 * Math.sin(t * Math.PI * 1.2) -
-      0.003 * Math.sin(t * Math.PI) +
-      (t > 0.85 ? (t - 0.85) * 0.04 : 0),
-    bodyRough: 0.45,
-    inner: '#a06a3a',
-    lip: '#6b3a1e',
+      t < 0.55
+        ? 0.039 + 0.005 * Math.pow(1 - t / 0.55, 2)
+        : 0.039 + 0.012 * Math.pow((t - 0.55) / 0.45, 2.2),
+    bodyRough: 0.4,
+    inner: '#d2b48a',
+    lip: '#d9c29b',
     body: (ctx, w, h) => {
-      gourd(ctx, w, h, '#5e2c16', '#2a1008', 41);
-      const g = ctx.createLinearGradient(0, 0, 0, h);
-      g.addColorStop(0, 'rgba(120,60,30,0.4)');
-      g.addColorStop(1, 'rgba(0,0,0,0.2)');
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, w, h);
+      gourd(ctx, w, h, '#b0702c', '#5e3210', 41);
+      // Vetas más claras de la calabaza
+      const r = rng(43);
+      for (let i = 0; i < 30; i++) {
+        ctx.fillStyle = `rgba(230,170,90,${0.08 + r() * 0.12})`;
+        ctx.beginPath();
+        ctx.ellipse(r() * w, r() * h, 20 + r() * 50, 8 + r() * 20, r() * 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
     },
     band: {
       to: 0.5,
+      straight: 0.0475,
       draw: (ctx, w, h) => {
-        leather(ctx, w, h, '#b8875a', 42);
-        // Costura y monograma grabado
-        ctx.strokeStyle = '#6e4a2a';
-        ctx.lineWidth = 3;
-        ctx.setLineDash([10, 8]);
-        ctx.beginPath();
-        ctx.moveTo(0, h * 0.08);
-        ctx.lineTo(w, h * 0.08);
-        ctx.moveTo(0, h * 0.92);
-        ctx.lineTo(w, h * 0.92);
-        ctx.stroke();
-        ctx.setLineDash([]);
+        // Cuero crudo con textura de corteza
+        ctx.fillStyle = '#94744c';
+        ctx.fillRect(0, 0, w, h);
+        const r = rng(42);
+        for (let i = 0; i < 420; i++) {
+          ctx.fillStyle = r() > 0.5 ? 'rgba(255,240,215,0.16)' : 'rgba(70,50,30,0.18)';
+          const x = r() * w;
+          const y = r() * h;
+          ctx.fillRect(x, y, 1 + r() * 2, 10 + r() * 40);
+        }
+        noise(ctx, w, h, 44, 0.06);
+        // Costura al frente: tiento cruzado en X
         atFront(ctx, w, (x) => {
-          ctx.strokeStyle = 'rgba(90,55,25,0.7)';
-          ctx.lineWidth = 4;
-          ctx.strokeRect(x - 70, h * 0.2, 140, h * 0.62);
-          text(ctx, 'MG', x, h * 0.37, 'bold 56px Georgia, serif', 'rgba(90,55,25,0.75)');
-          text(ctx, 'RC', x, h * 0.66, 'bold 56px Georgia, serif', 'rgba(90,55,25,0.75)');
+          ctx.strokeStyle = 'rgba(60,40,20,0.5)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, h);
+          ctx.stroke();
+          ctx.strokeStyle = '#ece4d2';
+          ctx.lineWidth = 6;
+          for (let y = h * 0.08; y < h * 0.9; y += 26) {
+            ctx.beginPath();
+            ctx.moveTo(x - 13, y);
+            ctx.lineTo(x + 13, y + 20);
+            ctx.moveTo(x + 13, y);
+            ctx.lineTo(x - 13, y + 20);
+            ctx.stroke();
+          }
         });
+        // Monograma grabado (personalizable), a un costado
+        const mx = w * 0.3;
+        ctx.strokeStyle = 'rgba(80,55,30,0.55)';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(mx - 64, h * 0.22, 128, h * 0.58);
+        text(ctx, 'MG', mx, h * 0.38, 'bold 50px Georgia, serif', 'rgba(80,55,30,0.7)');
+        text(ctx, 'RC', mx, h * 0.64, 'bold 50px Georgia, serif', 'rgba(80,55,30,0.7)');
       },
     },
   },
@@ -1705,7 +1727,7 @@ const MATES: Record<MateStyle, MateDef> = {
       braid: true,
       draw: (ctx, w, h) => {
         // Cuero crudo con vetas verticales
-        ctx.fillStyle = '#b98a58';
+        ctx.fillStyle = '#a77a4a';
         ctx.fillRect(0, 0, w, h);
         const r = rng(152);
         for (let i = 0; i < 260; i++) {
@@ -2082,23 +2104,6 @@ function holesTexture(base: string) {
   });
 }
 
-function knurlTexture() {
-  return canvasTexture(128, 256, (ctx, w, h) => {
-    ctx.fillStyle = '#c9ccd0';
-    ctx.fillRect(0, 0, w, h);
-    ctx.strokeStyle = 'rgba(40,40,40,0.55)';
-    ctx.lineWidth = 2;
-    for (let i = -h; i < w + h; i += 9) {
-      ctx.beginPath();
-      ctx.moveTo(i, 0);
-      ctx.lineTo(i + h, h);
-      ctx.moveTo(i + h, 0);
-      ctx.lineTo(i, h);
-      ctx.stroke();
-    }
-  });
-}
-
 /** Filtro tipo "paleta" (cuchara plana con agujeritos). */
 function paleta(metal: THREE.Material, holes: THREE.Material, r: number, tilt = 0) {
   const g = new THREE.Group();
@@ -2167,39 +2172,7 @@ export function buildBombillaModel(style: BombillaStyle) {
     mouth.scale.z = 0.4;
     g.add(collar, mouth);
   } else if (style === 'inoxCurva') {
-    // Acero inoxidable: curva arriba, zona de agarre moleteada y filtro de paleta
-    const curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, 0.03, 0),
-      new THREE.Vector3(0, 0.18, 0),
-      new THREE.Vector3(0.006, 0.215, 0),
-      new THREE.Vector3(0.026, 0.25, 0),
-    ]);
-    g.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 48, 0.0034, 10), inox));
-    g.add(
-      new THREE.Mesh(
-        new THREE.CylinderGeometry(0.0043, 0.0043, 0.075, 16).translate(0, 0.095, 0),
-        std('#ffffff', { map: knurlTexture(), metalness: 0.9, roughness: 0.4 })
-      )
-    );
-    g.add(
-      new THREE.Mesh(
-        new THREE.CylinderGeometry(0.0046, 0.0046, 0.004, 16).translate(0, 0.135, 0),
-        std('#3a3d40', { metalness: 0.8, roughness: 0.4 })
-      )
-    );
-    g.add(
-      paleta(
-        inox,
-        std('#ffffff', {
-          map: holesTexture('#c7cbcf'),
-          metalness: 0.9,
-          roughness: 0.3,
-          side: THREE.DoubleSide,
-        }),
-        0.0105,
-        0.25
-      )
-    );
+    buildInoxCurva(g);
   } else if (style === 'chata') {
     // Chata: caño aplanado de acero con anillo dorado y ranuras abajo
     const tube = new THREE.Mesh(
@@ -2369,6 +2342,135 @@ function spoonGeometry(
   geo.setIndex(idx);
   geo.computeVertexNormals();
   return geo;
+}
+
+/** Cuchara de la bombilla de acero: agujeritos en casi toda la gota y el sello INOX arriba. */
+function inoxSpoonTexture() {
+  return canvasTexture(256, 512, (ctx, w, h) => {
+    const g = ctx.createRadialGradient(w * 0.4, h * 0.5, 10, w * 0.5, h * 0.5, w * 0.95);
+    g.addColorStop(0, '#f6f6f4');
+    g.addColorStop(1, '#a3a4a2');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    const cx = w * 0.5;
+    const cy = h * 0.66;
+    const rx = w * 0.4;
+    const ry = h * 0.27;
+    ctx.fillStyle = '#1c1d1e';
+    for (let y = cy - ry; y <= cy + ry; y += 16) {
+      const row = Math.round((y - cy) / 16);
+      for (let x = cx - rx + (row % 2 ? 8 : 0); x <= cx + rx; x += 16) {
+        const nx = (x - cx) / rx;
+        const ny = (y - cy) / ry;
+        if (nx * nx + ny * ny > 1) continue;
+        ctx.beginPath();
+        ctx.arc(x, y, 4.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    // Sello "INOX" con su logo
+    ctx.strokeStyle = 'rgba(60,60,60,0.7)';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(cx - 6, h * 0.3, 14, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx + 10, h * 0.3, 14, 0, Math.PI * 2);
+    ctx.stroke();
+    text(ctx, 'INOX', cx + 30, h * 0.34, 'bold 18px system-ui', 'rgba(60,60,60,0.75)');
+  });
+}
+
+/** Moleteado en espiral del agarre. */
+function spiralKnurlTexture() {
+  const tex = canvasTexture(128, 256, (ctx, w, h) => {
+    ctx.fillStyle = '#d4d6d8';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(35,35,35,0.6)';
+    ctx.lineWidth = 2.2;
+    for (let i = -h; i < w + h; i += 7) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i + h * 0.6, h);
+      ctx.stroke();
+    }
+  });
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(1, 3);
+  return tex;
+}
+
+function buildInoxCurva(g: THREE.Group) {
+  const chrome = CHROME();
+  const add = (geo: THREE.BufferGeometry, mat: THREE.Material) => {
+    const m = new THREE.Mesh(geo, mat);
+    g.add(m);
+    return m;
+  };
+  const cyl = (rTop: number, rBot: number, y0: number, y1: number, seg = 20) =>
+    new THREE.CylinderGeometry(rTop, rBot, y1 - y0, seg).translate(0, (y0 + y1) / 2, 0);
+
+  // Cuchara grande, levemente inclinada hacia adelante
+  const L = 0.066;
+  const spoon = new THREE.Group();
+  spoon.add(
+    new THREE.Mesh(
+      spoonGeometry(L, 0.0142, 0.0042, 0.005),
+      std('#ffffff', {
+        map: inoxSpoonTexture(),
+        metalness: 1,
+        roughness: 0.16,
+        side: THREE.DoubleSide,
+      })
+    ),
+    new THREE.Mesh(
+      spoonGeometry(L, 0.0142, 0.0042, 0.005, -0.0011),
+      new THREE.MeshStandardMaterial({
+        color: '#dcdcda',
+        metalness: 1,
+        roughness: 0.14,
+        side: THREE.DoubleSide,
+      })
+    )
+  );
+  spoon.rotation.x = -0.1;
+  spoon.position.z = 0.0015;
+  g.add(spoon);
+  add(cyl(0.0037, 0.0046, L - 0.012, L + 0.004), chrome);
+
+  // Agarre moleteado en espiral
+  add(
+    cyl(0.0041, 0.0041, L + 0.004, 0.142),
+    std('#ffffff', { map: spiralKnurlTexture(), metalness: 1, roughness: 0.3 })
+  );
+  add(cyl(0.0036, 0.0041, 0.142, 0.146), chrome);
+
+  // Caño liso con tres ranuras
+  add(cyl(0.0036, 0.0036, 0.146, 0.178), chrome);
+  const groove = std('#2a2b2d', { metalness: 0.8, roughness: 0.4 });
+  for (const y of [0.167, 0.1715, 0.176]) {
+    add(
+      new THREE.TorusGeometry(0.0036, 0.0006, 6, 24).rotateX(Math.PI / 2).translate(0, y, 0),
+      groove
+    );
+  }
+
+  // Curva hacia la boquilla
+  const curve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0.177, 0),
+    new THREE.Vector3(0, 0.2, 0),
+    new THREE.Vector3(0.006, 0.222, 0),
+    new THREE.Vector3(0.022, 0.244, 0),
+    new THREE.Vector3(0.032, 0.254, 0),
+  ]);
+  add(new THREE.TubeGeometry(curve, 60, 0.0036, 14), chrome);
+  // Boquilla aplanada siguiendo la curva
+  const tip = curve.getPoint(1);
+  const tan = curve.getTangent(1);
+  const mouth = add(new THREE.CylinderGeometry(0.0052, 0.0037, 0.016, 16), chrome);
+  mouth.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tan);
+  mouth.position.copy(tip).addScaledVector(tan, -0.006);
+  mouth.scale.z = 0.5;
 }
 
 function buildDosBochas(g: THREE.Group) {
