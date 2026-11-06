@@ -49,7 +49,8 @@ export type MateStyle =
   | 'camionero'
   | 'torpedoCriollo'
   | 'camioneroClasico'
-  | 'imperial';
+  | 'imperial'
+  | 'torpedoCincelado';
 export type MateShape = { kind: 'mate'; style: MateStyle };
 export type TermoStyle = 'pico' | 'lumilagro' | 'stanley';
 export type TermoShape = { kind: 'termo'; style: TermoStyle };
@@ -230,7 +231,8 @@ export const OPTIONS: Option[] = [
     id: 'mate-criollo-premium',
     category: 'mate',
     name: 'Criollo Premium',
-    description: 'Calabaza, cuero cosido en X con tiento crudo y virola de alpaca.',
+    description:
+      'Calabaza moteada, funda de cuero con tiento trenzado y virola chata de alpaca cincelada.',
     shopHref: '/shop?category=mate',
     shape: { kind: 'mate', style: 'criolloPremium' },
   },
@@ -278,6 +280,17 @@ export const OPTIONS: Option[] = [
     shopHref: '/shop?category=mate',
     colors: [NEGRO, CHOCOLATE],
     shape: { kind: 'mate', style: 'imperial' },
+  },
+
+  {
+    id: 'mate-torpedo-cincelado',
+    category: 'mate',
+    name: 'Torpedo cincelado',
+    description:
+      'Calabaza forrada en cuero negro, costura en X y virola de alpaca cincelada a mano.',
+    shopHref: '/shop?category=mate',
+    colors: [NEGRO, CHOCOLATE],
+    shape: { kind: 'mate', style: 'torpedoCincelado' },
   },
 
   // ── Termos ────────────────────────────────────────────────────────────────

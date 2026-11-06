@@ -1077,53 +1077,6 @@ type MateDef = {
 };
 
 /**
- * Alpaca cincelada: dos guardas de perlitas (arriba y abajo) y al medio un motivo
- * repetido de florcitas y volutas, en grabado fino y prolijo.
- */
-function chisel(ctx: CanvasRenderingContext2D, w: number, h: number) {
-  const g = ctx.createLinearGradient(0, 0, 0, h);
-  g.addColorStop(0, '#eceae4');
-  g.addColorStop(0.5, '#d2d0c9');
-  g.addColorStop(1, '#e6e4de');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, w, h);
-  const ink = 'rgba(55,55,55,0.45)';
-  // Filetes y perlitas
-  ctx.fillStyle = ink;
-  for (const y of [0.12, 0.88]) ctx.fillRect(0, h * y - 1, w, 2);
-  for (const y of [0.2, 0.8]) {
-    for (let x = 6; x < w; x += 14) {
-      ctx.beginPath();
-      ctx.arc(x, h * y, 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-  // Motivo central: florcita + volutas en espejo, cada 64 px
-  ctx.strokeStyle = ink;
-  ctx.lineWidth = 2;
-  const cy = h * 0.5;
-  const ry = h * 0.17;
-  for (let x = 32; x < w + 32; x += 64) {
-    for (let k = 0; k < 4; k++) {
-      ctx.save();
-      ctx.translate(x, cy);
-      ctx.rotate((k * Math.PI) / 2 + Math.PI / 4);
-      ctx.beginPath();
-      ctx.ellipse(0, -ry * 0.45, ry * 0.18, ry * 0.42, 0, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-    }
-    for (const dir of [-1, 1]) {
-      ctx.beginPath();
-      ctx.moveTo(x + dir * ry * 0.9, cy);
-      ctx.quadraticCurveTo(x + dir * 22, cy - ry, x + dir * 30, cy);
-      ctx.quadraticCurveTo(x + dir * 22, cy + ry * 0.6, x + dir * 17, cy + ry * 0.15);
-      ctx.stroke();
-    }
-  }
-}
-
-/**
  * Virola del imperial de algarrobo: banda inferior con guarda pampa escalonada
  * en relieve (alpaca mate sobre fondo picado) y borde superior liso y pulido.
  */
@@ -1422,6 +1375,117 @@ function volcadaVirola(ctx: CanvasRenderingContext2D, w: number, h: number) {
   }
 }
 
+/**
+ * Virola del torpedo cincelado. v=0 (abajo del canvas) es el borde que toca el
+ * cuero y v=1 (arriba) la boca: una fila de hojas en guirnalda abajo, escamas
+ * superpuestas en el hombro y el canto de la boca con muescas.
+ */
+function torpedoCinceladoVirola(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, '#f4f3ef');
+  g.addColorStop(0.45, '#d2d1cc');
+  g.addColorStop(1, '#eeede8');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+  const ink = 'rgba(55,55,52,0.55)';
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = 2;
+  // Canto de la boca con muescas
+  ctx.fillStyle = ink;
+  ctx.fillRect(0, h * 0.16, w, 2);
+  for (let x = 6; x < w; x += 22) ctx.fillRect(x, 0, 2, h * 0.14);
+  // Escamas superpuestas (filas de arcos)
+  for (let row = 0; row < 3; row++) {
+    const y = h * (0.26 + row * 0.11);
+    const off = row % 2 ? 9 : 0;
+    for (let x = -18 + off; x < w + 18; x += 18) {
+      ctx.beginPath();
+      ctx.arc(x, y, 9, 0, Math.PI);
+      ctx.stroke();
+      for (let k = 1; k <= 2; k++) {
+        ctx.beginPath();
+        ctx.moveTo(x - 6 + k * 4, y + 2);
+        ctx.lineTo(x - 6 + k * 4, y + 7);
+        ctx.stroke();
+      }
+    }
+  }
+  // Guirnalda de hojas en diagonal
+  ctx.fillRect(0, h * 0.62, w, 2);
+  ctx.fillRect(0, h * 0.95, w, 2);
+  for (let x = 0; x < w + 30; x += 30) {
+    ctx.save();
+    ctx.translate(x, h * 0.785);
+    ctx.rotate(-0.5);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 15, 6.5, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-13, 0);
+    ctx.lineTo(13, 0);
+    ctx.stroke();
+    for (let k = -2; k <= 2; k++) {
+      ctx.beginPath();
+      ctx.moveTo(k * 5, 0);
+      ctx.lineTo(k * 5 + 3, -4);
+      ctx.moveTo(k * 5, 0);
+      ctx.lineTo(k * 5 + 3, 4);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
+/**
+ * Virola del criollo premium. Canvas de abajo (v=0, canto de afuera) hacia arriba
+ * (v=1, adentro de la boca): canto liso pulido, cara plana con arcos de hojas
+ * cincelados y una fila de punzonados junto a la boca.
+ */
+function premiumVirola(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, '#bdbcb7');
+  g.addColorStop(0.3, '#d9d8d3');
+  g.addColorStop(0.62, '#f2f1ed');
+  g.addColorStop(1, '#e6e5e0');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+  const ink = 'rgba(45,45,42,0.6)';
+  ctx.strokeStyle = ink;
+  ctx.fillStyle = ink;
+  // Cara plana: entre v≈0.35 y v≈0.85 → en el canvas y entre h*0.15 y h*0.65
+  const top = h * 0.17;
+  const bot = h * 0.62;
+  ctx.fillRect(0, bot, w, 2);
+  ctx.fillRect(0, top, w, 2);
+  const n = 14;
+  const step = w / n;
+  ctx.lineWidth = 2.2;
+  for (let i = 0; i < n; i++) {
+    const x = i * step + step / 2;
+    // Arco (festón) que abre hacia afuera
+    ctx.beginPath();
+    ctx.moveTo(x - step / 2, bot - 4);
+    ctx.quadraticCurveTo(x, top + (bot - top) * 0.15, x + step / 2, bot - 4);
+    ctx.stroke();
+    // Hojitas en abanico dentro del arco
+    for (let k = -2; k <= 2; k++) {
+      ctx.save();
+      ctx.translate(x + k * step * 0.13, bot - (bot - top) * 0.32);
+      ctx.rotate(k * 0.35);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 3, (bot - top) * 0.18, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+  // Punzonados junto a la boca
+  for (let x = 4; x < w; x += 9) {
+    ctx.beginPath();
+    ctx.arc(x, top - h * 0.05, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
 function imperialVirola(ctx: CanvasRenderingContext2D, w: number, h: number) {
   const g = ctx.createLinearGradient(0, 0, 0, h);
   g.addColorStop(0, '#f7f7f5');
@@ -1573,7 +1637,7 @@ const MATES: Record<MateStyle, MateDef> = {
     inner: '#d2b48a',
     lip: '#d9c29b',
     body: (ctx, w, h) => {
-      gourd(ctx, w, h, '#b0702c', '#5e3210', 41);
+      gourd(ctx, w, h, '#8f4d22', '#4a2008', 41);
       // Vetas más claras de la calabaza
       const r = rng(43);
       for (let i = 0; i < 30; i++) {
@@ -1621,53 +1685,86 @@ const MATES: Record<MateStyle, MateDef> = {
         const mx = w * 0.3;
         ctx.strokeStyle = 'rgba(80,55,30,0.55)';
         ctx.lineWidth = 4;
-        ctx.strokeRect(mx - 64, h * 0.22, 128, h * 0.58);
-        text(ctx, 'MG', mx, h * 0.38, 'bold 50px Georgia, serif', 'rgba(80,55,30,0.7)');
-        text(ctx, 'RC', mx, h * 0.64, 'bold 50px Georgia, serif', 'rgba(80,55,30,0.7)');
+        ctx.strokeRect(mx - 64, h * 0.18, 128, h * 0.66);
+        ctx.strokeRect(mx - 58, h * 0.21, 116, h * 0.6);
+        ctx.beginPath();
+        ctx.moveTo(mx, h * 0.21);
+        ctx.lineTo(mx, h * 0.81);
+        ctx.moveTo(mx - 58, h * 0.51);
+        ctx.lineTo(mx + 58, h * 0.51);
+        ctx.stroke();
+        text(ctx, 'M', mx - 29, h * 0.37, 'bold 50px Georgia, serif', 'rgba(80,55,30,0.7)');
+        text(ctx, 'G', mx + 29, h * 0.37, 'bold 50px Georgia, serif', 'rgba(80,55,30,0.7)');
+        text(ctx, 'R', mx - 29, h * 0.66, 'bold 50px Georgia, serif', 'rgba(80,55,30,0.7)');
+        text(ctx, 'C', mx + 29, h * 0.66, 'bold 50px Georgia, serif', 'rgba(80,55,30,0.7)');
       },
     },
   },
 
   criolloPremium: {
-    height: 0.14,
-    radius: (t) =>
-      0.038 +
-      0.01 * Math.sin(Math.min(t / 0.5, 1) * (Math.PI / 2)) -
-      (t > 0.55 ? (t - 0.55) * 0.016 : 0),
-    bodyRough: 0.55,
-    inner: '#b08048',
-    body: (ctx, w, h) => gourd(ctx, w, h, '#c49a5c', '#7a5226', 51),
+    // Calabaza moteada que abre hacia la boca, funda recta de cuero y virola plana cincelada
+    height: 0.13,
+    radius: (t) => 0.04 + 0.009 * Math.pow(t, 2.2),
+    bodyRough: 0.38,
+    inner: '#d3b98f',
+    body: (ctx, w, h) => {
+      gourd(ctx, w, h, '#93461c', '#3a1404', 51);
+      const r = rng(54);
+      ctx.fillStyle = 'rgba(60,20,5,0.55)';
+      for (let i = 0; i < 260; i++) {
+        ctx.beginPath();
+        ctx.arc(r() * w, r() * h, 1 + r() * 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    },
     band: {
-      to: 0.45,
+      to: 0.52,
+      straight: 0.0475,
       draw: (ctx, w, h) => {
-        leather(ctx, w, h, '#4a2a18', 52);
-        // Lazo de cuero crudo en X
+        ctx.fillStyle = '#6e4a2c';
+        ctx.fillRect(0, 0, w, h);
+        const r = rng(52);
+        for (let i = 0; i < 380; i++) {
+          ctx.fillStyle = r() > 0.5 ? 'rgba(255,230,200,0.1)' : 'rgba(30,15,5,0.18)';
+          ctx.fillRect(r() * w, r() * h, 1 + r() * 3, 6 + r() * 30);
+        }
+        noise(ctx, w, h, 53, 0.06);
+        // Canto claro del cuero arriba
+        ctx.fillStyle = '#e2cfae';
+        ctx.fillRect(0, 0, w, h * 0.04);
+        // Costura: solapa y tiento blanco trenzado en espiga
         atFront(ctx, w, (x) => {
-          ctx.fillStyle = '#3a2012';
-          ctx.fillRect(x - 26, 0, 52, h);
-          ctx.strokeStyle = '#f2eee6';
-          ctx.lineWidth = 7;
-          for (let y = h * 0.06; y < h * 0.94; y += 34) {
+          ctx.strokeStyle = 'rgba(230,215,190,0.8)';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(x - 22, h * 0.04);
+          ctx.lineTo(x - 22, h);
+          ctx.stroke();
+          ctx.strokeStyle = '#efe8da';
+          ctx.lineWidth = 9;
+          for (let y = h * 0.1; y < h * 0.92; y += 24) {
             ctx.beginPath();
-            ctx.moveTo(x - 18, y);
-            ctx.lineTo(x + 18, y + 26);
-            ctx.moveTo(x + 18, y);
-            ctx.lineTo(x - 18, y + 26);
+            ctx.moveTo(x - 14, y + 16);
+            ctx.lineTo(x + 2, y);
+            ctx.moveTo(x + 2, y + 10);
+            ctx.lineTo(x + 16, y - 4);
             ctx.stroke();
           }
         });
       },
     },
     virola: {
+      // Aro chato apoyado sobre la boca: canto exterior pulido + cara de arriba cincelada
       points: [
-        [0.0428, 0.126],
-        [0.0448, 0.129],
-        [0.0468, 0.135],
-        [0.0468, 0.146],
-        [0.0428, 0.149],
-        [0.0385, 0.147],
+        [0.0508, 0.122],
+        [0.0518, 0.132],
+        [0.0508, 0.1355],
+        [0.046, 0.1365],
+        [0.04, 0.1365],
+        [0.0362, 0.1355],
+        [0.0352, 0.13],
       ],
-      draw: (ctx, w, h) => chisel(ctx, w, h),
+      draw: (ctx, w, h) => premiumVirola(ctx, w, h),
     },
   },
 
@@ -1716,6 +1813,63 @@ const MATES: Record<MateStyle, MateDef> = {
         [0.0362, 0.115],
       ],
       draw: (ctx, w, h) => guardaPampa(ctx, w, h),
+    },
+  },
+
+  torpedoCincelado: {
+    // Huevo alto forrado en cuero, costura en X, 4 patas y virola abombada cincelada
+    height: 0.13,
+    radius: (t) =>
+      0.02 +
+      0.031 * Math.pow(Math.sin(Math.min(t / 0.55, 1) * (Math.PI / 2)), 0.8) -
+      (t > 0.6 ? (t - 0.6) * 0.022 : 0),
+    bodyRough: 0.55,
+    inner: '#c99a66',
+    legs: true,
+    colors: [LEATHER.negro, LEATHER.chocolate],
+    body: (ctx, w, h, c) => {
+      leather(ctx, w, h, c.leather ?? '#1f1d1c', 191);
+      // Arrugas suaves del cuero
+      const r = rng(192);
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 30; i++) {
+        ctx.strokeStyle = r() > 0.5 ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.2)';
+        const x = r() * w;
+        const y = r() * h;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.quadraticCurveTo(x + 20, y + (r() - 0.5) * 30, x + 40, y + (r() - 0.5) * 20);
+        ctx.stroke();
+      }
+      // Costura lateral con tiento negro cruzado en X
+      const x = w * 0.25;
+      ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(150,140,130,0.55)';
+      ctx.lineWidth = 6;
+      for (let y = h * 0.05; y < h * 0.95; y += 28) {
+        ctx.beginPath();
+        ctx.moveTo(x - 12, y);
+        ctx.lineTo(x + 12, y + 22);
+        ctx.moveTo(x + 12, y);
+        ctx.lineTo(x - 12, y + 22);
+        ctx.stroke();
+      }
+    },
+    virola: {
+      points: [
+        [0.0475, 0.106],
+        [0.0478, 0.114],
+        [0.0465, 0.122],
+        [0.0435, 0.128],
+        [0.041, 0.1305],
+        [0.0388, 0.1298],
+      ],
+      draw: (ctx, w, h) => torpedoCinceladoVirola(ctx, w, h),
     },
   },
 
