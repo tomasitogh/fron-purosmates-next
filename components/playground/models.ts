@@ -2148,11 +2148,11 @@ export const SHELF = {
 };
 
 /** Repisa de madera abierta (sin fondo, para no tapar la ventana). Origen: centro de la base. */
-export function buildShelf(width = SHELF.width) {
+export function buildShelf(width = SHELF.width, gap = SHELF.gap) {
   const g = new THREE.Group();
   const tex = woodTexture('#9a6a3e', '#4e3018', 1, 17);
   const wood = std('#ffffff', { map: tex, roughness: 0.55 });
-  const { depth, board, gap, tiers } = SHELF;
+  const { depth, board, tiers } = SHELF;
   const totalH = tiers * (gap + board) + board;
   for (let i = 0; i <= tiers; i++) {
     const m = new THREE.Mesh(new THREE.BoxGeometry(width, board, depth), wood);
@@ -2172,7 +2172,7 @@ export function buildShelf(width = SHELF.width) {
 }
 
 /** Altura (desde la base de la repisa) de la superficie de cada estante, de arriba hacia abajo. */
-export function shelfTierY(tier: number) {
-  const { board, gap, tiers } = SHELF;
+export function shelfTierY(tier: number, gap = SHELF.gap) {
+  const { board, tiers } = SHELF;
   return (tiers - 1 - tier) * (gap + board) + board;
 }

@@ -86,25 +86,33 @@ type Zone = {
   focusH?: number;
   /** Campo visual (grados) al enfocar la zona. */
   focusFov?: number;
+  /** Si está, los objetos van en una repisa de dos estantes con esta altura libre. */
+  shelfGap?: number;
 };
 const ZONES: Record<Category, Zone> = {
-  // Las yerbas van en una repisa de dos estantes, un poco más al fondo
+  // Yerbas y mates van en repisas de dos estantes, un poco más al fondo
   yerba: {
-    angle: THREE.MathUtils.degToRad(32),
+    angle: THREE.MathUtils.degToRad(35),
     spacing: 0.127,
     anchorH: 0.64,
     radius: 1.55,
     focusH: 0.16,
     focusFov: 46,
+    shelfGap: 0.26,
   },
-  bombilla: { angle: THREE.MathUtils.degToRad(11), spacing: 0.07, anchorH: 0.31 },
-  // Los mates van en una gradería: la fila de atrás más alta para que no se tapen
-  mate: { angle: THREE.MathUtils.degToRad(-11), spacing: 0.15, anchorH: 0.28, focusFov: 42 },
+  bombilla: { angle: THREE.MathUtils.degToRad(13), spacing: 0.062, anchorH: 0.31 },
+  mate: {
+    angle: THREE.MathUtils.degToRad(-10),
+    spacing: 0.15,
+    anchorH: 0.5,
+    radius: 1.42,
+    focusH: 0.1,
+    focusFov: 42,
+    shelfGap: 0.19,
+  },
   termo: { angle: THREE.MathUtils.degToRad(-38), spacing: 0.15, anchorH: 0.44 },
 };
 const ZONE_RADIUS = 1.1;
-/** Altura del escalón de atrás de la gradería de mates. */
-const RISER_H = 0.075;
 const OVERVIEW_PITCH = -0.32;
 
 const PREP = {
@@ -736,29 +744,17 @@ export class MateEngine {
   }
 
   private buildItems() {
-    const yerbaCount = OPTIONS.filter((o) => o.category === 'yerba').length;
-    const shelf = shadowed(
-      buildShelf(Math.ceil(yerbaCount / SHELF.tiers) * ZONES.yerba.spacing + 0.04)
-    );
-    shelf.position.copy(this.zoneCenter('yerba'));
-    shelf.rotation.y = ZONES.yerba.angle;
-    this.scene.add(shelf);
-
-    // Gradería de madera para los mates (solo si son más de 5)
-    const mateCount = OPTIONS.filter((o) => o.category === 'mate').length;
-    if (mateCount > 5) {
-      const backCount = Math.floor(mateCount / 2);
-      const zm = ZONES.mate;
-      const fwd = new THREE.Vector3(-Math.sin(zm.angle), 0, -Math.cos(zm.angle));
-      const riserTex = woodTexture('#9a6a3e', '#4e3018', 1, 23);
-      const riser = new THREE.Mesh(
-        new THREE.BoxGeometry(backCount * zm.spacing + 0.08, RISER_H, 0.13),
-        std('#ffffff', { map: riserTex, roughness: 0.55 })
+    // Repisas de madera (yerbas y mates)
+    for (const cat of CATEGORY_ORDER) {
+      const zone = ZONES[cat];
+      if (!zone.shelfGap) continue;
+      const count = OPTIONS.filter((o) => o.category === cat).length;
+      const shelf = shadowed(
+        buildShelf(Math.ceil(count / SHELF.tiers) * zone.spacing + 0.04, zone.shelfGap)
       );
-      riser.position.copy(this.zoneCenter('mate')).addScaledVector(fwd, 0.08);
-      riser.position.y = TABLE_Y + RISER_H / 2;
-      riser.rotation.y = zm.angle;
-      this.scene.add(shadowed(riser));
+      shelf.position.copy(this.zoneCenter(cat));
+      shelf.rotation.y = zone.angle;
+      this.scene.add(shelf);
     }
 
     for (const cat of CATEGORY_ORDER) {
@@ -779,24 +775,16 @@ export class MateEngine {
         else built = buildTermo(sh);
 
         const pos = center.clone();
-        if (cat === 'yerba') {
-          // Repisa: 5 paquetes por estante, todos mirando al frente
+        if (zone.shelfGap) {
+          // Repisa: mitad arriba y mitad abajo, todos mirando al frente
           const perTier = Math.ceil(opts.length / SHELF.tiers);
           const tier = Math.floor(i / perTier);
           const inTier = Math.min(perTier, opts.length - tier * perTier);
           const col = (i % perTier) - (inTier - 1) / 2;
           pos.addScaledVector(right, col * zone.spacing);
-          pos.y = TABLE_Y + shelfTierY(tier);
+          pos.y = TABLE_Y + shelfTierY(tier, zone.shelfGap);
         } else if (cat === 'bombilla') {
           pos.addScaledVector(right, (i - (opts.length - 1) / 2) * zone.spacing);
-        } else if (opts.length > 5) {
-          // Gradería: fila de atrás (más alta) y fila de adelante, intercaladas
-          const backCount = Math.floor(opts.length / 2);
-          const back = i < backCount;
-          const n = back ? backCount : opts.length - backCount;
-          const col = (back ? i : i - backCount) - (n - 1) / 2;
-          pos.addScaledVector(right, col * zone.spacing).addScaledVector(fwd, back ? 0.08 : -0.07);
-          if (back) pos.y = TABLE_Y + RISER_H;
         } else if (opts.length <= 3) {
           pos
             .addScaledVector(right, (i - 1) * zone.spacing)
@@ -807,7 +795,7 @@ export class MateEngine {
           const col = back ? i - 1 : i - 3.5;
           pos.addScaledVector(right, col * zone.spacing).addScaledVector(fwd, back ? 0.1 : -0.08);
         }
-        const faceYaw = cat === 'yerba' ? zone.angle : Math.atan2(EYE.x - pos.x, EYE.z - pos.z);
+        const faceYaw = zone.shelfGap ? zone.angle : Math.atan2(EYE.x - pos.x, EYE.z - pos.z);
         let quat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, faceYaw, 0));
         if (cat === 'bombilla') {
           pos.y = TABLE_Y + 0.006;
