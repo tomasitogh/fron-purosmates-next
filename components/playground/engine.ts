@@ -314,6 +314,9 @@ type MateParts = {
   water: THREE.Mesh;
 };
 
+/** Medialuna o tortita que se puede comer. */
+type Edible = { obj: THREE.Object3D; kind: Snack; bites: number; target: number };
+
 type Item = {
   opt: Option;
   group: THREE.Group;
@@ -420,8 +423,16 @@ export class MateEngine {
   private dropFx = new Particles(300, '#cfe8ff', 0.005);
   private crumbFx = new Particles(240, '#d8b07a', 0.0045);
   /** Medialunas y tortitas que se pueden comer. */
-  private edibles: { obj: THREE.Object3D; kind: Snack; bites: number; target: number }[] = [];
+  private edibles: Edible[] = [];
   private restockTimers: number[] = [];
+  private eating: {
+    ed: Edible;
+    phase: 'lift' | 'chew' | 'back';
+    t: number;
+    parent: THREE.Object3D;
+    homePos: THREE.Vector3;
+    homeQuat: THREE.Quaternion;
+  } | null = null;
   private stream: THREE.Mesh;
   private dust: THREE.Points;
   private resizeObs: ResizeObserver;
@@ -1318,6 +1329,7 @@ export class MateEngine {
     this.yerbaFx.update(dt);
     this.dropFx.update(dt);
     this.crumbFx.update(dt);
+    this.updateEating(dt);
     for (const ed of this.edibles) {
       const sc = damp(ed.obj.scale.x, ed.target, 12, dt);
       ed.obj.scale.setScalar(sc);
@@ -1554,20 +1566,81 @@ export class MateEngine {
   }
 
   /** Una mordida: sonido, miguitas y el pedazo que desaparece. */
-  private eat(ed: (typeof this.edibles)[number]) {
+  /** Llevar el bocado a la boca: lo saca del plato y lo acerca a la cámara. */
+  private eat(ed: Edible) {
+    if (this.eating) return;
+    const parent = ed.obj.parent!;
+    this.eating = {
+      ed,
+      phase: 'lift',
+      t: 0,
+      parent,
+      homePos: ed.obj.position.clone(),
+      homeQuat: ed.obj.quaternion.clone(),
+    };
+    this.scene.attach(ed.obj);
+  }
+
+  /** Avanza la animación de comer (subir → morder → masticar → volver al plato). */
+  private updateEating(dt: number) {
+    const e = this.eating;
+    if (!e) return;
+    const obj = e.ed.obj;
+    e.t += dt;
+    const k = 1 - Math.exp(-9 * dt);
+    if (e.phase === 'lift' || e.phase === 'chew') {
+      // Frente a la boca: un poco abajo del centro de la vista
+      const dir = this.camera.getWorldDirection(new THREE.Vector3());
+      const up = new THREE.Vector3(0, 1, 0).applyQuaternion(this.camera.quaternion);
+      const mouth = this.camera.position
+        .clone()
+        .addScaledVector(dir, e.phase === 'chew' ? 0.17 : 0.14)
+        .addScaledVector(up, -0.055);
+      obj.position.lerp(mouth, k);
+      // Mostrar el lado que se muerde mirando a la cámara, levemente inclinado
+      const face = new THREE.Quaternion().setFromRotationMatrix(
+        new THREE.Matrix4().lookAt(this.camera.position, obj.position, up)
+      );
+      face.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-1.1, 0, 0.25)));
+      obj.quaternion.slerp(face, k);
+      if (e.phase === 'lift' && (obj.position.distanceTo(mouth) < 0.012 || e.t > 0.9)) {
+        e.phase = 'chew';
+        e.t = 0;
+        this.bite(e.ed);
+      } else if (e.phase === 'chew' && e.t > 0.55) {
+        e.phase = 'back';
+        e.t = 0;
+      }
+    } else {
+      const homeWorld = e.parent.localToWorld(e.homePos.clone());
+      const parentQ = e.parent.getWorldQuaternion(new THREE.Quaternion());
+      const homeQ = parentQ.multiply(e.homeQuat);
+      obj.position.lerp(homeWorld, k);
+      obj.quaternion.slerp(homeQ, k);
+      if (obj.position.distanceTo(homeWorld) < 0.003 || e.t > 1.2) {
+        e.parent.attach(obj);
+        obj.position.copy(e.homePos);
+        obj.quaternion.copy(e.homeQuat);
+        this.eating = null;
+      }
+    }
+  }
+
+  /** El mordisco en sí: sonido, miguitas y el pedazo que desaparece. */
+  private bite(ed: Edible) {
     ed.bites++;
     playChew(ed.kind);
     this.cb.onEvent?.({ name: 'eat', kind: ed.kind });
-    const at = ed.obj.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.03, 0));
+    const at = ed.obj.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, -0.01, 0));
     for (let k = 0; k < 26; k++) {
       this.crumbFx.spawn(
         at
           .clone()
           .add(new THREE.Vector3((Math.random() - 0.5) * 0.04, 0, (Math.random() - 0.5) * 0.04)),
         new THREE.Vector3(
-          (Math.random() - 0.5) * 0.5,
-          0.3 + Math.random() * 0.5,
-          (Math.random() - 0.5) * 0.5
+          (Math.random() - 0.5) * 0.25,
+          -0.05 + Math.random() * 0.25,
+          (Math.random() - 0.5) * 0.25
         ),
         TABLE_Y + 0.004
       );

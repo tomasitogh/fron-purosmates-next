@@ -25,66 +25,127 @@ function audio() {
   return ctx;
 }
 
-/** Un golpe de ruido filtrado con envolvente corta: el "crunch". */
-function burst(
+/**
+ * Un "grano" de sonido: un pedacito de ruido muy corto filtrado. Muchos granos
+ * juntos suenan a algo que se rompe en migas (y no a un golpe/aplauso).
+ */
+function grain(
   ac: AudioContext,
+  out: AudioNode,
   at: number,
-  {
-    freq,
-    q,
-    dur,
-    gain,
-    type,
-  }: { freq: number; q: number; dur: number; gain: number; type: BiquadFilterType }
+  freq: number,
+  dur: number,
+  gain: number
 ) {
   const src = ac.createBufferSource();
   src.buffer = noise;
-  src.playbackRate.value = 0.8 + Math.random() * 0.4;
-  const filter = ac.createBiquadFilter();
-  filter.type = type;
-  filter.frequency.value = freq;
-  filter.Q.value = q;
+  const bp = ac.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.frequency.value = freq;
+  bp.Q.value = 3 + Math.random() * 3;
   const env = ac.createGain();
   env.gain.setValueAtTime(0.0001, at);
-  env.gain.exponentialRampToValueAtTime(gain, at + 0.006);
+  env.gain.linearRampToValueAtTime(gain, at + dur * 0.25);
   env.gain.exponentialRampToValueAtTime(0.0001, at + dur);
-  src.connect(filter).connect(env).connect(ac.destination);
+  src.connect(bp).connect(env).connect(out);
+  src.start(at, Math.random() * 0.4, dur + 0.01);
+}
+
+/** Crujido: una nube de granos repartidos en `len` segundos. */
+function crunch(
+  ac: AudioContext,
+  out: AudioNode,
+  at: number,
+  len: number,
+  count: number,
+  lo: number,
+  hi: number,
+  gain: number
+) {
+  for (let i = 0; i < count; i++) {
+    // Más granos al principio (cuando se parte) y menos al final
+    const t = at + Math.pow(Math.random(), 1.7) * len;
+    grain(
+      ac,
+      out,
+      t,
+      lo + Math.random() * (hi - lo),
+      0.006 + Math.random() * 0.018,
+      gain * (0.4 + Math.random() * 0.6)
+    );
+  }
+}
+
+/** Sonido sordo de la boca/mandíbula: ruido grave con ataque suave (sin "clic"). */
+function mouth(ac: AudioContext, out: AudioNode, at: number, dur: number, gain: number) {
+  const src = ac.createBufferSource();
+  src.buffer = noise;
+  src.playbackRate.value = 0.5;
+  const lp = ac.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 320 + Math.random() * 120;
+  const env = ac.createGain();
+  env.gain.setValueAtTime(0.0001, at);
+  env.gain.linearRampToValueAtTime(gain, at + dur * 0.35);
+  env.gain.linearRampToValueAtTime(0.0001, at + dur);
+  src.connect(lp).connect(env).connect(out);
   src.start(at, Math.random() * 0.3, dur + 0.02);
 }
 
 /**
- * Sonido de masticar: una mordida crocante y después 3–4 masticadas más suaves.
- * La medialuna suena más hojaldrada (agudo y con migas); la tortita, más
- * azucarada y grave.
+ * Masticar: el mordisco (los dientes parten el bocado: crujido con la boca
+ * abierta) y después varias masticadas con la boca cerrada, más apagadas.
+ * La medialuna es hojaldrada (migas finitas); la tortita tiene la costra de
+ * azúcar (crujido más grueso) y masa blanda debajo.
  */
 export function playChew(kind: Snack) {
   const ac = audio();
   if (!ac || !noise) return;
   const t = ac.currentTime + 0.02;
-  const crisp = kind === 'medialuna';
-  // Mordida
-  burst(ac, t, { freq: crisp ? 2600 : 1700, q: 0.7, dur: 0.11, gain: 0.55, type: 'bandpass' });
-  for (let k = 0; k < (crisp ? 6 : 4); k++) {
-    burst(ac, t + 0.015 + Math.random() * 0.07, {
-      freq: (crisp ? 4200 : 2800) + Math.random() * 1500,
-      q: 2,
-      dur: 0.025,
-      gain: 0.18,
-      type: 'bandpass',
-    });
-  }
-  // Masticadas: un golpe grave de la boca + un crujido más chico cada vez
-  const chews = 3 + Math.round(Math.random());
+  const flaky = kind === 'medialuna';
+
+  const master = ac.createGain();
+  master.gain.value = 0.9;
+  master.connect(ac.destination);
+
+  // Mordisco: boca abierta, más brillante
+  const open = ac.createBiquadFilter();
+  open.type = 'lowpass';
+  open.frequency.value = flaky ? 6500 : 4500;
+  open.connect(master);
+  crunch(
+    ac,
+    open,
+    t,
+    flaky ? 0.16 : 0.13,
+    flaky ? 46 : 30,
+    flaky ? 1800 : 1100,
+    flaky ? 6000 : 3800,
+    0.16
+  );
+  mouth(ac, master, t + 0.02, 0.12, 0.08);
+
+  // Masticadas: boca cerrada → todo pasa por un filtro grave
+  const closed = ac.createBiquadFilter();
+  closed.type = 'lowpass';
+  closed.frequency.value = flaky ? 1700 : 1300;
+  closed.Q.value = 0.7;
+  closed.connect(master);
+  const chews = 4 + Math.round(Math.random());
+  let at = t + 0.38;
   for (let i = 0; i < chews; i++) {
-    const at = t + 0.32 + i * (0.27 + Math.random() * 0.05);
-    const fade = 1 - i * 0.2;
-    burst(ac, at, { freq: 260, q: 0.9, dur: 0.12, gain: 0.32 * fade, type: 'lowpass' });
-    burst(ac, at + 0.01, {
-      freq: (crisp ? 2100 : 1400) + Math.random() * 500,
-      q: 1.1,
-      dur: 0.07,
-      gain: 0.22 * fade,
-      type: 'bandpass',
-    });
+    const fade = 1 - i * 0.17;
+    mouth(ac, master, at, 0.16, 0.12 * fade);
+    crunch(
+      ac,
+      closed,
+      at + 0.03,
+      0.1,
+      Math.round((flaky ? 18 : 12) * fade),
+      500,
+      flaky ? 3000 : 2200,
+      0.13 * fade
+    );
+    at += 0.25 + Math.random() * 0.07;
   }
 }
