@@ -487,6 +487,485 @@ const PACKS: Record<YerbaBrand, PackDef> = {
       stripes(ctx, w, h * 0.89, h * 0.11);
     },
   },
+  cosmico: {
+    format: 'caja',
+    w: 0.1,
+    h: 0.2,
+    d: 0.065,
+    top: '#efe8d8',
+    front: (ctx, w, h) => {
+      const G = '#2f5a3c';
+      ctx.fillStyle = '#f1ebdd';
+      ctx.fillRect(0, 0, w, h);
+      // Filete superior punteado con el emblema
+      ctx.fillStyle = G;
+      ctx.fillRect(0, h * 0.085, w, 3);
+      ctx.fillRect(0, h * 0.11, w, 3);
+      const r = rng(101);
+      for (let i = 0; i < 260; i++) {
+        ctx.fillRect(r() * w * 0.3, h * 0.09 + r() * h * 0.018, 2, 2);
+        ctx.fillRect(w * 0.7 + r() * w * 0.3, h * 0.09 + r() * h * 0.018, 2, 2);
+      }
+      ctx.fillStyle = '#f1ebdd';
+      ctx.fillRect(w * 0.42, h * 0.075, w * 0.16, h * 0.045);
+      ctx.strokeStyle = G;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(w * 0.43, h * 0.078, w * 0.14, h * 0.04);
+      // "YERBA MATE" en arco
+      ctx.save();
+      ctx.translate(w * 0.5, h * 0.52);
+      const word = 'YERBA MATE';
+      for (let i = 0; i < word.length; i++) {
+        ctx.save();
+        ctx.rotate(-0.55 + (i / (word.length - 1)) * 1.1);
+        text(ctx, word[i], 0, -h * 0.21, 'bold 44px Georgia, serif', G);
+        ctx.restore();
+      }
+      ctx.restore();
+      // Emblema circular con la C y el árbol
+      ctx.strokeStyle = G;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.ellipse(w * 0.5, h * 0.4, 44, 56, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      text(ctx, 'C', w * 0.5, h * 0.41, 'bold 56px Georgia, serif', G);
+      leaf(ctx, w * 0.47, h * 0.37, 12, -0.5, G);
+      leaf(ctx, w * 0.53, h * 0.37, 12, 0.5, G);
+      text(ctx, 'Selección', w * 0.2, h * 0.42, 'italic 30px Georgia, serif', G);
+      text(ctx, 'Especial', w * 0.8, h * 0.42, 'italic 30px Georgia, serif', G);
+      text(ctx, 'CÓSMICO', w * 0.5, h * 0.53, 'bold 108px Georgia, serif', G, { maxW: w * 0.9 });
+      text(ctx, 'ELABORADA CON PALO', w * 0.5, h * 0.6, '34px Georgia, serif', G);
+      // Sellos inferiores
+      ctx.beginPath();
+      ctx.arc(w * 0.18, h * 0.86, 44, 0, Math.PI * 2);
+      ctx.stroke();
+      text(ctx, '500G', w * 0.18, h * 0.865, 'bold 28px Georgia, serif', G);
+      text(ctx, 'INDUSTRIA', w * 0.5, h * 0.85, '18px system-ui', G);
+      text(ctx, 'Argentina', w * 0.5, h * 0.875, 'italic 28px Georgia, serif', G);
+      ctx.save();
+      ctx.translate(w * 0.82, h * 0.86);
+      ctx.rotate(Math.PI / 4);
+      ctx.strokeRect(-34, -34, 68, 68);
+      ctx.restore();
+      text(ctx, 'SUAVE', w * 0.82, h * 0.86, 'bold 20px system-ui', G);
+    },
+    side: (ctx, w, h) => {
+      ctx.fillStyle = '#ebe4d4';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#2f5a3c';
+      ctx.fillRect(0, h * 0.085, w, 3);
+      ctx.fillRect(0, h * 0.11, w, 3);
+    },
+  },
+
+  cbse: {
+    format: 'bolsa',
+    w: 0.11,
+    h: 0.19,
+    d: 0.07,
+    top: '#ffffff',
+    front: (ctx, w, h) => {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
+      // Rayos de sol grises
+      ctx.strokeStyle = 'rgba(150,150,150,0.35)';
+      ctx.lineWidth = 6;
+      for (let i = 0; i < 24; i++) {
+        const a = (i / 24) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(w * 0.5 + Math.cos(a) * w * 0.4, h * 0.48 + Math.sin(a) * w * 0.4);
+        ctx.lineTo(w * 0.5 + Math.cos(a) * w * 0.75, h * 0.48 + Math.sin(a) * w * 0.75);
+        ctx.stroke();
+      }
+      // Hojas en las esquinas
+      const r = rng(111);
+      for (let i = 0; i < 16; i++) {
+        const corner = i % 4;
+        const cx = corner % 2 ? w * (0.85 + r() * 0.2) : w * (r() * 0.2 - 0.05);
+        const cy = corner < 2 ? h * (r() * 0.15) : h * (0.85 + r() * 0.15);
+        leaf(ctx, cx, cy, 50 + r() * 50, r() * Math.PI, ['#7cc04a', '#5fae3a', '#9fd36a'][i % 3]);
+      }
+      // Silueta de mate con bombilla
+      ctx.strokeStyle = '#2f8a34';
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.36, h * 0.3);
+      ctx.bezierCurveTo(w * 0.05, h * 0.36, w * 0.05, h * 0.68, w * 0.5, h * 0.7);
+      ctx.bezierCurveTo(w * 0.95, h * 0.68, w * 0.95, h * 0.36, w * 0.64, h * 0.3);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(w * 0.55, h * 0.31);
+      ctx.lineTo(w * 0.66, h * 0.12);
+      ctx.stroke();
+      text(ctx, 'Yerba Mate', w * 0.5, h * 0.39, 'italic bold 44px Georgia, serif', '#d4202a');
+      text(ctx, 'CBSé', w * 0.5, h * 0.48, '900 124px system-ui, sans-serif', '#d4202a', {
+        stroke: '#ffffff',
+        strokeW: 8,
+      });
+      text(ctx, 'HIERBAS', w * 0.5, h * 0.56, 'bold 40px system-ui', '#2f8a34');
+      text(ctx, 'SERRANAS', w * 0.5, h * 0.6, 'bold 40px system-ui', '#2f8a34');
+      // Franja "REÚNE lo BUENO"
+      ctx.fillStyle = '#2f8a34';
+      ctx.fillRect(w * 0.18, h * 0.735, w * 0.64, h * 0.05);
+      text(ctx, 'REÚNE lo BUENO', w * 0.5, h * 0.76, 'bold 34px system-ui', '#fff');
+      // "LIBRE de ACIDEZ"
+      ctx.fillStyle = '#2f8a34';
+      ctx.beginPath();
+      ctx.arc(w * 0.17, h * 0.1, 56, 0, Math.PI * 2);
+      ctx.fill();
+      text(ctx, 'LIBRE de', w * 0.17, h * 0.09, 'bold 20px system-ui', '#fff');
+      text(ctx, 'ACIDEZ', w * 0.17, h * 0.11, 'bold 24px system-ui', '#fff');
+      text(ctx, 'PESO NETO 1kg', w * 0.5, h * 0.83, 'bold 26px system-ui', '#333');
+    },
+    side: (ctx, w, h) => {
+      ctx.fillStyle = '#2f8a34';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(w * 0.1, h * 0.1, w * 0.8, h * 0.8);
+      ctx.fillStyle = '#2f8a34';
+      ctx.fillRect(w * 0.14, h * 0.14, w * 0.72, h * 0.72);
+    },
+  },
+
+  pipore: {
+    format: 'bolsa',
+    w: 0.1,
+    h: 0.2,
+    d: 0.055,
+    top: '#4caf3c',
+    front: (ctx, w, h) => {
+      ctx.fillStyle = '#4caf3c';
+      ctx.fillRect(0, 0, w, h);
+      // Hojas en trazo arriba y franja inferior más oscura
+      ctx.strokeStyle = 'rgba(20,80,20,0.45)';
+      ctx.lineWidth = 3;
+      const r = rng(121);
+      for (let i = 0; i < 8; i++) {
+        ctx.beginPath();
+        ctx.ellipse(r() * w, h * (0.03 + r() * 0.1), 40 + r() * 30, 18, r() * 3, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#2f8a34';
+      ctx.fillRect(0, h * 0.72, w, h * 0.28);
+      for (let i = 0; i < 9; i++) {
+        ctx.beginPath();
+        ctx.ellipse(r() * w, h * (0.76 + r() * 0.22), 40 + r() * 30, 18, r() * 3, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#d8e86a';
+      for (const y of [0.155, 0.165, 0.7, 0.71]) ctx.fillRect(0, h * y, w, 4);
+      text(
+        ctx,
+        'YERBA MATE ELABORADA CON PALO COMPUESTA',
+        w * 0.5,
+        h * 0.18,
+        'bold 17px system-ui',
+        '#fff',
+        { maxW: w * 0.92 }
+      );
+      text(
+        ctx,
+        'POLEO • PEPERINA • MENTA • CEDRÓN',
+        w * 0.5,
+        h * 0.195,
+        'bold 17px system-ui',
+        '#fff'
+      );
+      text(ctx, 'YERBA MATE', w * 0.56, h * 0.26, 'bold 36px system-ui', '#1f4f1f');
+      text(ctx, 'Piporé', w * 0.48, h * 0.335, 'bold 120px Georgia, serif', '#ffffff', {
+        stroke: '#1f4f1f',
+        strokeW: 10,
+        maxW: w * 0.86,
+      });
+      // Rombo amarillo con el mapa rojo y la plantita
+      ctx.save();
+      ctx.translate(w * 0.5, h * 0.48);
+      ctx.rotate(Math.PI / 4);
+      ctx.fillStyle = '#f5d000';
+      ctx.fillRect(-62, -62, 124, 124);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(-62, -62, 124, 124);
+      ctx.restore();
+      ctx.fillStyle = '#d4202a';
+      ctx.beginPath();
+      ctx.ellipse(w * 0.53, h * 0.5, 48, 18, -0.6, 0, Math.PI * 2);
+      ctx.fill();
+      leaf(ctx, w * 0.46, h * 0.46, 18, -0.4, '#1f4f1f');
+      leaf(ctx, w * 0.51, h * 0.455, 18, 0.4, '#1f4f1f');
+      for (let i = 0; i < 7; i++)
+        leaf(ctx, w * (0.38 + i * 0.04), h * 0.6, 22, r() * 3, ['#2e7d32', '#66bb6a'][i % 2]);
+      // Cinta "HIERBAS SERRANAS"
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.roundRect(w * 0.12, h * 0.63, w * 0.76, h * 0.045, 20);
+      ctx.fill();
+      text(ctx, 'HIERBAS SERRANAS', w * 0.5, h * 0.653, 'bold 38px system-ui', '#2f8a34', {
+        maxW: w * 0.7,
+      });
+      text(ctx, 'INDUSTRIA ARGENTINA', w * 0.26, h * 0.85, 'bold 18px system-ui', '#fff');
+      text(ctx, 'PESO NETO 500g', w * 0.74, h * 0.85, 'bold 22px system-ui', '#fff');
+    },
+    side: (ctx, w, h) => {
+      ctx.fillStyle = '#46a537';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#2f8a34';
+      ctx.fillRect(0, h * 0.72, w, h * 0.28);
+    },
+  },
+
+  rosamonte: {
+    format: 'caja',
+    w: 0.11,
+    h: 0.19,
+    d: 0.075,
+    top: '#d8231d',
+    front: (ctx, w, h) => {
+      ctx.fillStyle = '#e0251f';
+      ctx.fillRect(0, 0, w, h);
+      // Franja negra a la derecha
+      ctx.fillStyle = '#141414';
+      ctx.fillRect(w * 0.72, 0, w * 0.28, h);
+      // Rama de yerba a la izquierda
+      ctx.strokeStyle = '#3d6b2a';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.12, h * 0.62);
+      ctx.quadraticCurveTo(w * 0.16, h * 0.4, w * 0.12, h * 0.2);
+      ctx.stroke();
+      const r = rng(131);
+      for (let i = 0; i < 9; i++) {
+        const y = h * (0.22 + i * 0.045);
+        leaf(
+          ctx,
+          w * (0.08 + (i % 2) * 0.1),
+          y,
+          34 + r() * 12,
+          (i % 2 ? 0.9 : -0.9) + (r() - 0.5) * 0.3,
+          ['#3f8f3a', '#2e7d32', '#58a845'][i % 3]
+        );
+      }
+      text(ctx, 'YERBA MATE', w * 0.44, h * 0.22, 'bold 40px system-ui', '#f5d000');
+      text(ctx, 'ELABORADA CON PALO', w * 0.44, h * 0.25, '18px system-ui', '#fff');
+      text(ctx, 'LIBRE DE GLUTEN', w * 0.44, h * 0.27, '18px system-ui', '#fff');
+      // Rosa con hojitas y ornamento dorado
+      ctx.fillStyle = '#c2185b';
+      for (let k = 0; k < 6; k++) {
+        ctx.beginPath();
+        ctx.arc(w * 0.44 + Math.cos(k) * 12, h * 0.4 + Math.sin(k) * 12, 16, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = '#ff5c8a';
+      ctx.beginPath();
+      ctx.arc(w * 0.44, h * 0.4, 12, 0, Math.PI * 2);
+      ctx.fill();
+      leaf(ctx, w * 0.36, h * 0.44, 16, 1.2, '#2e7d32');
+      leaf(ctx, w * 0.52, h * 0.44, 16, -1.2, '#2e7d32');
+      ctx.strokeStyle = '#e8b931';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.26, h * 0.47);
+      ctx.quadraticCurveTo(w * 0.44, h * 0.43, w * 0.62, h * 0.47);
+      ctx.stroke();
+      text(
+        ctx,
+        'ROSAMONTE',
+        w * 0.44,
+        h * 0.54,
+        'bold 96px Impact, "Arial Narrow", system-ui',
+        '#ffffff',
+        { maxW: w * 0.62 }
+      );
+      ctx.beginPath();
+      ctx.moveTo(w * 0.3, h * 0.62);
+      ctx.quadraticCurveTo(w * 0.44, h * 0.6, w * 0.58, h * 0.62);
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(w * 0.05, h * 0.86, w * 0.62, 3);
+      text(ctx, 'INDUSTRIA ARGENTINA', w * 0.2, h * 0.88, 'bold 16px system-ui', '#fff');
+      text(ctx, 'PESO NETO 1Kg', w * 0.55, h * 0.88, 'bold 18px system-ui', '#fff');
+    },
+    side: (ctx, w, h) => {
+      ctx.fillStyle = '#141414';
+      ctx.fillRect(0, 0, w, h);
+      ctx.save();
+      ctx.translate(w * 0.5, h * 0.55);
+      ctx.rotate(-Math.PI / 2);
+      text(ctx, 'ROSAMONTE', 0, 0, 'bold 70px Impact, "Arial Narrow", system-ui', '#fff');
+      ctx.restore();
+    },
+  },
+
+  kalena: {
+    format: 'bolsa',
+    w: 0.1,
+    h: 0.19,
+    d: 0.06,
+    top: '#5f7f5a',
+    front: (ctx, w, h) => {
+      ctx.fillStyle = '#3d9be0';
+      ctx.fillRect(0, 0, w, h);
+      const r = rng(141);
+      for (let i = 0; i < 20; i++)
+        leaf(ctx, r() * w, r() * h, 50 + r() * 60, r() * Math.PI, 'rgba(160,215,250,0.35)');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, h * 0.02, 6, h);
+      ctx.fillRect(w - 6, h * 0.02, 6, h);
+      text(ctx, 'YERBA MATE', w * 0.5, h * 0.17, 'bold 46px system-ui', '#ffffff', {
+        stroke: '#1f5fa8',
+        strokeW: 4,
+      });
+      text(ctx, 'ELABORADA DESPALADA', w * 0.5, h * 0.21, 'bold 24px system-ui', '#1f4f8a');
+      // Logo circular
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(w * 0.5, h * 0.4, w * 0.27, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#1f5fa8';
+      ctx.lineWidth = 6;
+      ctx.stroke();
+      leaf(ctx, w * 0.4, h * 0.38, 46, -0.6, '#2e8b3a');
+      ctx.fillStyle = '#d4202a';
+      for (let k = 0; k < 9; k++) {
+        ctx.beginPath();
+        ctx.arc(
+          w * (0.58 + (k % 3) * 0.04),
+          h * (0.33 + Math.floor(k / 3) * 0.022),
+          9,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+      text(ctx, 'K', w * 0.53, h * 0.43, 'bold 90px Georgia, serif', '#2e8b3a');
+      text(ctx, 'KALENA', w * 0.5, h * 0.58, 'bold 92px system-ui, sans-serif', '#ffffff', {
+        stroke: '#1f5fa8',
+        strokeW: 6,
+        maxW: w * 0.86,
+      });
+      text(ctx, 'ENVASADA EN ORIGEN', w * 0.5, h * 0.63, 'bold 30px system-ui', '#fff');
+      text(
+        ctx,
+        'Estacionamiento Natural',
+        w * 0.5,
+        h * 0.665,
+        'italic 24px Georgia, serif',
+        '#e8f4ff'
+      );
+      text(ctx, '500 g', w * 0.3, h * 0.76, 'bold 30px system-ui', '#fff');
+    },
+    side: (ctx, w, h) => {
+      ctx.fillStyle = '#3591d6';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 4, h);
+      ctx.fillRect(w - 4, 0, 4, h);
+    },
+  },
+  solylluvia: {
+    format: 'bolsa',
+    w: 0.1,
+    h: 0.2,
+    d: 0.055,
+    top: '#8f94d8',
+    front: (ctx, w, h) => {
+      // Franja lila superior
+      const g = ctx.createLinearGradient(0, 0, 0, h * 0.25);
+      g.addColorStop(0, '#a3a6e6');
+      g.addColorStop(1, '#7f86cf');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h * 0.25);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, h * 0.25, w, h * 0.55);
+      ctx.fillStyle = '#2b3a8c';
+      ctx.fillRect(0, h * 0.25, w, 8);
+      // Sol naciente con rayos
+      ctx.fillStyle = '#f5c400';
+      for (let i = 0; i < 9; i++) {
+        const a0 = -Math.PI * 0.05 - (i / 9) * Math.PI * 0.55;
+        ctx.beginPath();
+        ctx.moveTo(w * 0.15, h * 0.66);
+        ctx.lineTo(w * 0.15 + Math.cos(a0) * w * 1.2, h * 0.66 + Math.sin(a0) * w * 1.2);
+        ctx.lineTo(
+          w * 0.15 + Math.cos(a0 - 0.12) * w * 1.2,
+          h * 0.66 + Math.sin(a0 - 0.12) * w * 1.2
+        );
+        ctx.fill();
+      }
+      ctx.beginPath();
+      ctx.arc(w * 0.15, h * 0.66, w * 0.16, 0, Math.PI * 2);
+      ctx.fill();
+      // Lomas verdes
+      ctx.fillStyle = '#3f9a3a';
+      ctx.beginPath();
+      ctx.moveTo(0, h * 0.66);
+      ctx.quadraticCurveTo(w * 0.5, h * 0.6, w, h * 0.64);
+      ctx.lineTo(w, h * 0.8);
+      ctx.lineTo(0, h * 0.8);
+      ctx.fill();
+      // Nube azul
+      ctx.fillStyle = '#4c8fd6';
+      for (const [cx, cy, r] of [
+        [0.66, 0.52, 40],
+        [0.76, 0.5, 48],
+        [0.86, 0.53, 36],
+        [0.72, 0.555, 34],
+      ]) {
+        ctx.beginPath();
+        ctx.arc(w * cx, h * cy, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      const ribbon = (y: number, hh: number) => {
+        ctx.fillStyle = '#c8202a';
+        ctx.beginPath();
+        ctx.moveTo(w * 0.06, y + hh * 0.2);
+        ctx.quadraticCurveTo(w * 0.5, y - hh * 0.3, w * 0.94, y + hh * 0.2);
+        ctx.lineTo(w * 0.94, y + hh * 1.1);
+        ctx.quadraticCurveTo(w * 0.5, y + hh * 0.6, w * 0.06, y + hh * 1.1);
+        ctx.fill();
+      };
+      ribbon(h * 0.27, h * 0.06);
+      text(ctx, 'YERBA MATE', w * 0.5, h * 0.302, 'bold 40px system-ui', '#fff');
+      text(ctx, 'Barbacuá', w * 0.36, h * 0.37, 'italic bold 36px Georgia, serif', '#2b3a8c');
+      text(
+        ctx,
+        'Sol y Lluvia',
+        w * 0.5,
+        h * 0.44,
+        'italic bold 86px "Brush Script MT", Georgia, cursive',
+        '#d4202a',
+        {
+          stroke: '#2b3a8c',
+          strokeW: 6,
+          maxW: w * 0.92,
+        }
+      );
+      ribbon(h * 0.68, h * 0.07);
+      text(ctx, 'YERBA MATE ELABORADA CON PALO', w * 0.5, h * 0.71, 'bold 18px system-ui', '#fff', {
+        maxW: w * 0.8,
+      });
+      text(ctx, 'ESTACIONAMIENTO NATURAL', w * 0.5, h * 0.733, 'bold 22px system-ui', '#fff', {
+        maxW: w * 0.8,
+      });
+      ctx.fillStyle = '#2b3a8c';
+      ctx.fillRect(0, h * 0.8, w, h * 0.13);
+      text(ctx, 'PESO NETO 500g', w * 0.5, h * 0.85, 'bold 40px system-ui', '#fff');
+      text(ctx, 'INDUSTRIA ARGENTINA', w * 0.5, h * 0.895, 'bold 22px system-ui', '#fff');
+      ctx.fillStyle = '#d4202a';
+      ctx.fillRect(0, h * 0.93, w, h * 0.07);
+    },
+    side: (ctx, w, h) => {
+      ctx.fillStyle = '#f5c400';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#8f94d8';
+      ctx.fillRect(0, 0, w, h * 0.25);
+      ctx.fillStyle = '#2b3a8c';
+      ctx.fillRect(0, h * 0.8, w, h * 0.13);
+      ctx.fillStyle = '#d4202a';
+      ctx.fillRect(0, h * 0.93, w, h * 0.07);
+    },
+  },
 };
 
 function drawLeaves(ctx: CanvasRenderingContext2D, w: number, h: number, seed: number) {
@@ -566,6 +1045,8 @@ type MateDef = {
   };
   /** Labio superior (un toro fino) cuando no hay virola. */
   lip?: string;
+  /** Tres patitas de cuero en la base (camionero clásico). */
+  feet?: string;
 };
 
 const ALPACA = '#d8d6d0';
@@ -850,6 +1331,99 @@ const MATES: Record<MateStyle, MateDef> = {
       draw: (ctx, w, h) => chisel(ctx, w, h, 72),
     },
   },
+  torpedoCriollo: {
+    height: 0.135,
+    radius: (t) =>
+      0.04 +
+      0.006 * Math.sin(Math.min(t / 0.55, 1) * (Math.PI / 2)) -
+      (t > 0.6 ? (t - 0.6) * 0.012 : 0),
+    bodyRough: 0.55,
+    inner: '#b08048',
+    body: (ctx, w, h) => gourd(ctx, w, h, '#b57a42', '#6a4020', 151),
+    band: {
+      to: 0.42,
+      draw: (ctx, w, h) => {
+        leather(ctx, w, h, '#c99c6a', 152);
+        // Trenzado de tiento blanco arriba y abajo
+        ctx.strokeStyle = '#f4efe4';
+        ctx.lineWidth = 5;
+        for (const y of [h * 0.1, h * 0.9]) {
+          for (let x = 0; x < w; x += 22) {
+            ctx.beginPath();
+            ctx.moveTo(x, y - 12);
+            ctx.lineTo(x + 16, y + 12);
+            ctx.moveTo(x + 16, y - 12);
+            ctx.lineTo(x, y + 12);
+            ctx.stroke();
+          }
+        }
+      },
+    },
+    virola: {
+      points: [
+        [0.0458, 0.098],
+        [0.0468, 0.105],
+        [0.0475, 0.125],
+        [0.0455, 0.135],
+        [0.041, 0.137],
+        [0.0395, 0.134],
+      ],
+      draw: (ctx, w, h) => {
+        chisel(ctx, w, h, 153);
+        // Rombos repujados
+        ctx.strokeStyle = 'rgba(50,50,50,0.6)';
+        ctx.lineWidth = 3;
+        for (let x = 20; x < w; x += 64) {
+          ctx.beginPath();
+          ctx.moveTo(x, h * 0.25);
+          ctx.lineTo(x + 18, h * 0.5);
+          ctx.lineTo(x, h * 0.75);
+          ctx.lineTo(x - 18, h * 0.5);
+          ctx.closePath();
+          ctx.stroke();
+        }
+      },
+    },
+  },
+
+  camioneroClasico: {
+    height: 0.115,
+    radius: (t) => 0.034 + 0.022 * Math.sin(Math.min(t / 0.7, 1) * (Math.PI / 2)),
+    bodyRough: 0.6,
+    inner: '#a8743f',
+    feet: '#2b2321',
+    body: (ctx, w, h) => {
+      leather(ctx, w, h, '#2b2321', 161);
+      // Costuras verticales del cuero
+      ctx.strokeStyle = 'rgba(200,190,175,0.7)';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([8, 10]);
+      for (const u of [0.17, 0.5, 0.83]) {
+        ctx.beginPath();
+        ctx.moveTo(w * u, h * 0.12);
+        ctx.lineTo(w * u, h);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+    },
+    virola: {
+      points: [
+        [0.0555, 0.1],
+        [0.059, 0.104],
+        [0.0605, 0.118],
+        [0.057, 0.121],
+        [0.053, 0.12],
+      ],
+      draw: (ctx, w, h) => {
+        const g = ctx.createLinearGradient(0, 0, 0, h);
+        g.addColorStop(0, '#f2f2ee');
+        g.addColorStop(0.5, '#cfcdc6');
+        g.addColorStop(1, '#e8e6e0');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, w, h);
+      },
+    },
+  },
 };
 
 export function buildMateModel(style: MateStyle) {
@@ -914,6 +1488,17 @@ export function buildMateModel(style: MateStyle) {
     lip.rotation.x = Math.PI / 2;
     lip.position.y = H;
     g.add(lip);
+  }
+
+  if (def.feet) {
+    const footMat = std(def.feet, { roughness: 0.6 });
+    for (let k = 0; k < 3; k++) {
+      const a = (k / 3) * Math.PI * 2 + Math.PI / 6;
+      const foot = new THREE.Mesh(new THREE.SphereGeometry(0.012, 14, 10), footMat);
+      foot.scale.set(1.1, 0.7, 1.1);
+      foot.position.set(Math.sin(a) * 0.03, 0.007, Math.cos(a) * 0.03);
+      g.add(foot);
+    }
   }
 
   return { group: g, profile, top };
@@ -1053,6 +1638,63 @@ export function buildBombillaModel(style: BombillaStyle) {
         }),
         0.0105,
         0.25
+      )
+    );
+  } else if (style === 'chata') {
+    // Chata: caño aplanado de acero con anillo dorado y ranuras abajo
+    const tube = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.0045, 0.0045, 0.24, 16).translate(0, 0.12, 0),
+      inox
+    );
+    tube.scale.set(1.5, 1, 0.45);
+    const ring = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.0049, 0.0049, 0.012, 16).translate(0, 0.13, 0),
+      gold
+    );
+    ring.scale.set(1.5, 1, 0.5);
+    g.add(tube, ring);
+    const slot = std('#2a2c2e', { roughness: 0.6 });
+    for (let k = 0; k < 4; k++) {
+      for (const z of [-0.0021, 0.0021]) {
+        const sl = new THREE.Mesh(new THREE.BoxGeometry(0.0045, 0.006, 0.0004), slot);
+        sl.position.set(0, 0.008 + k * 0.008, z);
+        g.add(sl);
+      }
+    }
+  } else if (style === 'bohr') {
+    // Bohr: acero, curva suave, boquilla aplanada con dos anillos y filtro redondo
+    const curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0.03, 0),
+      new THREE.Vector3(0, 0.17, 0),
+      new THREE.Vector3(0.004, 0.205, 0),
+      new THREE.Vector3(0.018, 0.235, 0),
+    ]);
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 48, 0.0034, 10), inox));
+    const dark = std('#3a3d40', { metalness: 0.8, roughness: 0.4 });
+    for (const y of [0.15, 0.158]) {
+      g.add(
+        new THREE.Mesh(
+          new THREE.CylinderGeometry(0.0041, 0.0041, 0.0025, 16).translate(0, y, 0),
+          dark
+        )
+      );
+    }
+    const mouth = new THREE.Mesh(new THREE.CylinderGeometry(0.0055, 0.004, 0.022, 14), inox);
+    mouth.position.set(0.02, 0.242, 0);
+    mouth.rotation.z = -0.9;
+    mouth.scale.z = 0.45;
+    g.add(mouth);
+    g.add(
+      paleta(
+        inox,
+        std('#ffffff', {
+          map: holesTexture('#c7cbcf'),
+          metalness: 0.9,
+          roughness: 0.3,
+          side: THREE.DoubleSide,
+        }),
+        0.0125,
+        0.15
       )
     );
   } else {
@@ -1316,4 +1958,45 @@ export function buildTermoModel(style: TermoStyle) {
   }
 
   return { group: g, height: h, mouth: new THREE.Vector3(-0.03, h - 0.005, 0) };
+}
+
+// ─── Repisa de yerbas ───────────────────────────────────────────────────────
+
+export const SHELF = {
+  width: 0.68,
+  depth: 0.15,
+  board: 0.018,
+  /** Altura libre de cada estante (el paquete más alto mide ~0.23 m). */
+  gap: 0.26,
+  tiers: 2,
+};
+
+/** Repisa de madera abierta (sin fondo, para no tapar la ventana). Origen: centro de la base. */
+export function buildShelf(width = SHELF.width) {
+  const g = new THREE.Group();
+  const tex = woodTexture('#9a6a3e', '#4e3018', 1, 17);
+  const wood = std('#ffffff', { map: tex, roughness: 0.55 });
+  const { depth, board, gap, tiers } = SHELF;
+  const totalH = tiers * (gap + board) + board;
+  for (let i = 0; i <= tiers; i++) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(width, board, depth), wood);
+    m.position.y = i * (gap + board) + board / 2;
+    g.add(m);
+  }
+  for (const sx of [-1, 1]) {
+    const side = new THREE.Mesh(new THREE.BoxGeometry(board, totalH, depth), wood);
+    side.position.set(sx * (width / 2 + board / 2), totalH / 2, 0);
+    g.add(side);
+  }
+  // Travesaño trasero fino (da estructura sin tapar el paisaje)
+  const rail = new THREE.Mesh(new THREE.BoxGeometry(width, 0.03, board), wood);
+  rail.position.set(0, totalH - 0.05, -depth / 2 + board / 2);
+  g.add(rail);
+  return g;
+}
+
+/** Altura (desde la base de la repisa) de la superficie de cada estante, de arriba hacia abajo. */
+export function shelfTierY(tier: number) {
+  const { board, gap, tiers } = SHELF;
+  return (tiers - 1 - tier) * (gap + board) + board;
 }

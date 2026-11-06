@@ -16,8 +16,11 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import {
   buildBombillaModel,
   buildMateModel,
+  buildShelf,
   buildTermoModel,
   buildYerbaPack,
+  SHELF,
+  shelfTierY,
   canvasTexture,
   rng,
   std,
@@ -73,13 +76,35 @@ const EYE = new THREE.Vector3(0, 1.28, 0.78);
 const MAT_Y = TABLE_Y + 0.006;
 
 /** Ángulo (respecto a mirar de frente) y distancia de cada zona sobre la mesa. */
-const ZONES: Record<Category, { angle: number; spacing: number; anchorH: number }> = {
-  yerba: { angle: THREE.MathUtils.degToRad(33), spacing: 0.155, anchorH: 0.3 },
-  bombilla: { angle: THREE.MathUtils.degToRad(12), spacing: 0.085, anchorH: 0.31 },
-  mate: { angle: THREE.MathUtils.degToRad(-12), spacing: 0.165, anchorH: 0.22 },
-  termo: { angle: THREE.MathUtils.degToRad(-33), spacing: 0.15, anchorH: 0.44 },
+type Zone = {
+  angle: number;
+  spacing: number;
+  anchorH: number;
+  /** Distancia desde los ojos (por defecto ZONE_RADIUS). */
+  radius?: number;
+  /** Altura a la que mira la cámara al enfocar la zona. */
+  focusH?: number;
+  /** Campo visual (grados) al enfocar la zona. */
+  focusFov?: number;
+};
+const ZONES: Record<Category, Zone> = {
+  // Las yerbas van en una repisa de dos estantes, un poco más al fondo
+  yerba: {
+    angle: THREE.MathUtils.degToRad(32),
+    spacing: 0.127,
+    anchorH: 0.64,
+    radius: 1.55,
+    focusH: 0.16,
+    focusFov: 46,
+  },
+  bombilla: { angle: THREE.MathUtils.degToRad(11), spacing: 0.07, anchorH: 0.31 },
+  // Los mates van en una gradería: la fila de atrás más alta para que no se tapen
+  mate: { angle: THREE.MathUtils.degToRad(-11), spacing: 0.15, anchorH: 0.28, focusFov: 42 },
+  termo: { angle: THREE.MathUtils.degToRad(-38), spacing: 0.15, anchorH: 0.44 },
 };
 const ZONE_RADIUS = 1.1;
+/** Altura del escalón de atrás de la gradería de mates. */
+const RISER_H = 0.075;
 const OVERVIEW_PITCH = -0.32;
 
 const PREP = {
@@ -671,7 +696,11 @@ export class MateEngine {
     // Porta-bombillas
     const zb = this.zoneCenter('bombilla');
     const holder = new THREE.Mesh(
-      new THREE.BoxGeometry(0.3, 0.035, 0.06),
+      new THREE.BoxGeometry(
+        OPTIONS.filter((o) => o.category === 'bombilla').length * ZONES.bombilla.spacing + 0.06,
+        0.035,
+        0.06
+      ),
       std('#7a4f2c', { roughness: 0.6 })
     );
     holder.position.set(zb.x, TABLE_Y + 0.0175, zb.z);
@@ -702,14 +731,36 @@ export class MateEngine {
 
   private zoneCenter(cat: Category) {
     const a = ZONES[cat].angle;
-    return new THREE.Vector3(
-      EYE.x - Math.sin(a) * ZONE_RADIUS,
-      TABLE_Y,
-      EYE.z - Math.cos(a) * ZONE_RADIUS
-    );
+    const R = ZONES[cat].radius ?? ZONE_RADIUS;
+    return new THREE.Vector3(EYE.x - Math.sin(a) * R, TABLE_Y, EYE.z - Math.cos(a) * R);
   }
 
   private buildItems() {
+    const yerbaCount = OPTIONS.filter((o) => o.category === 'yerba').length;
+    const shelf = shadowed(
+      buildShelf(Math.ceil(yerbaCount / SHELF.tiers) * ZONES.yerba.spacing + 0.04)
+    );
+    shelf.position.copy(this.zoneCenter('yerba'));
+    shelf.rotation.y = ZONES.yerba.angle;
+    this.scene.add(shelf);
+
+    // Gradería de madera para los mates (solo si son más de 5)
+    const mateCount = OPTIONS.filter((o) => o.category === 'mate').length;
+    if (mateCount > 5) {
+      const backCount = Math.floor(mateCount / 2);
+      const zm = ZONES.mate;
+      const fwd = new THREE.Vector3(-Math.sin(zm.angle), 0, -Math.cos(zm.angle));
+      const riserTex = woodTexture('#9a6a3e', '#4e3018', 1, 23);
+      const riser = new THREE.Mesh(
+        new THREE.BoxGeometry(backCount * zm.spacing + 0.08, RISER_H, 0.13),
+        std('#ffffff', { map: riserTex, roughness: 0.55 })
+      );
+      riser.position.copy(this.zoneCenter('mate')).addScaledVector(fwd, 0.08);
+      riser.position.y = TABLE_Y + RISER_H / 2;
+      riser.rotation.y = zm.angle;
+      this.scene.add(shadowed(riser));
+    }
+
     for (const cat of CATEGORY_ORDER) {
       const zone = ZONES[cat];
       const center = this.zoneCenter(cat);
@@ -728,7 +779,25 @@ export class MateEngine {
         else built = buildTermo(sh);
 
         const pos = center.clone();
-        if (opts.length <= 3) {
+        if (cat === 'yerba') {
+          // Repisa: 5 paquetes por estante, todos mirando al frente
+          const perTier = Math.ceil(opts.length / SHELF.tiers);
+          const tier = Math.floor(i / perTier);
+          const inTier = Math.min(perTier, opts.length - tier * perTier);
+          const col = (i % perTier) - (inTier - 1) / 2;
+          pos.addScaledVector(right, col * zone.spacing);
+          pos.y = TABLE_Y + shelfTierY(tier);
+        } else if (cat === 'bombilla') {
+          pos.addScaledVector(right, (i - (opts.length - 1) / 2) * zone.spacing);
+        } else if (opts.length > 5) {
+          // Gradería: fila de atrás (más alta) y fila de adelante, intercaladas
+          const backCount = Math.floor(opts.length / 2);
+          const back = i < backCount;
+          const n = back ? backCount : opts.length - backCount;
+          const col = (back ? i : i - backCount) - (n - 1) / 2;
+          pos.addScaledVector(right, col * zone.spacing).addScaledVector(fwd, back ? 0.08 : -0.07);
+          if (back) pos.y = TABLE_Y + RISER_H;
+        } else if (opts.length <= 3) {
           pos
             .addScaledVector(right, (i - 1) * zone.spacing)
             .addScaledVector(fwd, i === 1 ? 0.05 : 0);
@@ -738,12 +807,12 @@ export class MateEngine {
           const col = back ? i - 1 : i - 3.5;
           pos.addScaledVector(right, col * zone.spacing).addScaledVector(fwd, back ? 0.1 : -0.08);
         }
-        const faceYaw = Math.atan2(EYE.x - pos.x, EYE.z - pos.z);
+        const faceYaw = cat === 'yerba' ? zone.angle : Math.atan2(EYE.x - pos.x, EYE.z - pos.z);
         let quat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, faceYaw, 0));
         if (cat === 'bombilla') {
           pos.y = TABLE_Y + 0.006;
           quat = new THREE.Quaternion().setFromEuler(
-            new THREE.Euler(0, faceYaw, (i - 1) * -0.12, 'YXZ')
+            new THREE.Euler(0, faceYaw, (i - (opts.length - 1) / 2) * -0.08, 'YXZ')
           );
         }
         const group = shadowed(built.group);
@@ -769,7 +838,7 @@ export class MateEngine {
           new THREE.RingGeometry(ringR, ringR + 0.012, 48).rotateX(-Math.PI / 2),
           ringMat
         );
-        ring.position.set(pos.x, TABLE_Y + 0.002, pos.z);
+        ring.position.set(pos.x, pos.y + 0.002, pos.z);
         this.scene.add(ring);
 
         this.items.push({
@@ -803,7 +872,7 @@ export class MateEngine {
     if (cat) {
       // Apuntar un poco por debajo para que los objetos queden arriba del panel de opciones
       const target = this.zoneCenter(cat).add(
-        new THREE.Vector3(0, this.camera.aspect < 1 ? -0.1 : 0, 0)
+        new THREE.Vector3(0, (ZONES[cat].focusH ?? 0) + (this.camera.aspect < 1 ? -0.1 : 0), 0)
       );
       const { yaw, pitch } = yawPitchTo(target);
       this.yawT = yaw;
@@ -1154,8 +1223,9 @@ export class MateEngine {
   private update(dt: number) {
     // Cámara
     const portrait = this.camera.aspect < 1;
-    const base = this.s.phase === 'choose' ? (this.s.focus ? 38 : 60) : 58;
-    this.fovT = portrait ? base * 1.3 : base;
+    const focusFov = this.s.focus ? (ZONES[this.s.focus].focusFov ?? 38) : 0;
+    const base = this.s.phase === 'choose' ? (this.s.focus ? focusFov : 70) : 58;
+    this.fovT = portrait ? Math.min(base * 1.3, 80) : base;
     this.yaw = damp(this.yaw, this.yawT, 5, dt);
     this.pitch = damp(this.pitch, this.pitchT, 5, dt);
     this.camera.fov = damp(this.camera.fov, this.fovT, 4, dt);

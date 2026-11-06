@@ -1,7 +1,8 @@
 /**
  * Catálogo del playground "Cebá tu mate".
  *
- * Cada categoría puede tener hasta 5 opciones (la mesa las acomoda en dos filas).
+ * Las yerbas van en una repisa de 2 estantes; con más de 5 mates se arma una gradería
+ * (fila de atrás más alta) y las bombillas van en fila en el porta-bombillas.
  * Cada opción describe cómo se dibuja en 3D (forma + colores) y a qué parte
  * de la tienda lleva cuando el usuario termina de jugar. Las formas se generan
  * por código en `engine.ts` (no hay modelos 3D externos que descargar).
@@ -25,11 +26,29 @@ export const CATEGORY_PLURAL: Record<Category, string> = {
   termo: 'Termos',
 };
 
-export type YerbaBrand = 'donomar' | 'taragui' | 'lamerced' | 'playadito' | 'baldo';
+export type YerbaBrand =
+  | 'donomar'
+  | 'taragui'
+  | 'lamerced'
+  | 'playadito'
+  | 'baldo'
+  | 'cosmico'
+  | 'cbse'
+  | 'pipore'
+  | 'rosamonte'
+  | 'kalena'
+  | 'solylluvia';
 export type YerbaShape = { kind: 'yerba'; brand: YerbaBrand };
-export type BombillaStyle = 'bombillon' | 'inoxCurva' | 'dosBochas';
+export type BombillaStyle = 'bombillon' | 'inoxCurva' | 'dosBochas' | 'chata' | 'bohr';
 export type BombillaShape = { kind: 'bombilla'; style: BombillaStyle };
-export type MateStyle = 'mu' | 'criollo' | 'criolloPremium' | 'imperialAlgarrobo' | 'camionero';
+export type MateStyle =
+  | 'mu'
+  | 'criollo'
+  | 'criolloPremium'
+  | 'imperialAlgarrobo'
+  | 'camionero'
+  | 'torpedoCriollo'
+  | 'camioneroClasico';
 export type MateShape = { kind: 'mate'; style: MateStyle };
 export type TermoStyle = 'pico' | 'lumilagro' | 'stanley';
 export type TermoShape = { kind: 'termo'; style: TermoStyle };
@@ -86,6 +105,56 @@ export const OPTIONS: Option[] = [
     shape: { kind: 'yerba', brand: 'baldo' },
   },
 
+  {
+    id: 'yerba-cosmico',
+    category: 'yerba',
+    name: 'Cósmico',
+    description: 'Selección especial con palo, suave y con 12 meses de estacionamiento.',
+    shopHref: '/shop',
+    shape: { kind: 'yerba', brand: 'cosmico' },
+  },
+  {
+    id: 'yerba-cbse-hierbas',
+    category: 'yerba',
+    name: 'CBSé Hierbas Serranas',
+    description: 'Con peperina, menta y poleo. Libre de acidez.',
+    shopHref: '/shop',
+    shape: { kind: 'yerba', brand: 'cbse' },
+  },
+  {
+    id: 'yerba-pipore-hierbas',
+    category: 'yerba',
+    name: 'Piporé Hierbas Serranas',
+    description: 'Compuesta con poleo, peperina, menta y cedrón.',
+    shopHref: '/shop',
+    shape: { kind: 'yerba', brand: 'pipore' },
+  },
+  {
+    id: 'yerba-rosamonte',
+    category: 'yerba',
+    name: 'Rosamonte',
+    description: 'Con palo, de sabor fuerte y bien misionero.',
+    shopHref: '/shop',
+    shape: { kind: 'yerba', brand: 'rosamonte' },
+  },
+  {
+    id: 'yerba-kalena',
+    category: 'yerba',
+    name: 'Kalena',
+    description: 'Despalada, envasada en origen con estacionamiento natural.',
+    shopHref: '/shop',
+    shape: { kind: 'yerba', brand: 'kalena' },
+  },
+
+  {
+    id: 'yerba-sol-y-lluvia',
+    category: 'yerba',
+    name: 'Sol y Lluvia Barbacuá',
+    description: 'Con palo, ahumada y con estacionamiento natural.',
+    shopHref: '/shop',
+    shape: { kind: 'yerba', brand: 'solylluvia' },
+  },
+
   // ── Bombillas ─────────────────────────────────────────────────────────────
   {
     id: 'bombilla-bombillon-alpaca',
@@ -110,6 +179,23 @@ export const OPTIONS: Option[] = [
     description: 'Clásica de alpaca con dos bochas y filtro redondo grande.',
     shopHref: '/shop?category=bombilla',
     shape: { kind: 'bombilla', style: 'dosBochas' },
+  },
+
+  {
+    id: 'bombilla-chata',
+    category: 'bombilla',
+    name: 'Chata',
+    description: 'Caño aplanado de acero con anillo dorado. Ideal para camioneros.',
+    shopHref: '/shop?category=bombilla',
+    shape: { kind: 'bombilla', style: 'chata' },
+  },
+  {
+    id: 'bombilla-bohr',
+    category: 'bombilla',
+    name: 'Bohr',
+    description: 'Acero inoxidable, curva suave y filtro redondo que no se tapa.',
+    shopHref: '/shop?category=bombilla',
+    shape: { kind: 'bombilla', style: 'bohr' },
   },
 
   // ── Mates ─────────────────────────────────────────────────────────────────
@@ -152,6 +238,23 @@ export const OPTIONS: Option[] = [
     description: 'Cuero negro y virola de alpaca cincelada, bien ancha.',
     shopHref: '/shop?category=mate',
     shape: { kind: 'mate', style: 'camionero' },
+  },
+
+  {
+    id: 'mate-torpedo-criollo',
+    category: 'mate',
+    name: 'Torpedo Criollo',
+    description: 'Calabaza torpedo, cuero crudo trenzado y virola de alpaca repujada.',
+    shopHref: '/shop?category=mate',
+    shape: { kind: 'mate', style: 'torpedoCriollo' },
+  },
+  {
+    id: 'mate-camionero',
+    category: 'mate',
+    name: 'Camionero',
+    description: 'El clásico de cuero con patitas y virola lisa bien ancha.',
+    shopHref: '/shop?category=mate',
+    shape: { kind: 'mate', style: 'camioneroClasico' },
   },
 
   // ── Termos ────────────────────────────────────────────────────────────────
