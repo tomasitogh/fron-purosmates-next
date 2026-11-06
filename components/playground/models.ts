@@ -1029,24 +1029,51 @@ export function buildYerbaPack(brand: YerbaBrand) {
 
 // ─── Mates ──────────────────────────────────────────────────────────────────
 
+/** Variante de color de un mate (las ids coinciden con `colors` del catálogo). */
+type MateColor = { id: string; leather?: string; paint?: string; thread?: string };
+
+export const LEATHER = {
+  negro: { id: 'negro', leather: '#1f1d1c', thread: '#6e6157' },
+  chocolate: { id: 'chocolate', leather: '#4a2a19', thread: '#a0523a' },
+};
+
 type MateDef = {
   height: number;
   /** Radio exterior en función de t (0 = base, 1 = boca). */
   radius: (t: number) => number;
-  body: (ctx: CanvasRenderingContext2D, w: number, h: number) => void;
+  body: (ctx: CanvasRenderingContext2D, w: number, h: number, c: MateColor) => void;
   bodyRough: number;
+  /** Colores elegibles; el primero es el que se muestra de entrada. */
+  colors?: MateColor[];
+  /** Sección con lóbulos (no redonda) y boca ondulada (mate mu). */
+  lobes?: { n: number; amp: number; rimWave: number };
+  /** El interior lleva una franja pintada en el borde (color de la pintura). */
+  innerPaint?: boolean;
+  /** Base de cuero con 4 patas cosidas (mate imperial). */
+  legs?: boolean;
   inner: string;
   /** Banda de cuero en relieve: desde la base hasta `to` (0–1). */
-  band?: { to: number; draw: (ctx: CanvasRenderingContext2D, w: number, h: number) => void };
+  band?: {
+    to: number;
+    draw: (ctx: CanvasRenderingContext2D, w: number, h: number) => void;
+    /** Funda recta (cilindro de este radio) en vez de seguir la forma del mate. */
+    straight?: number;
+    /** Trenza de tiento en el borde de arriba de la funda. */
+    braid?: boolean;
+  };
   /** Virola de alpaca: perfil [radio, y] + dibujo cincelado. */
   virola?: {
     points: [number, number][];
     draw: (ctx: CanvasRenderingContext2D, w: number, h: number) => void;
+    /** Tono del metal (blanco = alpaca; algo dorado para virolas de bronce/alpaca dorada). */
+    tint?: string;
+    /** Cordón retorcido en el borde exterior: radio y altura. */
+    rope?: { r: number; y: number };
   };
   /** Labio superior (un toro fino) cuando no hay virola. */
   lip?: string;
-  /** Tres patitas de cuero en la base (camionero clásico). */
-  feet?: string;
+  /** Tres patitas de cuero en la base (camionero clásico); toman el color del cuero. */
+  feet?: boolean;
 };
 
 const ALPACA = '#d8d6d0';
@@ -1158,62 +1185,362 @@ function atFront(ctx: CanvasRenderingContext2D, w: number, fn: (x: number) => vo
   fn(w);
 }
 
+/**
+ * Virola del imperial. El lathe va de abajo (v=0) a la boca (v=1): el tercio de
+ * abajo del canvas es la banda cincelada (medallones ovalados con volutas) y el
+ * resto es el borde plano pulido.
+ */
+/** Trenza de tiento crudo (para el toro del borde de la funda). */
+function braidTexture() {
+  const tex = canvasTexture(512, 64, (ctx, w, h) => {
+    ctx.fillStyle = '#e9e2d4';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(120,100,75,0.55)';
+    ctx.lineWidth = 3;
+    for (let x = 0; x < w; x += 16) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.quadraticCurveTo(x + 10, h / 2, x, h);
+      ctx.stroke();
+    }
+  });
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.repeat.set(4, 1);
+  return tex;
+}
+
+/**
+ * Virola del torpedo criollo: hombro abombado y pulido, con rombos repujados y
+ * arcos en punta rellenos de picado (punteado).
+ */
+function torpedoVirola(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, '#f6f6f3');
+  g.addColorStop(0.4, '#d6d6d2');
+  g.addColorStop(0.75, '#f0f0ed');
+  g.addColorStop(1, '#c9c9c4');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+  const ink = 'rgba(55,55,52,0.55)';
+  // Filete inferior
+  ctx.fillStyle = ink;
+  ctx.fillRect(0, h * 0.93, w, 2);
+  const step = w / 8;
+  for (let i = 0; i < 8; i++) {
+    const x = i * step + step / 2;
+    // Arco en punta que cuelga desde arriba, relleno de picado
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x - step * 0.42, h * 0.25);
+    ctx.quadraticCurveTo(x - step * 0.3, h * 0.55, x, h * 0.62);
+    ctx.quadraticCurveTo(x + step * 0.3, h * 0.55, x + step * 0.42, h * 0.25);
+    ctx.closePath();
+    ctx.strokeStyle = ink;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.clip();
+    ctx.fillStyle = 'rgba(60,60,58,0.45)';
+    const r = rng(300 + i);
+    for (let k = 0; k < 160; k++)
+      ctx.fillRect(x - step / 2 + r() * step, h * 0.25 + r() * h * 0.4, 2, 2);
+    ctx.restore();
+    // Rombo repujado entre arcos
+    const dx = x + step / 2;
+    ctx.beginPath();
+    ctx.moveTo(dx, h * 0.42);
+    ctx.lineTo(dx + step * 0.18, h * 0.66);
+    ctx.lineTo(dx, h * 0.9);
+    ctx.lineTo(dx - step * 0.18, h * 0.66);
+    ctx.closePath();
+    ctx.strokeStyle = ink;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    ctx.save();
+    ctx.clip();
+    ctx.fillStyle = 'rgba(60,60,58,0.5)';
+    const r2 = rng(400 + i);
+    for (let k = 0; k < 90; k++)
+      ctx.fillRect(dx - step * 0.18 + r2() * step * 0.36, h * 0.42 + r2() * h * 0.48, 2, 2);
+    ctx.restore();
+  }
+  // Banda superior pulida con un filete
+  ctx.fillStyle = ink;
+  ctx.fillRect(0, h * 0.22, w, 2);
+}
+
+/**
+ * Mu negro: madera rojiza, borde negro grueso con chorreados redondeados y
+ * cuatro lunares pintados en cada panel (no lleva franjas ni tachas).
+ */
+function muNegro(ctx: CanvasRenderingContext2D, w: number, h: number, paint: string) {
+  ctx.fillStyle = '#c4703e';
+  ctx.fillRect(0, 0, w, h);
+  grain(ctx, w, h, '#8a4320', 33, 60, true);
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, 'rgba(255,180,130,0.08)');
+  g.addColorStop(1, 'rgba(80,30,10,0.18)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = paint;
+  const r = rng(34);
+  ctx.fillRect(0, 0, w, h * 0.09);
+  // Chorreados: lenguas anchas con la punta redonda
+  const drips = [0.02, 0.13, 0.29, 0.4, 0.55, 0.68, 0.84, 0.95];
+  for (const u of drips) {
+    const cx = u * w;
+    const half = w * (0.022 + r() * 0.014);
+    const len = h * (0.2 + r() * 0.17);
+    ctx.beginPath();
+    ctx.moveTo(cx - half, 0);
+    ctx.lineTo(cx - half, len - half);
+    ctx.arc(cx, len - half, half, Math.PI, 0, true);
+    ctx.lineTo(cx + half, 0);
+    ctx.fill();
+  }
+  // Lunares: uno arriba, dos al medio y uno abajo, en cada panel
+  for (const u of [1 / 6, 1 / 2, 5 / 6]) {
+    for (const [du, dv] of [
+      [0.012, 0.36],
+      [-0.02, 0.5],
+      [0.026, 0.53],
+      [0.0, 0.7],
+    ]) {
+      ctx.beginPath();
+      ctx.arc((u + du) * w, h * dv, 7.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+
+/** Cordón retorcido (vetas en diagonal que se repiten). */
+function ropeTexture() {
+  const tex = canvasTexture(256, 32, (ctx, w, h) => {
+    ctx.fillStyle = '#e9e5da';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(60,55,40,0.6)';
+    ctx.lineWidth = 3;
+    for (let x = -h; x < w + h; x += 10) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x + h, h);
+      ctx.stroke();
+    }
+  });
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.repeat.set(24, 1);
+  return tex;
+}
+
+/**
+ * Virola volcada (plato). El lathe va del cuello de la boca (v=0, abajo del
+ * canvas) al borde exterior (v=1, arriba): abajo una guarda de espirales y en el
+ * plato flores en abanico repujadas.
+ */
+function volcadaVirola(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, '#f3f2ee');
+  g.addColorStop(0.5, '#dcdbd6');
+  g.addColorStop(0.82, '#f1f0ec');
+  g.addColorStop(1, '#c9c4b2');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+  const ink = 'rgba(55,52,40,0.55)';
+  // Guarda de espirales en el cuello
+  const y0 = h * (5 / 6);
+  ctx.fillStyle = '#cfc8ad';
+  ctx.fillRect(0, y0, w, h - y0);
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = 2;
+  const cy = y0 + (h - y0) / 2;
+  for (let x = 10; x < w; x += 26) {
+    ctx.beginPath();
+    for (let k = 0; k <= 20; k++) {
+      const a = (k / 20) * Math.PI * 3;
+      const r = 1 + (k / 20) * 9;
+      const px = x + Math.cos(a) * r;
+      const py = cy + Math.sin(a) * r * 0.8;
+      if (k) ctx.lineTo(px, py);
+      else ctx.moveTo(px, py);
+    }
+    ctx.stroke();
+  }
+  ctx.fillStyle = ink;
+  ctx.fillRect(0, y0, w, 2);
+  // Flores en abanico repujadas, apuntando hacia el borde
+  const n = 9;
+  const step = w / n;
+  ctx.lineWidth = 2;
+  for (let i = 0; i < n; i++) {
+    const x = i * step + step / 2;
+    const base = h * 0.7;
+    // Contorno en arco apuntado
+    ctx.beginPath();
+    ctx.moveTo(x - step * 0.42, base);
+    ctx.quadraticCurveTo(x - step * 0.4, h * 0.2, x, h * 0.1);
+    ctx.quadraticCurveTo(x + step * 0.4, h * 0.2, x + step * 0.42, base);
+    ctx.stroke();
+    // Pétalos en abanico
+    for (let k = -3; k <= 3; k++) {
+      const a = -Math.PI / 2 + k * 0.32;
+      ctx.beginPath();
+      ctx.moveTo(x, base - 6);
+      ctx.quadraticCurveTo(
+        x + Math.cos(a) * step * 0.18 + k * 3,
+        base + Math.sin(a) * h * 0.25,
+        x + Math.cos(a) * step * 0.3,
+        base + Math.sin(a) * h * 0.42
+      );
+      ctx.stroke();
+    }
+    // Centro punteado
+    ctx.fillStyle = ink;
+    const r = rng(500 + i);
+    for (let k = 0; k < 40; k++) {
+      ctx.fillRect(x - 12 + r() * 24, base - 22 + r() * 18, 2, 2);
+    }
+    // Hojitas entre flores
+    ctx.beginPath();
+    ctx.ellipse(x + step / 2, h * 0.5, 4, 14, 0.3, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+}
+
+function imperialVirola(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, '#f7f7f5');
+  g.addColorStop(0.35, '#cfd0ce');
+  g.addColorStop(0.66, '#f2f2f0');
+  g.addColorStop(1, '#c9c7c0');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+  const y0 = h * 0.667;
+  const bh = h - y0;
+  ctx.fillStyle = '#dcdad3';
+  ctx.fillRect(0, y0, w, bh);
+  const ink = 'rgba(50,50,48,0.5)';
+  ctx.strokeStyle = ink;
+  ctx.fillStyle = ink;
+  ctx.lineWidth = 1.6;
+  for (const y of [y0 + bh * 0.08, y0 + bh * 0.92]) ctx.fillRect(0, y - 1, w, 2);
+  const cy = y0 + bh * 0.5;
+  for (let x = 46; x < w + 46; x += 92) {
+    // Medallón ovalado con rombo al centro
+    ctx.beginPath();
+    ctx.ellipse(x, cy, 20, bh * 0.3, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(x, cy, 15, bh * 0.21, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x, cy - bh * 0.15);
+    ctx.lineTo(x + 7, cy);
+    ctx.lineTo(x, cy + bh * 0.15);
+    ctx.lineTo(x - 7, cy);
+    ctx.closePath();
+    ctx.stroke();
+    // Volutas tipo paisley entre medallones
+    for (const dir of [-1, 1]) {
+      const sx = x + dir * 46;
+      ctx.beginPath();
+      ctx.moveTo(sx - dir * 18, cy + bh * 0.2);
+      ctx.bezierCurveTo(sx - dir * 10, cy - bh * 0.35, sx + dir * 10, cy - bh * 0.1, sx, cy);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(sx, cy, 4, 0, Math.PI * 2);
+      ctx.stroke();
+      for (let k = 0; k < 4; k++) {
+        ctx.beginPath();
+        ctx.ellipse(
+          sx - dir * (10 + k * 4),
+          cy + bh * (0.05 + k * 0.04),
+          3,
+          1.5,
+          dir * 0.6,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+    }
+  }
+}
+
 const MATES: Record<MateStyle, MateDef> = {
   mu: {
+    // Forma de ubre: 3 lóbulos, punta redondeada abajo y boca ondulada
     height: 0.13,
-    radius: (t) => {
-      const k = Math.min(t / 0.88, 1);
-      return (
-        0.02 +
-        0.037 * Math.pow(Math.sin((k * Math.PI) / 2), 0.75) -
-        (t > 0.88 ? (t - 0.88) * 0.05 : 0)
-      );
-    },
-    bodyRough: 0.6,
-    inner: '#b9824c',
-    lip: '#f4f1ea',
-    body: (ctx, w, h) => {
-      ctx.fillStyle = '#c38d55';
+    radius: (t) =>
+      0.012 +
+      0.046 * Math.pow(Math.sin(Math.min(t / 0.85, 1) * (Math.PI / 2)), 0.9) -
+      (t > 0.85 ? (t - 0.85) * 0.04 : 0),
+    bodyRough: 0.55,
+    inner: '#c08550',
+    lobes: { n: 3, amp: 0.07, rimWave: 0.005 },
+    innerPaint: true,
+    colors: [
+      { id: 'blanco', paint: '#f4f2ec' },
+      { id: 'negro', paint: '#1b1a1a' },
+    ],
+    body: (ctx, w, h, c) => {
+      if (c.id === 'negro') return muNegro(ctx, w, h, c.paint ?? '#1b1a1a');
+      const paint = c.paint ?? '#f4f2ec';
+      ctx.fillStyle = '#b97c45';
       ctx.fillRect(0, 0, w, h);
-      grain(ctx, w, h, '#7a4a22', 31, 60, true);
-      // Manchas de vaca y pintura que chorrea desde la boca
-      ctx.fillStyle = '#f4f1ea';
+      grain(ctx, w, h, '#86522a', 31, 70, true);
       const r = rng(32);
-      ctx.fillRect(0, 0, w, h * 0.05);
-      for (let i = 0; i < 9; i++) {
-        const x = r() * w;
-        const dw = 30 + r() * 60;
-        const dh = h * (0.08 + r() * 0.35);
+      ctx.fillStyle = paint;
+      // Borde pintado (arriba del canvas = boca), con borde inferior irregular
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      for (let x = 0; x <= w; x += 16) ctx.lineTo(x, h * (0.06 + r() * 0.025));
+      ctx.lineTo(w, 0);
+      ctx.fill();
+      // Franjas que bajan por las 3 aristas (u = 0, 1/3, 2/3) con chorreados
+      for (const u of [0, 1 / 3, 2 / 3, 1]) {
+        const cx = u * w;
+        const half = w * 0.022;
         ctx.beginPath();
-        ctx.moveTo(x - dw / 2, 0);
-        ctx.lineTo(x + dw / 2, 0);
-        ctx.quadraticCurveTo(x + dw * 0.4, dh * 0.8, x, dh);
-        ctx.quadraticCurveTo(x - dw * 0.4, dh * 0.8, x - dw / 2, 0);
+        ctx.moveTo(cx - half, 0);
+        for (let y = 0; y <= h * 0.8; y += 12)
+          ctx.lineTo(cx - half - Math.sin(y * 0.05 + u * 9) * 4 - r() * 3, y);
+        for (let y = h * 0.8; y >= 0; y -= 12)
+          ctx.lineTo(cx + half + Math.sin(y * 0.045 + u * 7) * 4 + r() * 3, y);
         ctx.fill();
-      }
-      for (let i = 0; i < 6; i++) {
-        ctx.beginPath();
-        const x = r() * w;
-        const y = h * (0.45 + r() * 0.45);
-        for (let k = 0; k < 6; k++) {
-          ctx.ellipse(
-            x + (r() - 0.5) * 60,
-            y + (r() - 0.5) * 60,
-            20 + r() * 35,
-            15 + r() * 30,
-            r() * 3,
-            0,
-            Math.PI * 2
-          );
+        // Chorreados hacia los costados
+        for (let k = 0; k < 3; k++) {
+          const dir = r() > 0.5 ? 1 : -1;
+          const y = h * (0.15 + r() * 0.5);
+          const len = 14 + r() * 30;
+          ctx.beginPath();
+          ctx.ellipse(cx + dir * (half + len / 2), y, len / 2, 5 + r() * 4, 0, 0, Math.PI * 2);
+          ctx.fill();
         }
-        ctx.fill();
       }
-      // Puntitos de pirograbado
-      ctx.fillStyle = '#8a8f96';
-      for (let i = 0; i < 26; i++) {
-        ctx.beginPath();
-        ctx.arc(r() * w, h * (0.15 + r() * 0.5), 3, 0, Math.PI * 2);
-        ctx.fill();
+      // Punta de abajo pintada entera, con borde de pinceladas
+      ctx.beginPath();
+      ctx.moveTo(0, h);
+      for (let x = 0; x <= w; x += 14) {
+        const near = Math.min(...[0, 1 / 3, 2 / 3, 1].map((u) => Math.abs(x / w - u)));
+        ctx.lineTo(x, h * (0.66 + near * 0.3 + r() * 0.04));
+      }
+      ctx.lineTo(w, h);
+      ctx.fill();
+      // Tachitas de alpaca: dos columnas de 4 en cada panel de madera
+      for (const u of [1 / 6, 1 / 2, 5 / 6]) {
+        for (const off of [-0.028, 0.028]) {
+          for (let k = 0; k < 4; k++) {
+            const x = (u + off) * w;
+            const y = h * (0.26 + k * 0.09 + (off > 0 ? 0.045 : 0));
+            const g = ctx.createRadialGradient(x - 2, y - 2, 1, x, y, 6);
+            g.addColorStop(0, '#ffffff');
+            g.addColorStop(0.5, '#b9bcc0');
+            g.addColorStop(1, '#6d7074');
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.arc(x, y, 5.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
       }
     },
   },
@@ -1338,80 +1665,86 @@ const MATES: Record<MateStyle, MateDef> = {
   },
 
   camionero: {
-    height: 0.1,
-    radius: (t) => 0.032 + 0.022 * Math.pow(t, 0.8),
-    bodyRough: 0.7,
-    inner: '#a8743f',
-    body: (ctx, w, h) => leather(ctx, w, h, '#1d1b1a', 71),
+    // Cuero que se angosta hacia abajo, patas de cuero y virola volcada en plato
+    height: 0.108,
+    radius: (t) => 0.022 + 0.031 * Math.pow(t, 0.7),
+    bodyRough: 0.6,
+    inner: '#cdb08a',
+    legs: true,
+    colors: [LEATHER.negro, LEATHER.chocolate],
+    body: (ctx, w, h, c) => leather(ctx, w, h, c.leather ?? '#1d1b1a', 71),
     virola: {
-      // Virola "volcada": ala ancha y doblada hacia afuera
+      // Cuello en la boca (guarda de espirales) y ala abierta como un plato
       points: [
-        [0.0535, 0.088],
-        [0.0565, 0.1],
-        [0.06, 0.106],
-        [0.072, 0.11],
-        [0.08, 0.112],
-        [0.082, 0.108],
-        [0.078, 0.106],
-        [0.066, 0.104],
-        [0.056, 0.1],
-        [0.052, 0.098],
+        [0.0335, 0.094],
+        [0.0335, 0.104],
+        [0.036, 0.1065],
+        [0.048, 0.1105],
+        [0.06, 0.1165],
+        [0.0695, 0.122],
+        [0.0735, 0.1245],
       ],
-      draw: (ctx, w, h) => chisel(ctx, w, h),
+      tint: '#f7f0da',
+      rope: { r: 0.0735, y: 0.1245 },
+      draw: (ctx, w, h) => volcadaVirola(ctx, w, h),
     },
   },
   torpedoCriollo: {
-    height: 0.135,
+    // Calabaza con forma de huevo, funda recta de cuero crudo y virola abombada
+    height: 0.1,
     radius: (t) =>
-      0.04 +
-      0.006 * Math.sin(Math.min(t / 0.55, 1) * (Math.PI / 2)) -
-      (t > 0.6 ? (t - 0.6) * 0.012 : 0),
-    bodyRough: 0.55,
-    inner: '#b08048',
-    body: (ctx, w, h) => gourd(ctx, w, h, '#b57a42', '#6a4020', 151),
+      0.03 +
+      0.022 * Math.sin(Math.min(t / 0.45, 1) * (Math.PI / 2)) -
+      (t > 0.6 ? (t - 0.6) * 0.008 : 0),
+    bodyRough: 0.45,
+    inner: '#cdb48c',
+    body: (ctx, w, h) => gourd(ctx, w, h, '#c98a45', '#8a5525', 151),
     band: {
-      to: 0.42,
+      to: 0.55,
+      straight: 0.0525,
+      braid: true,
       draw: (ctx, w, h) => {
-        leather(ctx, w, h, '#c99c6a', 152);
-        // Trenzado de tiento blanco arriba y abajo
-        ctx.strokeStyle = '#f4efe4';
-        ctx.lineWidth = 5;
-        for (const y of [h * 0.1, h * 0.9]) {
-          for (let x = 0; x < w; x += 22) {
-            ctx.beginPath();
-            ctx.moveTo(x, y - 12);
-            ctx.lineTo(x + 16, y + 12);
-            ctx.moveTo(x + 16, y - 12);
-            ctx.lineTo(x, y + 12);
-            ctx.stroke();
-          }
+        // Cuero crudo con vetas verticales
+        ctx.fillStyle = '#b98a58';
+        ctx.fillRect(0, 0, w, h);
+        const r = rng(152);
+        for (let i = 0; i < 260; i++) {
+          ctx.fillStyle = r() > 0.5 ? 'rgba(255,255,255,0.12)' : 'rgba(110,75,40,0.12)';
+          ctx.fillRect(r() * w, 0, 1 + r() * 2, h);
+        }
+        noise(ctx, w, h, 153, 0.05);
+        // Costura lateral con tiento cruzado en X
+        const x = w * 0.12;
+        ctx.strokeStyle = '#efe9dd';
+        ctx.lineWidth = 7;
+        for (let y = h * 0.08; y < h * 0.92; y += 30) {
+          ctx.beginPath();
+          ctx.moveTo(x - 14, y);
+          ctx.lineTo(x + 14, y + 24);
+          ctx.moveTo(x + 14, y);
+          ctx.lineTo(x - 14, y + 24);
+          ctx.stroke();
+        }
+        // Agujeritos de la trenza en el borde de arriba
+        ctx.fillStyle = 'rgba(90,60,30,0.6)';
+        for (let xx = 8; xx < w; xx += 20) {
+          ctx.beginPath();
+          ctx.arc(xx, h * 0.1, 3, 0, Math.PI * 2);
+          ctx.fill();
         }
       },
     },
     virola: {
       points: [
-        [0.0458, 0.098],
-        [0.0468, 0.105],
-        [0.0475, 0.125],
-        [0.0455, 0.135],
-        [0.041, 0.137],
-        [0.0395, 0.134],
+        [0.0505, 0.094],
+        [0.0515, 0.102],
+        [0.0505, 0.113],
+        [0.0468, 0.122],
+        [0.042, 0.1285],
+        [0.0392, 0.131],
+        [0.0372, 0.13],
       ],
-      draw: (ctx, w, h) => {
-        chisel(ctx, w, h);
-        // Rombos repujados
-        ctx.strokeStyle = 'rgba(55,55,55,0.4)';
-        ctx.lineWidth = 2;
-        for (let x = 32; x < w; x += 64) {
-          ctx.beginPath();
-          ctx.moveTo(x, h * 0.25);
-          ctx.lineTo(x + 18, h * 0.5);
-          ctx.lineTo(x, h * 0.75);
-          ctx.lineTo(x - 18, h * 0.5);
-          ctx.closePath();
-          ctx.stroke();
-        }
-      },
+      draw: (ctx, w, h) => torpedoVirola(ctx, w, h),
     },
   },
 
@@ -1420,9 +1753,10 @@ const MATES: Record<MateStyle, MateDef> = {
     radius: (t) => 0.034 + 0.022 * Math.sin(Math.min(t / 0.7, 1) * (Math.PI / 2)),
     bodyRough: 0.6,
     inner: '#a8743f',
-    feet: '#2b2321',
-    body: (ctx, w, h) => {
-      leather(ctx, w, h, '#2b2321', 161);
+    feet: true,
+    colors: [LEATHER.negro, LEATHER.chocolate],
+    body: (ctx, w, h, c) => {
+      leather(ctx, w, h, c.leather ?? '#2b2321', 161);
       // Costuras verticales del cuero
       ctx.strokeStyle = 'rgba(200,190,175,0.7)';
       ctx.lineWidth = 3;
@@ -1453,6 +1787,45 @@ const MATES: Record<MateStyle, MateDef> = {
       },
     },
   },
+  imperial: {
+    height: 0.095,
+    radius: (t) =>
+      0.018 +
+      0.04 * Math.sin(Math.min(t / 0.55, 1) * (Math.PI / 2)) -
+      (t > 0.55 ? (t - 0.55) * 0.018 : 0),
+    bodyRough: 0.5,
+    inner: '#d9c4a0',
+    legs: true,
+    colors: [LEATHER.negro, LEATHER.chocolate],
+    body: (ctx, w, h, c) => {
+      leather(ctx, w, h, c.leather ?? '#1f1d1c', 181);
+      // Arrugas y brillos del cuero moldeado
+      const r = rng(182);
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 40; i++) {
+        ctx.strokeStyle = r() > 0.5 ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.18)';
+        const x = r() * w;
+        const y = r() * h;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.quadraticCurveTo(x + 20, y + (r() - 0.5) * 30, x + 30 + r() * 40, y + (r() - 0.5) * 20);
+        ctx.stroke();
+      }
+    },
+    virola: {
+      // Banda cincelada ancha + borde superior plano y pulido
+      points: [
+        [0.0548, 0.074],
+        [0.0522, 0.092],
+        [0.051, 0.111],
+        [0.0522, 0.113],
+        [0.0522, 0.119],
+        [0.036, 0.1205],
+        [0.0352, 0.116],
+      ],
+      draw: (ctx, w, h) => imperialVirola(ctx, w, h),
+    },
+  },
 };
 
 export function buildMateModel(style: MateStyle) {
@@ -1465,27 +1838,99 @@ export function buildMateModel(style: MateStyle) {
     const t = i / N;
     profile.push(new THREE.Vector2(def.radius(t), t * H));
   }
+  let color: MateColor = def.colors?.[0] ?? { id: 'default' };
 
-  const bodyMat = std('#ffffff', {
-    map: canvasTexture(1024, 512, def.body),
-    roughness: def.bodyRough,
-  });
-  g.add(new THREE.Mesh(new THREE.LatheGeometry(profile, 64), bodyMat));
+  const bodyTexture = () => canvasTexture(1024, 512, (ctx, w, h) => def.body(ctx, w, h, color));
+  const bodyMat = std('#ffffff', { map: bodyTexture(), roughness: def.bodyRough });
+  /** Sección con lóbulos y boca ondulada (solo si el mate los define). */
+  const shapeLobes = (geo: THREE.BufferGeometry) => {
+    if (!def.lobes) return geo;
+    const { n, amp, rimWave } = def.lobes;
+    const p = geo.attributes.position as THREE.BufferAttribute;
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i);
+      const z = p.getZ(i);
+      const y = p.getY(i);
+      const phi = Math.atan2(x, z);
+      const k = 1 + amp * Math.cos(n * phi);
+      p.setXYZ(
+        i,
+        x * k,
+        y + (y > H * 0.88 ? rimWave * Math.cos(n * phi) * ((y - H * 0.88) / (H * 0.12)) : 0),
+        z * k
+      );
+    }
+    geo.computeVertexNormals();
+    return geo;
+  };
+  g.add(new THREE.Mesh(shapeLobes(new THREE.LatheGeometry(profile, 96)), bodyMat));
 
   // Interior de calabaza/madera (se ve por la boca)
   const innerProfile = profile
     .slice(1)
     .map((p) => new THREE.Vector2(p.x * 0.9, Math.max(p.y, H * 0.05)));
-  g.add(
-    new THREE.Mesh(
-      new THREE.LatheGeometry(innerProfile, 48),
-      std(def.inner, { roughness: 0.9, side: THREE.BackSide })
-    )
+  const innerTexture = () =>
+    canvasTexture(256, 256, (ctx, w, h) => {
+      ctx.fillStyle = def.inner;
+      ctx.fillRect(0, 0, w, h);
+      grain(ctx, w, h, 'rgba(90,50,20,0.6)', 41, 25, true);
+      if (def.innerPaint) {
+        ctx.fillStyle = color.paint ?? '#f4f2ec';
+        ctx.fillRect(0, 0, w, h * 0.12);
+      }
+    });
+  const innerMat = std('#ffffff', { map: innerTexture(), roughness: 0.9, side: THREE.BackSide });
+  g.add(new THREE.Mesh(shapeLobes(new THREE.LatheGeometry(innerProfile, 96)), innerMat));
+  // Canto de la boca (une la pared de afuera con la de adentro)
+  let rimMat: THREE.MeshStandardMaterial | null = null;
+  if (def.lobes) {
+    rimMat = std(color.paint ?? '#f4f2ec', { roughness: 0.6, side: THREE.DoubleSide });
+    const rTop = def.radius(1);
+    g.add(
+      new THREE.Mesh(
+        shapeLobes(
+          new THREE.LatheGeometry(
+            [new THREE.Vector2(rTop * 0.9, H), new THREE.Vector2(rTop, H)],
+            96
+          )
+        ),
+        rimMat
+      )
+    );
+  }
+  // Tapa interior (fondo de la calabaza) para que no se vea hueco desde arriba
+  const floor = new THREE.Mesh(
+    new THREE.CircleGeometry(def.radius(0.05) * 0.9, 32).rotateX(-Math.PI / 2),
+    std(def.inner, { roughness: 0.95 })
   );
+  floor.position.y = H * 0.05;
+  g.add(floor);
 
   if (def.band) {
     const n = Math.round(N * def.band.to);
-    const bandProfile = profile.slice(1, n + 2).map((p) => new THREE.Vector2(p.x + 0.0022, p.y));
+    const bandTop = def.band.to * H;
+    const bandProfile = def.band.straight
+      ? [
+          new THREE.Vector2(def.band.straight - 0.004, 0.0004),
+          new THREE.Vector2(def.band.straight, 0.0004),
+          new THREE.Vector2(def.band.straight, bandTop),
+          new THREE.Vector2(def.band.straight - 0.0025, bandTop),
+        ]
+      : profile.slice(1, n + 2).map((p) => new THREE.Vector2(p.x + 0.0022, p.y));
+    if (def.band.braid) {
+      const braid = new THREE.Mesh(
+        new THREE.TorusGeometry(
+          (def.band.straight ?? def.radius(def.band.to)) + 0.0004,
+          0.0024,
+          10,
+          96
+        ),
+        std('#ffffff', { map: braidTexture(), roughness: 0.85 })
+      );
+      braid.rotation.x = Math.PI / 2;
+      braid.position.y = bandTop;
+      g.add(braid);
+    }
     g.add(
       new THREE.Mesh(
         new THREE.LatheGeometry(bandProfile, 64),
@@ -1500,37 +1945,123 @@ export function buildMateModel(style: MateStyle) {
     g.add(
       new THREE.Mesh(
         new THREE.LatheGeometry(pts, 64),
-        std('#ffffff', {
-          map: canvasTexture(1024, 128, def.virola.draw),
+        std(def.virola.tint ?? '#ffffff', {
+          map: canvasTexture(1024, 256, def.virola.draw),
           metalness: 0.95,
-          roughness: 0.28,
+          roughness: 0.22,
           side: THREE.DoubleSide,
         })
       )
     );
+    if (def.virola.rope) {
+      const rope = new THREE.Mesh(
+        new THREE.TorusGeometry(def.virola.rope.r, 0.0017, 10, 128),
+        std(def.virola.tint ?? '#ffffff', { map: ropeTexture(), metalness: 1, roughness: 0.25 })
+      );
+      rope.rotation.x = Math.PI / 2;
+      rope.position.y = def.virola.rope.y;
+      g.add(rope);
+    }
     top = Math.max(H, ...def.virola.points.map((p) => p[1]));
-  } else if (def.lip) {
+  }
+  let lipMat: THREE.MeshStandardMaterial | null = null;
+  if (!def.virola && def.lip) {
+    lipMat = std(color.paint ?? def.lip, { roughness: 0.6 });
     const lip = new THREE.Mesh(
       new THREE.TorusGeometry(def.radius(1) * 0.95, 0.0025, 8, 64),
-      std(def.lip, { roughness: 0.6 })
+      lipMat
     );
     lip.rotation.x = Math.PI / 2;
     lip.position.y = H;
     g.add(lip);
   }
 
+  // Materiales de cuero que cambian con el color elegido
+  const leatherMat = std(color.leather ?? '#2b2321', { roughness: 0.6 });
+  const threadMat = std(color.thread ?? '#6e6157', { roughness: 0.8 });
+
   if (def.feet) {
-    const footMat = std(def.feet, { roughness: 0.6 });
     for (let k = 0; k < 3; k++) {
       const a = (k / 3) * Math.PI * 2 + Math.PI / 6;
-      const foot = new THREE.Mesh(new THREE.SphereGeometry(0.012, 14, 10), footMat);
+      const foot = new THREE.Mesh(new THREE.SphereGeometry(0.012, 14, 10), leatherMat);
       foot.scale.set(1.1, 0.7, 1.1);
       foot.position.set(Math.sin(a) * 0.03, 0.007, Math.cos(a) * 0.03);
       g.add(foot);
     }
   }
 
-  return { group: g, profile, top };
+  if (def.legs) {
+    // 4 patas de cuero: aletas que bajan desde la costura y apoyan en la mesa
+    const shape = new THREE.Shape();
+    shape.moveTo(0, 0);
+    shape.lineTo(0.054, 0);
+    shape.lineTo(0.057, 0.004);
+    shape.quadraticCurveTo(0.05, 0.012, 0.043, 0.018);
+    shape.quadraticCurveTo(0.044, 0.032, def.radius(0.42) - 0.002, 0.04);
+    shape.lineTo(0, 0.04);
+    shape.closePath();
+    const finGeo = new THREE.ExtrudeGeometry(shape, {
+      depth: 0.0045,
+      bevelEnabled: true,
+      bevelThickness: 0.0008,
+      bevelSize: 0.0008,
+      bevelSegments: 2,
+    }).translate(0, 0, -0.00225);
+    for (let k = 0; k < 4; k++) {
+      const a = Math.PI / 4 + (k * Math.PI) / 2;
+      const leg = new THREE.Group();
+      leg.rotation.y = a - Math.PI / 2;
+      leg.add(new THREE.Mesh(finGeo, leatherMat));
+      // Puntadas a lo largo del borde de la pata
+      for (let i = 0; i < 7; i++) {
+        const t = i / 6;
+        const st = new THREE.Mesh(new THREE.BoxGeometry(0.0035, 0.0012, 0.0062), threadMat);
+        st.position.set(0.012 + t * 0.034, 0.006 + Math.sin(t * Math.PI) * 0.006, 0);
+        leg.add(st);
+      }
+      // Costura vertical que sube por el cuerpo hasta la virola
+      const pts: THREE.Vector3[] = [];
+      for (let i = 0; i <= 12; i++) {
+        const y = 0.04 + (i / 12) * 0.036;
+        const r = def.radius(y / H) + 0.0006;
+        pts.push(new THREE.Vector3(r, y, 0));
+      }
+      const curve = new THREE.CatmullRomCurve3(pts);
+      leg.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 24, 0.0016, 8), leatherMat));
+      for (let i = 0; i < 6; i++) {
+        const p = curve.getPoint(i / 5);
+        for (const z of [-0.0028, 0.0028]) {
+          const st = new THREE.Mesh(new THREE.SphereGeometry(0.0009, 6, 4), threadMat);
+          st.position.set(p.x + 0.0004, p.y, z);
+          leg.add(st);
+        }
+      }
+      g.add(leg);
+    }
+  }
+
+  /** Cambia el color del cuero o de la pintura sin reconstruir el mate. */
+  const setColor = (id: string) => {
+    const next = def.colors?.find((c) => c.id === id);
+    if (!next || next.id === color.id) return;
+    color = next;
+    const old = bodyMat.map;
+    bodyMat.map = bodyTexture();
+    bodyMat.needsUpdate = true;
+    old?.dispose();
+    if (def.innerPaint) {
+      const oldInner = innerMat.map;
+      innerMat.map = innerTexture();
+      innerMat.needsUpdate = true;
+      oldInner?.dispose();
+    }
+    if (rimMat && next.paint) rimMat.color.set(next.paint);
+    if (next.leather) leatherMat.color.set(next.leather);
+    if (next.thread) threadMat.color.set(next.thread);
+    if (lipMat && next.paint) lipMat.color.set(next.paint);
+  };
+
+  return { group: g, profile, top, setColor };
 }
 
 // ─── Bombillas ──────────────────────────────────────────────────────────────

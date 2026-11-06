@@ -56,10 +56,13 @@ export type Snapshot = {
   toast: { id: number; text: string; tone: 'info' | 'good' | 'warn' } | null;
   scores: Partial<Record<Step, number>>;
   finalScore: number | null;
+  /** Color elegido por artículo (id de opción → id de color). */
+  colors: Record<string, string>;
 };
 
 export type EngineEvent =
   | { name: 'select'; category: Category; optionId: string }
+  | { name: 'color'; optionId: string; colorId: string }
   | { name: 'prepare_start' }
   | { name: 'step'; step: Step }
   | { name: 'complete'; score: number };
@@ -320,6 +323,8 @@ type Item = {
   ring: THREE.Mesh;
   ringMat: THREE.MeshBasicMaterial;
   mate?: MateParts;
+  /** Cambia el color del modelo (solo artículos con `colors` en el catálogo). */
+  setColor?: (id: string) => void;
   /** Punto local por donde sale la yerba (paquete) o el agua (termo). */
   mouth?: THREE.Vector3;
 };
@@ -363,7 +368,7 @@ function radiusAt(profile: THREE.Vector2[], y: number) {
 }
 
 function buildMate(shape: MateShape) {
-  const { group: g, profile, top } = buildMateModel(shape.style);
+  const { group: g, profile, top, setColor } = buildMateModel(shape.style);
 
   // Superficie de la yerba (un disco que sube con el llenado y se inclina)
   const yerbaMat = std('#ffffff', { color: YERBA_DRY.clone(), roughness: 1 });
@@ -383,7 +388,11 @@ function buildMate(shape: MateShape) {
   g.add(water);
 
   g.add(hitbox(0.075, 0.2));
-  return { group: g, mate: { profile, top, yerbaPivot, yerbaMat, water } satisfies MateParts };
+  return {
+    group: g,
+    setColor,
+    mate: { profile, top, yerbaPivot, yerbaMat, water } satisfies MateParts,
+  };
 }
 
 function buildTermo(shape: TermoShape) {
@@ -436,8 +445,10 @@ export class MateEngine {
     toast: null,
     scores: {},
     finalScore: null,
+    colors: {},
   };
   private toastSeq = 0;
+  private advanceTimer = 0;
   private yerbaFill = 0;
   private slope = 0;
   private wet = 0;
@@ -764,7 +775,12 @@ export class MateEngine {
       const fwd = new THREE.Vector3(-Math.sin(zone.angle), 0, -Math.cos(zone.angle));
       const opts = OPTIONS.filter((o) => o.category === cat);
       opts.forEach((opt, i) => {
-        let built: { group: THREE.Group; mouth?: THREE.Vector3; mate?: MateParts };
+        let built: {
+          group: THREE.Group;
+          mouth?: THREE.Vector3;
+          mate?: MateParts;
+          setColor?: (id: string) => void;
+        };
         const sh = opt.shape;
         if (sh.kind === 'yerba') {
           const pack = buildYerbaPack(sh.brand);
@@ -842,6 +858,7 @@ export class MateEngine {
           ringMat,
           mate: built.mate,
           mouth: built.mouth,
+          setColor: built.setColor,
         });
       });
     }
@@ -872,6 +889,18 @@ export class MateEngine {
     this.dirty = true;
   }
 
+  setColor(optionId: string, colorId: string) {
+    const item = this.items.find((i) => i.opt.id === optionId);
+    if (!item?.setColor || !item.opt.colors?.some((c) => c.id === colorId)) return;
+    item.setColor(colorId);
+    this.s.colors = { ...this.s.colors, [optionId]: colorId };
+    if (this.s.selection[item.opt.category] === optionId) {
+      this.scheduleAdvance(item.opt.category, 2600);
+    }
+    this.cb.onEvent?.({ name: 'color', optionId, colorId });
+    this.dirty = true;
+  }
+
   select(optionId: string) {
     const item = this.items.find((i) => i.opt.id === optionId);
     if (!item || this.s.phase !== 'choose') return;
@@ -879,13 +908,21 @@ export class MateEngine {
     this.s.selection = { ...this.s.selection, [cat]: optionId };
     this.toast(`Elegiste: ${item.opt.name}`, 'good');
     this.cb.onEvent?.({ name: 'select', category: cat, optionId });
-    // Volver a la vista general después de un ratito, o ir a la próxima categoría
-    window.setTimeout(() => {
+    this.scheduleAdvance(cat, item.opt.colors ? 2600 : 900);
+    this.dirty = true;
+  }
+
+  /**
+   * Después de elegir, pasa a la próxima categoría. Si el artículo tiene colores
+   * espera más (y cada cambio de color reinicia la espera) para poder probarlos.
+   */
+  private scheduleAdvance(cat: Category, delay: number) {
+    window.clearTimeout(this.advanceTimer);
+    this.advanceTimer = window.setTimeout(() => {
       if (this.disposed || this.s.phase !== 'choose' || this.s.focus !== cat) return;
       const next = CATEGORY_ORDER.find((c) => !this.s.selection[c]);
       this.focus(next ?? null);
-    }, 900);
-    this.dirty = true;
+    }, delay);
   }
 
   get isComplete() {
@@ -1000,6 +1037,7 @@ export class MateEngine {
 
   dispose() {
     this.disposed = true;
+    window.clearTimeout(this.advanceTimer);
     cancelAnimationFrame(this.raf);
     this.resizeObs.disconnect();
     const el = this.renderer.domElement;
@@ -1205,6 +1243,7 @@ export class MateEngine {
       ...this.s,
       selection: { ...this.s.selection },
       scores: { ...this.s.scores },
+      colors: { ...this.s.colors },
     });
   }
 

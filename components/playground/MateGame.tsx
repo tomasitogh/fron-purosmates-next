@@ -23,6 +23,7 @@ import {
   CATEGORY_PLURAL,
   POUR_TARGET,
   STEPS,
+  colorLabel,
   getOption,
   optionsFor,
   type Category,
@@ -317,7 +318,9 @@ export default function MateGame() {
           category={snap.focus}
           selectedId={snap.selection[snap.focus]}
           hovered={snap.hovered}
+          colors={snap.colors}
           onSelect={(id) => engine()?.select(id)}
+          onColor={(id, colorId) => engine()?.setColor(id, colorId)}
           onClose={() => engine()?.focus(null)}
         />
       )}
@@ -529,13 +532,17 @@ function FocusPanel({
   category,
   selectedId,
   hovered,
+  colors,
   onSelect,
+  onColor,
   onClose,
 }: {
   category: Category;
   selectedId?: string;
   hovered: string | null;
+  colors: Record<string, string>;
   onSelect: (id: string) => void;
+  onColor: (id: string, colorId: string) => void;
   onClose: () => void;
 }) {
   const many = optionsFor(category).length > 5;
@@ -561,12 +568,11 @@ function FocusPanel({
         >
           {optionsFor(category).map((o) => {
             const sel = o.id === selectedId;
+            const current = colors[o.id] ?? o.colors?.[0]?.id;
             return (
-              <button
+              <div
                 key={o.id}
-                type="button"
-                onClick={() => onSelect(o.id)}
-                className={`w-[78%] shrink-0 snap-start rounded-2xl border-2 p-3 text-left transition sm:w-[38%] ${many ? 'lg:w-[19%]' : 'lg:w-auto'} ${
+                className={`w-[78%] shrink-0 snap-start rounded-2xl border-2 text-left transition sm:w-[38%] ${many ? 'lg:w-[19%]' : 'lg:w-auto'} ${
                   sel
                     ? 'border-[#D4AF37] bg-[#D4AF37]/15'
                     : hovered === o.id
@@ -574,14 +580,50 @@ function FocusPanel({
                       : 'border-transparent bg-white/70 hover:border-[#254642]/30'
                 }`}
               >
-                <span className="flex items-center justify-between gap-2 text-sm font-black text-[#254642]">
-                  {o.name}
-                  {sel && <Check className="h-4 w-4 shrink-0 text-[#b08d25]" />}
-                </span>
-                <span className="mt-0.5 block text-xs leading-snug text-gray-600">
-                  {o.description}
-                </span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => onSelect(o.id)}
+                  className="block w-full p-3 pb-2 text-left"
+                >
+                  <span className="flex items-center justify-between gap-2 text-sm font-black text-[#254642]">
+                    {o.name}
+                    {sel && <Check className="h-4 w-4 shrink-0 text-[#b08d25]" />}
+                  </span>
+                  <span className="mt-0.5 block text-xs leading-snug text-gray-600">
+                    {o.description}
+                  </span>
+                </button>
+                {o.colors && (
+                  <div
+                    className="flex items-center gap-1.5 px-3 pb-3"
+                    role="radiogroup"
+                    aria-label={`Color de ${o.name}`}
+                  >
+                    {o.colors.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={current === c.id}
+                        title={c.label}
+                        onClick={() => {
+                          onColor(o.id, c.id);
+                          onSelect(o.id);
+                        }}
+                        className={`h-6 w-6 rounded-full border-2 shadow-sm transition ${
+                          current === c.id
+                            ? 'scale-110 border-[#D4AF37]'
+                            : 'border-white hover:scale-105'
+                        }`}
+                        style={{ background: c.swatch }}
+                      />
+                    ))}
+                    <span className="ml-1 text-[11px] font-semibold text-gray-600">
+                      {o.colors.find((c) => c.id === current)?.label}
+                    </span>
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
@@ -634,7 +676,15 @@ function DonePanel({
                   <span className="block text-[11px] font-bold text-gray-500 uppercase">
                     {CATEGORY_LABEL[cat]}
                   </span>
-                  <span className="block truncate text-sm font-bold text-[#254642]">{o.name}</span>
+                  <span className="block truncate text-sm font-bold text-[#254642]">
+                    {o.name}
+                    {colorLabel(o, snap.colors[o.id]) && (
+                      <span className="font-semibold text-gray-500">
+                        {' '}
+                        · {colorLabel(o, snap.colors[o.id])}
+                      </span>
+                    )}
+                  </span>
                 </span>
                 {cat !== 'yerba' && (
                   <Link

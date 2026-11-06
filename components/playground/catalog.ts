@@ -48,10 +48,18 @@ export type MateStyle =
   | 'imperialAlgarrobo'
   | 'camionero'
   | 'torpedoCriollo'
-  | 'camioneroClasico';
+  | 'camioneroClasico'
+  | 'imperial';
 export type MateShape = { kind: 'mate'; style: MateStyle };
 export type TermoStyle = 'pico' | 'lumilagro' | 'stanley';
 export type TermoShape = { kind: 'termo'; style: TermoStyle };
+
+/** Colores que se pueden elegir para un artículo (las ids las usa `models.ts`). */
+export type ColorOption = { id: string; label: string; swatch: string };
+
+const NEGRO: ColorOption = { id: 'negro', label: 'Negro', swatch: '#1f1d1c' };
+const CHOCOLATE: ColorOption = { id: 'chocolate', label: 'Chocolate', swatch: '#4a2a19' };
+const BLANCO: ColorOption = { id: 'blanco', label: 'Blanco', swatch: '#f4f1ea' };
 
 export type Option = {
   id: string;
@@ -59,6 +67,8 @@ export type Option = {
   name: string;
   description: string;
   shopHref: string;
+  /** Variantes de color; la primera es la de entrada. */
+  colors?: ColorOption[];
   shape: YerbaShape | BombillaShape | MateShape | TermoShape;
 };
 
@@ -205,6 +215,7 @@ export const OPTIONS: Option[] = [
     name: 'Mate Mu',
     description: 'Madera torneada y pintada a mano con manchas de vaca.',
     shopHref: '/shop?category=mate',
+    colors: [BLANCO, NEGRO],
     shape: { kind: 'mate', style: 'mu' },
   },
   {
@@ -237,6 +248,7 @@ export const OPTIONS: Option[] = [
     name: 'Camionero virola volcada',
     description: 'Cuero negro y virola de alpaca cincelada, bien ancha.',
     shopHref: '/shop?category=mate',
+    colors: [NEGRO, CHOCOLATE],
     shape: { kind: 'mate', style: 'camionero' },
   },
 
@@ -244,7 +256,7 @@ export const OPTIONS: Option[] = [
     id: 'mate-torpedo-criollo',
     category: 'mate',
     name: 'Torpedo Criollo',
-    description: 'Calabaza torpedo, cuero crudo trenzado y virola de alpaca repujada.',
+    description: 'Calabaza, funda de cuero crudo con trenza y virola de alpaca repujada.',
     shopHref: '/shop?category=mate',
     shape: { kind: 'mate', style: 'torpedoCriollo' },
   },
@@ -254,7 +266,18 @@ export const OPTIONS: Option[] = [
     name: 'Camionero',
     description: 'El clásico de cuero con patitas y virola lisa bien ancha.',
     shopHref: '/shop?category=mate',
+    colors: [NEGRO, CHOCOLATE],
     shape: { kind: 'mate', style: 'camioneroClasico' },
+  },
+
+  {
+    id: 'mate-imperial',
+    category: 'mate',
+    name: 'Imperial',
+    description: 'Calabaza forrada en cuero con patas cosidas y virola de alpaca cincelada.',
+    shopHref: '/shop?category=mate',
+    colors: [NEGRO, CHOCOLATE],
+    shape: { kind: 'mate', style: 'imperial' },
   },
 
   // ── Termos ────────────────────────────────────────────────────────────────
@@ -283,6 +306,11 @@ export const OPTIONS: Option[] = [
     shape: { kind: 'termo', style: 'stanley' },
   },
 ];
+
+export function colorLabel(opt: Option | undefined, colorId: string | undefined) {
+  if (!opt?.colors?.length) return null;
+  return (opt.colors.find((c) => c.id === colorId) ?? opt.colors[0]).label;
+}
 
 export function getOption(id: string | undefined): Option | undefined {
   return OPTIONS.find((o) => o.id === id);
