@@ -41,6 +41,28 @@ function cleanDescription(text: string, maxLength = 160): string {
   return `${stripped.slice(0, maxLength).replace(/\s+\S*$/, '')}…`;
 }
 
+// Direct lookup by slug (small payload, cached per product); the full list is
+// only a fallback so a slow/failed endpoint doesn't drop the product photo.
+async function getProductForPreview(slug: string): Promise<any | null> {
+  try {
+    const res = await fetch(`${API_URL}/products/slug/${encodeURIComponent(slug)}`, {
+      next: { revalidate: 60 },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.name) return data;
+    }
+  } catch (error) {
+    console.error('Error fetching product for link preview:', error);
+  }
+  const list = await getProducts();
+  return (
+    (Array.isArray(list) ? list : []).find(
+      (p: any) => (p.slug || slugify(p.name || '')) === slug
+    ) || null
+  );
+}
+
 const defaultMetadata: Metadata = {
   // The layout template renders: "Catálogo de Productos | Puros Mates"
   title: 'Catálogo de Productos',
@@ -65,9 +87,7 @@ export async function generateMetadata({
   const slug = Array.isArray(producto) ? producto[0] : producto;
   if (!slug) return defaultMetadata;
 
-  const data = await getProducts();
-  const list: any[] = Array.isArray(data) ? data : [];
-  const product = list.find((p) => (p.slug || slugify(p.name || '')) === slug);
+  const product = await getProductForPreview(slug);
   if (!product) return defaultMetadata;
 
   const images: any[] = product.images ?? [];
