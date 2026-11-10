@@ -63,6 +63,14 @@ async function getProductForPreview(slug: string): Promise<any | null> {
   );
 }
 
+// WhatsApp ignores link-preview images that are WebP or heavy. Cloudinary can
+// serve the same photo as a compressed 1200x630 JPG just by changing the URL.
+function toPreviewImageUrl(url: string): string {
+  const marker = '/image/upload/';
+  if (!url.includes('res.cloudinary.com') || !url.includes(marker)) return url;
+  return url.replace(marker, `${marker}f_jpg,q_auto:good,w_1200,h_630,c_pad,b_white/`);
+}
+
 const defaultMetadata: Metadata = {
   // The layout template renders: "Catálogo de Productos | Puros Mates"
   title: 'Catálogo de Productos',
@@ -92,7 +100,7 @@ export async function generateMetadata({
 
   const images: any[] = product.images ?? [];
   const mainImage = images.find((img) => img?.isPrimary || img?.primary) ?? images[0];
-  const imageUrl: string = mainImage?.url || '/logo-purosmates.png';
+  const imageUrl: string = toPreviewImageUrl(mainImage?.url || '/logo-purosmates.png');
   const description = cleanDescription(
     product.description || `${product.name} - Comprá en Puros Mates con envíos a todo el país.`
   );
@@ -105,7 +113,7 @@ export async function generateMetadata({
       title: product.name,
       description,
       url: `/shop?producto=${slug}`,
-      images: [{ url: imageUrl, alt: product.name }],
+      images: [{ url: imageUrl, width: 1200, height: 630, alt: product.name }],
       type: 'website',
       locale: 'es_AR',
       siteName: 'Puros Mates',
