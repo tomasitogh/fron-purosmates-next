@@ -33,6 +33,7 @@ es atraer tráfico (es compartible, tiene puntaje) y llevarlo a la tienda y al b
 | `components/playground/MateGame.tsx` | UI en React: intro, hotspots, panel de opciones, pasos, medidor, final. |
 | `components/playground/engine.ts`    | Motor Three.js: escena, cámara, clicks 3D y la lógica de cada paso.     |
 | `components/playground/catalog.ts`   | Opciones elegibles (nombre, descripción, colores, link) y los 9 pasos.  |
+| `components/playground/fx.ts`        | Efectos: yerba en relieve según la marca, agua con espuma y vapor.      |
 
 ### Cómo funciona Three.js acá (resumen)
 

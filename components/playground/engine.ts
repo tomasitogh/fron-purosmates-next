@@ -13,6 +13,15 @@
 import * as THREE from 'three';
 import { buildMedialunasBoard, buildPortrait, buildTortitasPlate } from './decor';
 import { buildDogBed, Dog } from './dog';
+import {
+  mateWaterTexture,
+  softDotTexture,
+  Steam,
+  YERBA_TINT_DRY,
+  YERBA_TINT_WET,
+  yerbaMoundGeometry,
+  yerbaTexture,
+} from './fx';
 import { playChew, type Snack } from './sound';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
@@ -124,6 +133,8 @@ const ZONES: Record<Category, Zone> = {
 };
 const ZONE_RADIUS = 1.1;
 const OVERVIEW_PITCH = -0.32;
+/** Tangente del medio ángulo horizontal que ocupa toda la mesa (~50° a cada lado). */
+const OVERVIEW_HALF_TAN = Math.tan(THREE.MathUtils.degToRad(50));
 
 const PREP = {
   mate: new THREE.Vector3(0, MAT_Y, 0.3),
@@ -134,8 +145,8 @@ const PREP = {
 
 const PREP_LOOK = new THREE.Vector3(0, TABLE_Y + 0.04, 0.26);
 
-const YERBA_DRY = new THREE.Color('#a9ad4e');
-const YERBA_WET = new THREE.Color('#4d6a26');
+/** Inclinación de la yerba (rad) a partir de la cual la montañita está formada del todo. */
+const FULL_MOUND_SLOPE = 0.3;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -264,7 +275,9 @@ class Particles {
   constructor(
     private max: number,
     color: string,
-    size: number
+    size: number,
+    /** `true`: gotas/polvo translúcidos de borde suave. `false`: granitos opacos. */
+    soft = false
   ) {
     this.pos = new Float32Array(max * 3).fill(-100);
     this.vel = new Float32Array(max * 3);
@@ -272,7 +285,13 @@ class Particles {
     this.killY = new Float32Array(max);
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(this.pos, 3));
-    const mat = new THREE.PointsMaterial({ color, size, sizeAttenuation: true });
+    const mat = new THREE.PointsMaterial({
+      color,
+      size,
+      sizeAttenuation: true,
+      map: softDotTexture(),
+      ...(soft ? { transparent: true, opacity: 0.85, depthWrite: false } : { alphaTest: 0.5 }),
+    });
     this.points = new THREE.Points(geo, mat);
     this.points.frustumCulled = false;
   }
@@ -315,6 +334,7 @@ type MateParts = {
   top: number;
   yerbaPivot: THREE.Group;
   yerbaMat: THREE.MeshStandardMaterial;
+  yerbaMesh: THREE.Mesh;
   water: THREE.Mesh;
 };
 
@@ -349,11 +369,19 @@ function shadowed<T extends THREE.Object3D>(o: T): T {
   return o;
 }
 
+/** ¿El objeto se está dibujando? (él y todos sus padres visibles). */
+function shown(o: THREE.Object3D | null) {
+  for (; o; o = o.parent) if (!o.visible) return false;
+  return true;
+}
+
 /** Collider invisible y grande para que los objetos finos sean fáciles de tocar. */
 function hitbox(radius: number, height: number) {
   const m = new THREE.Mesh(
     new THREE.CylinderGeometry(radius, radius, height, 10).translate(0, height / 2, 0),
-    new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
+    // `visible: false` evita dibujarlo (un draw call menos por objeto); el
+    // Raycaster no mira la visibilidad del material, así que sigue siendo tocable.
+    new THREE.MeshBasicMaterial({ visible: false })
   );
   m.userData.hitbox = true;
   return m;
@@ -380,19 +408,31 @@ function radiusAt(profile: THREE.Vector2[], y: number) {
 function buildMate(shape: MateShape) {
   const { group: g, profile, top, setColor } = buildMateModel(shape.style);
 
-  // Superficie de la yerba (un disco que sube con el llenado y se inclina)
-  const yerbaMat = std('#ffffff', { color: YERBA_DRY.clone(), roughness: 1 });
+  // Superficie de la yerba: sube con el llenado, se inclina y forma la montañita
+  const yerbaTex = yerbaTexture('playadito');
+  const yerbaMat = std('#ffffff', {
+    map: yerbaTex,
+    bumpMap: yerbaTex,
+    bumpScale: 1.6,
+    roughness: 1,
+  });
   const yerbaPivot = new THREE.Group();
-  const disc = new THREE.Mesh(new THREE.CircleGeometry(1, 40), yerbaMat);
-  disc.rotation.x = -Math.PI / 2;
-  disc.receiveShadow = true;
-  yerbaPivot.add(disc);
+  const yerbaMesh = new THREE.Mesh(yerbaMoundGeometry(), yerbaMat);
+  yerbaMesh.receiveShadow = true;
+  yerbaPivot.add(yerbaMesh);
   yerbaPivot.visible = false;
   g.add(yerbaPivot);
 
   const water = new THREE.Mesh(
     new THREE.CircleGeometry(1, 32).rotateX(-Math.PI / 2),
-    std('#8f9c3c', { roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.88 })
+    // Poco reflejo del ambiente: si no, el sol lo lava y parece un disco claro
+    std('#ffffff', {
+      map: mateWaterTexture(),
+      roughness: 0.3,
+      envMapIntensity: 0.35,
+      transparent: true,
+      depthWrite: false,
+    })
   );
   water.visible = false;
   g.add(water);
@@ -401,7 +441,7 @@ function buildMate(shape: MateShape) {
   return {
     group: g,
     setColor,
-    mate: { profile, top, yerbaPivot, yerbaMat, water } satisfies MateParts,
+    mate: { profile, top, yerbaPivot, yerbaMat, yerbaMesh, water } satisfies MateParts,
   };
 }
 
@@ -423,9 +463,10 @@ export class MateEngine {
   private raycaster = new THREE.Raycaster();
   private items: Item[] = [];
   private hotspots: Partial<Record<Category, HTMLElement>> = {};
-  private yerbaFx = new Particles(500, '#8c9a3a', 0.006);
-  private dropFx = new Particles(300, '#cfe8ff', 0.005);
-  private crumbFx = new Particles(240, '#d8b07a', 0.0045);
+  private yerbaFx = new Particles(500, '#8c9a3a', 0.0075);
+  private dropFx = new Particles(300, '#dff1ff', 0.0065, true);
+  private crumbFx = new Particles(240, '#d8b07a', 0.0055);
+  private steam = new Steam();
   private dog: Dog | null = null;
   /** Medialunas y tortitas que se pueden comer. */
   private edibles: Edible[] = [];
@@ -441,6 +482,7 @@ export class MateEngine {
   private stream: THREE.Mesh;
   private dust: THREE.Points;
   private resizeObs: ResizeObserver;
+  private envTarget: THREE.WebGLRenderTarget | null = null;
 
   // Cámara
   private yaw = 0;
@@ -509,14 +551,32 @@ export class MateEngine {
     this.buildItems();
 
     this.stream = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.0035, 0.0045, 1, 10).translate(0, -0.5, 0),
-      std('#d9eeff', { transparent: true, opacity: 0.65, roughness: 0.05 })
+      // El chorro se afina al caer, como el agua de verdad
+      new THREE.CylinderGeometry(0.003, 0.0021, 1, 12).translate(0, -0.5, 0),
+      std('#e8f4ff', { transparent: true, opacity: 0.5, roughness: 0.03 })
     );
     this.stream.visible = false;
-    this.scene.add(this.stream, this.yerbaFx.points, this.dropFx.points, this.crumbFx.points);
+    this.scene.add(
+      this.stream,
+      this.yerbaFx.points,
+      this.dropFx.points,
+      this.crumbFx.points,
+      this.steam.group
+    );
 
     this.dust = this.buildDust();
     this.scene.add(this.dust);
+
+    // Filtrado anisótropo al máximo razonable: la mesa, el piso y las etiquetas
+    // se ven nítidos aunque se miren de costado.
+    const aniso = Math.min(8, this.renderer.capabilities.getMaxAnisotropy());
+    this.scene.traverse((o) => {
+      const m = (o as THREE.Mesh).material;
+      for (const mat of Array.isArray(m) ? m : m ? [m] : []) {
+        const map = (mat as THREE.MeshStandardMaterial).map;
+        if (map) map.anisotropy = aniso;
+      }
+    });
 
     this.resizeObs = new ResizeObserver(() => this.resize());
     this.resizeObs.observe(host);
@@ -530,6 +590,7 @@ export class MateEngine {
     el.addEventListener('wheel', this.onWheel, { passive: true });
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
+    window.addEventListener('blur', this.onBlur);
 
     this.loop();
     this.emit(true);
@@ -542,8 +603,11 @@ export class MateEngine {
     sc.background = new THREE.Color('#cfe6f5');
 
     const pmrem = new THREE.PMREMGenerator(this.renderer);
-    sc.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    const room = new RoomEnvironment();
+    this.envTarget = pmrem.fromScene(room, 0.04);
+    sc.environment = this.envTarget.texture;
     sc.environmentIntensity = 0.45;
+    room.dispose();
     pmrem.dispose();
 
     sc.add(new THREE.HemisphereLight('#e3f1ff', '#c9a37c', 1.25));
@@ -675,7 +739,7 @@ export class MateEngine {
     floorTex.repeat.set(3, 3);
     const floor = new THREE.Mesh(
       new THREE.PlaneGeometry(6, 4.2),
-      std('#ffffff', { map: floorTex, roughness: 0.7 })
+      std('#ffffff', { map: floorTex, bumpMap: floorTex, bumpScale: 0.6, roughness: 0.62 })
     );
     floor.rotation.x = -Math.PI / 2;
     floor.position.set(0, 0, 1.1);
@@ -717,7 +781,12 @@ export class MateEngine {
     const tableTex = woodTexture('#b07a4c', '#5a3820', 1, 5);
     tableTex.wrapS = THREE.RepeatWrapping;
     tableTex.repeat.set(2, 1);
-    const tableMat = std('#ffffff', { map: tableTex, roughness: 0.55 });
+    const tableMat = std('#ffffff', {
+      map: tableTex,
+      bumpMap: tableTex,
+      bumpScale: 0.5,
+      roughness: 0.5,
+    });
     const top = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.05, 1.3), tableMat);
     top.position.set(0, TABLE_Y - 0.025, -0.05);
     sc.add(top);
@@ -801,9 +870,10 @@ export class MateEngine {
       geo,
       new THREE.PointsMaterial({
         color: '#fff6dc',
-        size: 0.006,
+        size: 0.011,
+        map: softDotTexture(),
         transparent: true,
-        opacity: 0.55,
+        opacity: 0.5,
         depthWrite: false,
       })
     );
@@ -979,7 +1049,6 @@ export class MateEngine {
    */
   private scheduleAdvance(cat: Category, delay: number) {
     window.clearTimeout(this.advanceTimer);
-    for (const t of this.restockTimers) window.clearTimeout(t);
     this.advanceTimer = window.setTimeout(() => {
       if (this.disposed || this.s.phase !== 'choose' || this.s.focus !== cat) return;
       const next = CATEGORY_ORDER.find((c) => !this.s.selection[c]);
@@ -1001,6 +1070,12 @@ export class MateEngine {
       new THREE.Quaternion().setFromEuler(
         new THREE.Euler(0, Math.atan2(EYE.x - p.x, EYE.z - p.z), 0)
       );
+    // La yerba dentro del mate se ve como la marca elegida (con/sin palo, barbacuá…)
+    if (sel.yerba.opt.shape.kind === 'yerba') {
+      const tex = yerbaTexture(sel.yerba.opt.shape.brand);
+      sel.mate.mate!.yerbaMat.map = tex;
+      sel.mate.mate!.yerbaMat.bumpMap = tex;
+    }
     sel.yerba.tPos.copy(PREP.yerba);
     sel.yerba.tQuat.copy(faceQuat(PREP.yerba));
     sel.termo.tPos.copy(PREP.termo);
@@ -1100,6 +1175,7 @@ export class MateEngine {
   dispose() {
     this.disposed = true;
     window.clearTimeout(this.advanceTimer);
+    for (const t of this.restockTimers) window.clearTimeout(t);
     cancelAnimationFrame(this.raf);
     this.resizeObs.disconnect();
     const el = this.renderer.domElement;
@@ -1110,6 +1186,7 @@ export class MateEngine {
     el.removeEventListener('wheel', this.onWheel);
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
+    window.removeEventListener('blur', this.onBlur);
     window.removeEventListener('deviceorientation', this.onOrientation);
     this.scene.traverse((o) => {
       const m = o as THREE.Mesh;
@@ -1119,9 +1196,14 @@ export class MateEngine {
         for (const v of Object.values(mat)) if (v instanceof THREE.Texture) v.dispose();
         mat.dispose();
       }
+      // Las luces con sombra tienen su propio render target (el shadow map)
+      (o as THREE.DirectionalLight).shadow?.dispose();
     });
-    this.scene.environment?.dispose();
+    this.envTarget?.dispose();
     this.renderer.dispose();
+    // `dispose()` no suelta el contexto WebGL: sin esto, entrar y salir varias
+    // veces de la página acumula contextos hasta que el navegador los descarta.
+    this.renderer.forceContextLoss();
     el.remove();
   }
 
@@ -1150,7 +1232,9 @@ export class MateEngine {
       if (it.mate) {
         it.mate.yerbaPivot.visible = false;
         it.mate.water.visible = false;
-        it.mate.yerbaMat.color.copy(YERBA_DRY);
+        it.mate.yerbaMat.color.copy(YERBA_TINT_DRY);
+        it.mate.yerbaMat.roughness = 1;
+        it.mate.yerbaMesh.morphTargetInfluences![0] = 0;
       }
     }
     this.yerbaFill = 0;
@@ -1169,6 +1253,7 @@ export class MateEngine {
     this.yerbaFx.clear();
     this.dropFx.clear();
     this.stream.visible = false;
+    this.steam.clear();
   }
 
   private setStep(step: Step) {
@@ -1306,6 +1391,18 @@ export class MateEngine {
     return mate.group.localToWorld(new THREE.Vector3(r * 0.38, mp.top + extraY, 0));
   }
 
+  /**
+   * Dónde cae el chorro. Sin bombilla es el hueco; con la bombilla ya puesta se
+   * ceba al lado (hacia la persona), para que ni el pico ni el chorro la atraviesen.
+   */
+  private pourPoint(extraY = 0) {
+    if (this.bombillaAnim !== 'done') return this.holePoint(extraY);
+    const mate = this.selected().mate;
+    const mp = mate.mate!;
+    const r = radiusAt(mp.profile, this.yerbaY(mp)) * 0.9;
+    return mate.group.localToWorld(new THREE.Vector3(r * 0.3, mp.top + extraY, r * 0.4));
+  }
+
   private yerbaY(mp: MateParts) {
     return mp.profile[0].y + this.yerbaFill * (mp.top - mp.profile[0].y) * 0.92;
   }
@@ -1344,7 +1441,16 @@ export class MateEngine {
     // Cámara
     const portrait = this.camera.aspect < 1;
     const focusFov = this.s.focus ? (ZONES[this.s.focus].focusFov ?? 38) : 0;
-    const base = this.s.phase === 'choose' ? (this.s.focus ? focusFov : 70) : 58;
+    // Vista general: el FOV vertical se abre lo necesario para que entren las
+    // yerbas (izquierda) y los termos (derecha) aunque la ventana sea angosta.
+    const overview = clamp(
+      THREE.MathUtils.radToDeg(2 * Math.atan(OVERVIEW_HALF_TAN / this.camera.aspect)),
+      70,
+      82
+    );
+    // Al preparar, en pantallas anchas se acerca un poco más para lucir el mate
+    const prep = portrait ? 58 : 53;
+    const base = this.s.phase === 'choose' ? (this.s.focus ? focusFov : overview) : prep;
     this.fovT = portrait ? Math.min(base * 1.3, 80) : base;
     this.yaw = damp(this.yaw, this.yawT, 5, dt);
     this.pitch = damp(this.pitch, this.pitchT, 5, dt);
@@ -1381,6 +1487,7 @@ export class MateEngine {
     this.yerbaFx.update(dt);
     this.dropFx.update(dt);
     this.crumbFx.update(dt);
+    this.steam.update(dt);
     this.updateEating(dt);
     this.dog?.update(dt);
     for (const ed of this.edibles) {
@@ -1465,7 +1572,7 @@ export class MateEngine {
     const pouring = (st === 'water1' || st === 'water2' || st === 'cebar') && holding;
     let streamOn = false;
     if (pouring) {
-      const target = this.holePoint(0.1);
+      const target = this.pourPoint(this.bombillaAnim === 'done' ? 0.2 : 0.1);
       const q = quatZ(1.85);
       sel.termo.tQuat.copy(q);
       sel.termo.tPos.copy(target.clone().sub(sel.termo.mouth!.clone().applyQuaternion(q)));
@@ -1496,9 +1603,22 @@ export class MateEngine {
       const end = this.holePoint(0);
       end.y = mate.group.localToWorld(new THREE.Vector3(0, this.waterY(mp), 0)).y;
       this.stream.position.copy(spout);
-      this.stream.scale.y = Math.max(0.01, spout.y - end.y);
+      const wob = 1 + Math.sin(this.clock.elapsedTime * 38) * 0.14;
+      this.stream.scale.set(wob, Math.max(0.01, spout.y - end.y), wob);
       this.stream.quaternion.identity();
       this.stream.visible = true;
+      // Salpicaduras chiquitas donde el chorro pega en el agua
+      if (Math.random() < 0.6) {
+        this.dropFx.spawn(
+          new THREE.Vector3(spout.x, end.y + 0.002, spout.z),
+          new THREE.Vector3(
+            (Math.random() - 0.5) * 0.09,
+            0.12 + Math.random() * 0.14,
+            (Math.random() - 0.5) * 0.09
+          ),
+          end.y - 0.002
+        );
+      }
     } else {
       this.stream.visible = false;
     }
@@ -1549,9 +1669,16 @@ export class MateEngine {
     const yR = radiusAt(mp.profile, yY) * 0.9;
     mp.yerbaPivot.visible = this.yerbaFill > 0.02;
     mp.yerbaPivot.position.y = yY;
-    mp.yerbaPivot.children[0].scale.setScalar(yR * 0.9);
+    mp.yerbaMesh.scale.setScalar(yR * 0.9);
+    // La montañita aparece a medida que se inclina la yerba
+    mp.yerbaMesh.morphTargetInfluences![0] = clamp(
+      Math.abs(mp.yerbaPivot.rotation.z) / FULL_MOUND_SLOPE,
+      0,
+      1
+    );
     this.wet = damp(this.wet, Math.max(this.wet, this.wetT), 1.2, dt);
-    mp.yerbaMat.color.copy(YERBA_DRY).lerp(YERBA_WET, this.wet);
+    mp.yerbaMat.color.copy(YERBA_TINT_DRY).lerp(YERBA_TINT_WET, this.wet);
+    mp.yerbaMat.roughness = 1 - 0.35 * this.wet;
 
     let water = 0;
     if (st === 'water1' || st === 'water2') water = this.s.meter * 0.45;
@@ -1565,6 +1692,17 @@ export class MateEngine {
       const wr = radiusAt(mp.profile, wy);
       mp.water.position.set(wr * 0.35, wy, 0);
       mp.water.scale.setScalar(wr * 0.55);
+      // El agua de cebar está caliente: larga vapor (no mientras se toma, que
+      // el mate está pegado a la cara)
+      const hot = this.s.phase === 'prepare' && (st === 'cebar' || st === 'drink');
+      if (hot && this.drinkT === 0 && this.waterShown > 0.15) {
+        this.steam.emit(
+          mp.water.getWorldPosition(new THREE.Vector3()),
+          wr * 0.4,
+          streamOn ? 9 : 5,
+          dt
+        );
+      }
     }
   }
 
@@ -1579,16 +1717,29 @@ export class MateEngine {
     const show = this.s.phase === 'choose' && this.s.focus === null;
     const w = this.host.clientWidth;
     const h = this.host.clientHeight;
+    const placed: { x: number; y: number; hw: number }[] = [];
     for (const cat of CATEGORY_ORDER) {
       const el = this.hotspots[cat];
       if (!el) continue;
-      const p = this.zoneCenter(cat)
-        .add(new THREE.Vector3(0, ZONES[cat].anchorH, 0))
-        .project(this.camera);
-      const visible = show && p.z < 1 && Math.abs(p.x) < 1.1 && Math.abs(p.y) < 1.1;
-      el.style.opacity = visible ? '1' : '0';
-      el.style.pointerEvents = visible ? 'auto' : 'none';
-      el.style.transform = `translate(-50%, -50%) translate(${((p.x + 1) / 2) * w}px, ${((1 - p.y) / 2) * h}px)`;
+      const world = this.zoneCenter(cat).add(new THREE.Vector3(0, ZONES[cat].anchorH, 0));
+      const view = world.clone().applyMatrix4(this.camera.matrixWorldInverse);
+      const p = world.project(this.camera);
+      // Si la zona queda fuera de cuadro (típico en celular vertical, donde solo
+      // entran dos grupos), la etiqueta se pega al borde de ese lado en vez de
+      // ocultarse: así siempre se puede tocar para ir a ese grupo.
+      const hw = el.offsetWidth / 2 + 8;
+      const behind = view.z >= 0;
+      let x = behind ? (view.x >= 0 ? w : 0) : ((p.x + 1) / 2) * w;
+      let y = behind ? h * 0.4 : ((1 - p.y) / 2) * h;
+      x = clamp(x, hw, Math.max(hw, w - hw));
+      y = clamp(y, 76, Math.max(76, h - 150));
+      for (const o of placed) {
+        if (Math.abs(o.x - x) < o.hw + hw && Math.abs(o.y - y) < 44) y = o.y + 44;
+      }
+      placed.push({ x, y, hw });
+      el.style.opacity = show ? '1' : '0';
+      el.style.pointerEvents = show ? 'auto' : 'none';
+      el.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
     }
   }
 
@@ -1654,7 +1805,9 @@ export class MateEngine {
       const face = new THREE.Quaternion().setFromRotationMatrix(
         new THREE.Matrix4().lookAt(this.camera.position, obj.position, up)
       );
-      face.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-1.1, 0, 0.25)));
+      // +X inclina la cara de arriba hacia la cámara (con signo negativo se veía
+      // la base clara de la tortita en vez del azúcar negra).
+      face.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(1.1, 0, 0.25)));
       obj.quaternion.slerp(face, k);
       if (e.phase === 'lift' && (obj.position.distanceTo(mouth) < 0.012 || e.t > 0.9)) {
         e.phase = 'chew';
@@ -1763,6 +1916,10 @@ export class MateEngine {
       true
     );
     for (const h of hits) {
+      // El Raycaster ignora `visible`: sin este filtro, los discos ocultos de
+      // yerba y agua de cada mate (1 m de radio hasta que se prepara) atrapaban
+      // los toques dirigidos a los termos y a casi toda la mesa.
+      if (!shown(h.object)) continue;
       let o: THREE.Object3D | null = h.object;
       while (o && !o.userData.optionId) o = o.parent;
       if (o) {
@@ -1873,6 +2030,12 @@ export class MateEngine {
 
   private onKeyUp = (e: KeyboardEvent) => {
     if (e.code === 'Space') this.setHolding(false);
+  };
+
+  /** Si la ventana pierde el foco con la barra apretada, el `keyup` nunca llega. */
+  private onBlur = () => {
+    this.pointer = null;
+    this.setHolding(false);
   };
 
   private onOrientation = (e: DeviceOrientationEvent) => {
