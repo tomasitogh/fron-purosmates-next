@@ -8,8 +8,19 @@ export type Snack = 'medialuna' | 'tortita';
 let ctx: AudioContext | null = null;
 let noise: AudioBuffer | null = null;
 
+let muted = false;
+
+/** Silencia todo (lo recuerda el botón de sonido de la UI). */
+export function setMuted(on: boolean) {
+  muted = on;
+  if (on) {
+    setPour('water', false);
+    setPour('yerba', false);
+  }
+}
+
 function audio() {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === 'undefined' || muted) return null;
   if (!ctx) {
     const AC =
       window.AudioContext ??
@@ -148,4 +159,109 @@ export function playChew(kind: Snack) {
     );
     at += 0.25 + Math.random() * 0.07;
   }
+}
+
+// ─── Sonidos de la preparación ──────────────────────────────────────────────
+
+type Pour = 'water' | 'yerba';
+const pours: Partial<Record<Pour, { src: AudioBufferSourceNode; gain: GainNode }>> = {};
+
+/**
+ * Sonido continuo mientras se vuelca: el chorro de agua (ruido medio, redondo)
+ * o la yerba cayendo (ruido agudo y seco). Se llama en cada frame con on/off.
+ */
+export function setPour(kind: Pour, on: boolean) {
+  const cur = pours[kind];
+  if (!on) {
+    if (!cur) return;
+    delete pours[kind];
+    const t = cur.gain.context.currentTime;
+    cur.gain.gain.cancelScheduledValues(t);
+    cur.gain.gain.setTargetAtTime(0.0001, t, 0.05);
+    cur.src.stop(t + 0.3);
+    return;
+  }
+  if (cur) return;
+  const ac = audio();
+  if (!ac || !noise) return;
+  const src = ac.createBufferSource();
+  src.buffer = noise;
+  src.loop = true;
+  const f1 = ac.createBiquadFilter();
+  const f2 = ac.createBiquadFilter();
+  if (kind === 'water') {
+    f1.type = 'bandpass';
+    f1.frequency.value = 1500;
+    f1.Q.value = 0.9;
+    f2.type = 'lowpass';
+    f2.frequency.value = 3200;
+  } else {
+    f1.type = 'highpass';
+    f1.frequency.value = 3800;
+    f2.type = 'lowpass';
+    f2.frequency.value = 9000;
+  }
+  const gain = ac.createGain();
+  gain.gain.setValueAtTime(0.0001, ac.currentTime);
+  gain.gain.setTargetAtTime(kind === 'water' ? 0.11 : 0.05, ac.currentTime, 0.08);
+  src.connect(f1).connect(f2).connect(gain).connect(ac.destination);
+  src.start(ac.currentTime, Math.random() * 0.4);
+  pours[kind] = { src, gain };
+}
+
+/** Campanita suave cuando un paso sale bien. */
+export function playDing(good = true) {
+  const ac = audio();
+  if (!ac) return;
+  const t = ac.currentTime + 0.01;
+  const notes = good ? [784, 1175] : [392];
+  notes.forEach((f, i) => {
+    const o = ac.createOscillator();
+    o.type = 'sine';
+    o.frequency.value = f;
+    const g = ac.createGain();
+    const at = t + i * 0.09;
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.linearRampToValueAtTime(0.07, at + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.35);
+    o.connect(g).connect(ac.destination);
+    o.start(at);
+    o.stop(at + 0.4);
+  });
+}
+
+/** El "ruidito" del final del mate: aire y agua burbujeando por la bombilla. */
+export function playSlurp() {
+  const ac = audio();
+  if (!ac || !noise) return;
+  const t = ac.currentTime + 0.02;
+  const dur = 0.95;
+  const src = ac.createBufferSource();
+  src.buffer = noise;
+  src.loop = true;
+  const bp = ac.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.Q.value = 2.2;
+  bp.frequency.setValueAtTime(500, t);
+  bp.frequency.linearRampToValueAtTime(1500, t + dur);
+  // Gorgoteo: el volumen tiembla rápido
+  const trem = ac.createGain();
+  trem.gain.value = 0.5;
+  const lfo = ac.createOscillator();
+  lfo.type = 'square';
+  lfo.frequency.setValueAtTime(22, t);
+  lfo.frequency.linearRampToValueAtTime(34, t + dur);
+  const depth = ac.createGain();
+  depth.gain.value = 0.5;
+  lfo.connect(depth).connect(trem.gain);
+  const env = ac.createGain();
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.linearRampToValueAtTime(0.22, t + 0.12);
+  env.gain.setValueAtTime(0.22, t + dur - 0.2);
+  env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  src.connect(bp).connect(trem).connect(env).connect(ac.destination);
+  src.start(t);
+  src.stop(t + dur + 0.05);
+  lfo.start(t);
+  lfo.stop(t + dur + 0.05);
 }

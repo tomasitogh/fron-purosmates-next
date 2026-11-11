@@ -1,19 +1,24 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import {
   ArrowLeft,
   Check,
   Coffee,
   Hand,
+  ImageDown,
   Leaf,
+  MessageCircle,
   Pipette,
   RotateCcw,
   Share2,
   ShoppingBag,
   Smartphone,
   Thermometer,
+  Trophy,
+  Volume2,
+  VolumeX,
   X,
 } from 'lucide-react';
 
@@ -29,7 +34,35 @@ import {
   type Category,
   type Step,
 } from './catalog';
-import type { EngineEvent, MateEngine, Snapshot } from './engine';
+import type { EngineEvent, MateEngine, ScoreItem, Snapshot } from './engine';
+import { buildShareCard, challengeUrl, shareText, whatsappUrl, type ShareData } from './share';
+import { setMuted as setSoundMuted } from './sound';
+
+const SCORE_LABEL: Record<ScoreItem['id'], string> = {
+  yerba: 'Yerba',
+  tilt: 'Pendiente',
+  wet: 'Humedecido',
+  wait: 'Paciencia',
+  cebar: 'Cebada',
+};
+
+const BEST_KEY = 'pm_playground_best';
+const MUTED_KEY = 'pm_playground_muted';
+
+function readStored(key: string) {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+function writeStored(key: string, value: string) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    /* modo privado: no se guarda */
+  }
+}
 
 const CATEGORY_ICON: Record<Category, typeof Leaf> = {
   yerba: Leaf,
@@ -59,13 +92,32 @@ function track(e: EngineEvent | { name: string; [k: string]: unknown }) {
 }
 
 function scoreTitle(score: number) {
-  if (score >= 92) return 'Cebador/a de lujo';
+  if (score >= 97) return 'Maestro/a cebador/a';
+  if (score >= 90) return 'Cebador/a de lujo';
   if (score >= 80) return 'Buen pulso matero';
-  if (score >= 65) return 'Vas bien, ¡a practicar la ronda!';
+  if (score >= 65) return 'Vas bien, ¡a practicar!';
   return 'Mate lavado… ¡otra vuelta!';
 }
 
-export default function MateGame() {
+const COMPACT_QUERY = '(orientation: landscape) and (max-height: 520px)';
+
+/** Celular acostado: hay poco alto, así que los paneles van angostos y a un costado. */
+function useCompact() {
+  return useSyncExternalStore(
+    (onChange) => {
+      const mq = window.matchMedia(COMPACT_QUERY);
+      mq.addEventListener('change', onChange);
+      return () => mq.removeEventListener('change', onChange);
+    },
+    () => window.matchMedia(COMPACT_QUERY).matches,
+    () => false
+  );
+}
+
+/** Récord personal guardado en el dispositivo. */
+type Record_ = { best: number | null; isNew: boolean };
+
+export default function MateGame({ challenge = null }: { challenge?: number | null }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<MateEngine | null>(null);
   const [snap, setSnap] = useState<Snapshot | null>(null);
@@ -80,6 +132,9 @@ export default function MateGame() {
       window.matchMedia('(pointer: coarse)').matches
   );
   const [localMsg, setLocalMsg] = useState<string | null>(null);
+  const [muted, setMuted] = useState(false);
+  const [record, setRecord] = useState<Record_>({ best: null, isNew: false });
+  const compact = useCompact();
 
   // Montar el motor 3D (Three.js se descarga solo en esta página)
   useEffect(() => {
@@ -95,8 +150,21 @@ export default function MateGame() {
         try {
           engineRef.current = new MateEngine(host, {
             onChange: setSnap,
-            onEvent: track,
+            onEvent: (e) => {
+              track(e);
+              if (e.name !== 'complete') return;
+              // Récord personal (queda guardado en este dispositivo)
+              const prev = Number(readStored(BEST_KEY));
+              const best = Number.isFinite(prev) && prev > 0 ? prev : null;
+              const isNew = best == null || e.score > best;
+              if (isNew) writeStored(BEST_KEY, String(e.score));
+              setRecord({ best: isNew ? e.score : best, isNew: isNew && best != null });
+            },
           });
+          if (readStored(MUTED_KEY) === '1') {
+            setSoundMuted(true);
+            setMuted(true);
+          }
         } catch (err) {
           console.error('No se pudo iniciar WebGL', err);
           setError(true);
@@ -114,11 +182,17 @@ export default function MateGame() {
 
   // Toasts que vienen del motor: se ocultan solos a los 2,4 s
   const toastId = snap?.toast?.id;
+  const toastTone = snap?.toast?.tone;
   useEffect(() => {
     if (toastId == null) return;
+    // Vibración cortita en el celular (Android): acierto suave, aviso doble
+    // (solo si ya tocó la pantalla: antes el navegador la bloquea)
+    if (toastTone !== 'info' && navigator.userActivation?.hasBeenActive) {
+      navigator.vibrate?.(toastTone === 'warn' ? [30, 50, 30] : 14);
+    }
     const t = window.setTimeout(() => setHiddenToast(toastId), 2400);
     return () => window.clearTimeout(t);
-  }, [toastId]);
+  }, [toastId, toastTone]);
 
   useEffect(() => {
     if (!localMsg) return;
@@ -130,7 +204,20 @@ export default function MateGame() {
 
   const start = () => {
     setStarted(true);
-    track({ name: 'start' });
+    track({ name: 'start', challenge: challenge ?? undefined });
+    // En el celular el giroscopio arranca solo: este toque es el gesto que iOS
+    // exige para pedir permiso. Si lo niegan, queda el botón para reintentar.
+    if (canGyro)
+      void engine()
+        ?.setGyro(true)
+        .then((ok) => setGyro(ok));
+  };
+
+  const toggleMuted = () => {
+    const next = !muted;
+    setMuted(next);
+    setSoundMuted(next);
+    writeStored(MUTED_KEY, next ? '1' : '0');
   };
 
   const toggleGyro = async () => {
@@ -139,16 +226,39 @@ export default function MateGame() {
     if (!gyro && !ok) setLocalMsg('Tu navegador no dio permiso para usar el giroscopio.');
   };
 
+  /** Datos del resultado para el texto y la imagen de compartir. */
+  const shareData = (): ShareData | null => {
+    if (snap?.finalScore == null) return null;
+    const name = (c: Category) => getOption(snap.selection[c])?.name;
+    return {
+      score: snap.finalScore,
+      title: scoreTitle(snap.finalScore),
+      lines: (snap.breakdown ?? []).map((b) => ({ label: SCORE_LABEL[b.id], score: b.score })),
+      gear: [name('mate'), name('yerba')].filter(Boolean).join(' · '),
+    };
+  };
+
+  const shareCard = async (data: ShareData) => {
+    const scene = engine()?.capture();
+    const blob = scene ? await buildShareCard(scene, data) : null;
+    return blob ? new File([blob], 'mi-mate-puros-mates.jpg', { type: 'image/jpeg' }) : null;
+  };
+
+  /** Compartir nativo (con imagen si el dispositivo deja) o copiar el link. */
   const share = async () => {
-    const url = 'https://www.purosmates.com.ar/playground';
-    const text =
-      snap?.finalScore != null
-        ? `Saqué ${snap.finalScore}/100 cebando un mate en 3D 🧉 ¿Te animás?`
-        : 'Cebá tu mate en 3D 🧉';
-    track({ name: 'share' });
+    const data = shareData();
+    const score = data?.score;
+    const url = score != null ? challengeUrl(score) : 'https://www.purosmates.com.ar/playground';
+    const text = score != null ? shareText(score) : 'Cebá tu mate en 3D 🧉';
+    track({ name: 'share', method: 'native' });
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'Cebá tu mate · Puros Mates', text, url });
+        const file = data ? await shareCard(data) : null;
+        if (file && navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ files: [file], text: `${text} ${url}` });
+        } else {
+          await navigator.share({ title: 'Cebá tu mate · Puros Mates', text, url });
+        }
         return;
       }
       await navigator.clipboard.writeText(`${text} ${url}`);
@@ -156,6 +266,21 @@ export default function MateGame() {
     } catch {
       /* el usuario canceló */
     }
+  };
+
+  /** Bajar la imagen del resultado (para estados, historias o donde quiera). */
+  const downloadCard = async () => {
+    const data = shareData();
+    const file = data ? await shareCard(data) : null;
+    if (!file) return;
+    track({ name: 'share', method: 'image' });
+    const href = URL.createObjectURL(file);
+    const a = document.createElement('a');
+    a.href = href;
+    a.download = file.name;
+    a.click();
+    window.setTimeout(() => URL.revokeObjectURL(href), 4000);
+    setLocalMsg('Imagen guardada: subila a tus historias 🧉');
   };
 
   const phase = snap?.phase ?? 'choose';
@@ -187,7 +312,7 @@ export default function MateGame() {
   const visibleToast = localMsg ? { id: -1, text: localMsg, tone: 'info' as const } : engineToast;
 
   return (
-    <div className="fixed inset-0 z-[100] overflow-hidden bg-[#cfe6f5] text-[#1f2d2a] select-none">
+    <div className="fixed inset-0 z-[100] touch-manipulation overflow-hidden overscroll-none bg-[#cfe6f5] text-[#1f2d2a] select-none [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none]">
       {/* Lienzo 3D */}
       <div ref={hostRef} className="absolute inset-0" aria-hidden="true" />
 
@@ -259,6 +384,21 @@ export default function MateGame() {
         )}
 
         <div className="pointer-events-auto flex gap-2">
+          {started && (
+            <button
+              type="button"
+              onClick={toggleMuted}
+              aria-pressed={muted}
+              aria-label={muted ? 'Activar sonido' : 'Silenciar'}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/80 text-[#254642] shadow-lg backdrop-blur-md"
+            >
+              {muted ? (
+                <VolumeX className="h-4 w-4 shrink-0" />
+              ) : (
+                <Volume2 className="h-4 w-4 shrink-0" />
+              )}
+            </button>
+          )}
           {canGyro && started && (
             <button
               type="button"
@@ -266,7 +406,7 @@ export default function MateGame() {
               aria-pressed={gyro}
               className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold shadow-lg backdrop-blur-md transition ${gyro ? 'bg-[#D4AF37] text-[#254642]' : 'bg-white/80 text-[#254642]'}`}
             >
-              <Smartphone className="h-4 w-4" /> {gyro ? 'Giroscopio on' : 'Mover con el celu'}
+              <Smartphone className="h-4 w-4" /> {gyro ? 'Giroscopio' : 'Mover con el celu'}
             </button>
           )}
         </div>
@@ -322,18 +462,27 @@ export default function MateGame() {
           onSelect={(id) => engine()?.select(id)}
           onColor={(id, colorId) => engine()?.setColor(id, colorId)}
           onClose={() => engine()?.focus(null)}
+          compact={compact}
         />
       )}
 
       {/* ── Fase: preparar ──────────────────────────────────────────────── */}
       {started && phase === 'prepare' && snap && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:p-5 lg:justify-start">
-          <div className="pointer-events-auto w-full max-w-md rounded-3xl bg-white/90 p-4 shadow-2xl backdrop-blur-md sm:p-5 lg:max-w-sm">
+        <div
+          className={`pointer-events-none absolute inset-x-0 bottom-0 flex p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] ${compact ? 'justify-start pl-[calc(0.75rem+env(safe-area-inset-left,0px))]' : 'justify-center sm:p-5 lg:justify-start'}`}
+        >
+          <div
+            className={`pointer-events-auto w-full rounded-3xl bg-white/90 shadow-2xl backdrop-blur-md ${compact ? 'max-w-[16.5rem] p-3' : 'max-w-md p-4 sm:p-5 lg:max-w-sm'}`}
+          >
             <p className="text-[11px] font-black tracking-widest text-[#D4AF37] uppercase">
               Paso {stepIdx + 1} de {STEPS.length}
             </p>
-            <h2 className="text-xl font-black text-[#254642]">{STEPS[stepIdx].title}</h2>
-            <p className="mt-0.5 text-sm text-gray-600">{STEPS[stepIdx].hint}</p>
+            <h2
+              className={`font-black text-[#254642] ${compact ? 'text-base leading-tight' : 'text-xl'}`}
+            >
+              {STEPS[stepIdx].title}
+            </h2>
+            {!compact && <p className="mt-0.5 text-sm text-gray-600">{STEPS[stepIdx].hint}</p>}
 
             <div className="mt-3">
               {step === 'tilt' && (
@@ -387,7 +536,7 @@ export default function MateGame() {
               <button
                 type="button"
                 {...holdProps}
-                className={`mt-3 w-full touch-none rounded-2xl py-4 text-base font-black shadow-lg transition ${
+                className={`mt-3 w-full touch-none rounded-2xl text-base font-black shadow-lg transition ${compact ? 'py-3' : 'py-4'} ${
                   snap.holding
                     ? 'scale-[0.98] bg-[#1c3632] text-[#D4AF37]'
                     : 'bg-[#254642] text-[#F5F5DC] hover:bg-[#1c3632]'
@@ -400,29 +549,37 @@ export default function MateGame() {
               <button
                 type="button"
                 onClick={() => engine()?.action()}
-                className="mt-3 w-full rounded-2xl bg-[#D4AF37] py-4 text-base font-black text-[#1c3632] shadow-lg transition hover:brightness-105 active:scale-[0.98]"
+                className={`mt-3 w-full rounded-2xl bg-[#D4AF37] text-base font-black text-[#1c3632] shadow-lg transition hover:brightness-105 active:scale-[0.98] ${compact ? 'py-3' : 'py-4'}`}
               >
                 {TAP_LABEL[step]}
               </button>
             )}
-            <p className="mt-2 hidden text-center text-[11px] text-gray-500 sm:block">
-              Tip: también podés usar la barra espaciadora.
-            </p>
+            {!compact && (
+              <p className="mt-2 hidden text-center text-[11px] text-gray-500 lg:block">
+                Tip: también podés usar la barra espaciadora.
+              </p>
+            )}
           </div>
         </div>
       )}
 
       {/* ── Fase: ¿otro mate? ──────────────────────────────────────────── */}
       {started && phase === 'again' && snap && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:p-5 lg:justify-start">
-          <div className="pointer-events-auto w-full max-w-md animate-[pmPop_.3s_ease-out] rounded-3xl bg-white/90 p-4 shadow-2xl backdrop-blur-md sm:p-5 lg:max-w-sm">
+        <div
+          className={`pointer-events-none absolute inset-x-0 bottom-0 flex p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] ${compact ? 'justify-start pl-[calc(0.75rem+env(safe-area-inset-left,0px))]' : 'justify-center sm:p-5 lg:justify-start'}`}
+        >
+          <div
+            className={`pointer-events-auto w-full animate-[pmPop_.3s_ease-out] rounded-3xl bg-white/90 shadow-2xl backdrop-blur-md ${compact ? 'max-w-[16.5rem] p-3' : 'max-w-md p-4 sm:p-5 lg:max-w-sm'}`}
+          >
             <p className="text-[11px] font-black tracking-widest text-[#D4AF37] uppercase">
               {snap.rounds === 1 ? 'Primer mate' : `Llevás ${snap.rounds} mates`}
             </p>
             <h2 className="text-xl font-black text-[#254642]">¿Otro mate?</h2>
-            <p className="mt-0.5 text-sm text-gray-600">
-              La yerba y la bombilla quedan como están: solo hay que volver a cebar.
-            </p>
+            {!compact && (
+              <p className="mt-0.5 text-sm text-gray-600">
+                La yerba y la bombilla quedan como están: solo hay que volver a cebar.
+              </p>
+            )}
             <button
               type="button"
               onClick={() => engine()?.anotherMate()}
@@ -445,6 +602,9 @@ export default function MateGame() {
       {started && phase === 'done' && snap && (
         <DonePanel
           snap={snap}
+          record={record}
+          challenge={challenge}
+          onDownload={downloadCard}
           onReplay={() => {
             track({ name: 'replay' });
             engine()?.replay();
@@ -459,20 +619,30 @@ export default function MateGame() {
 
       {/* ── Intro ───────────────────────────────────────────────────────── */}
       {!started && (
-        <div className="absolute inset-0 flex items-center justify-center overflow-y-auto bg-[#1c3632]/35 p-4 backdrop-blur-[3px]">
-          <section className="w-full max-w-lg animate-[pmPop_.4s_ease-out] rounded-3xl bg-[#FAF8F5] p-6 shadow-2xl sm:p-8">
+        <div className="absolute inset-0 flex overflow-y-auto bg-[#1c3632]/35 p-4 backdrop-blur-[3px]">
+          <section
+            className={`m-auto w-full max-w-lg animate-[pmPop_.4s_ease-out] rounded-3xl bg-[#FAF8F5] shadow-2xl ${compact ? 'p-5' : 'p-6 sm:p-8'}`}
+          >
             <span className="text-xs font-black tracking-widest text-[#D4AF37] uppercase">
               Playground · Juego 3D
             </span>
             <h1 className="mt-1 text-3xl leading-tight font-black text-[#254642] sm:text-4xl">
               Cebá tu mate
             </h1>
+            {challenge != null && (
+              <p className="mt-3 flex items-center gap-2 rounded-2xl bg-[#D4AF37]/20 px-4 py-3 text-sm font-bold text-[#254642]">
+                <Trophy className="h-5 w-5 shrink-0 text-[#b08d25]" />
+                Te desafiaron: superá los {challenge} puntos.
+              </p>
+            )}
             <p className="mt-2 text-sm leading-relaxed text-gray-700 sm:text-base">
               Sentate a la mesa, mirá alrededor y elegí tu equipo:{' '}
               <strong>termo, mate, bombilla y yerba</strong>. Después cebá el mate paso a paso, como
               se hace de verdad. Y si te da hambre, tocá las medialunas o las tortitas negras.
             </p>
-            <ol className="mt-4 grid grid-cols-1 gap-x-4 gap-y-1 text-sm text-gray-700 sm:grid-cols-2">
+            <ol
+              className={`mt-4 grid-cols-1 gap-x-4 gap-y-1 text-sm text-gray-700 sm:grid-cols-2 ${compact ? 'hidden' : 'grid'}`}
+            >
               {STEPS.map((s, i) => (
                 <li key={s.id} className="flex gap-2">
                   <span className="font-black text-[#D4AF37]">{i + 1}.</span>
@@ -565,6 +735,7 @@ function FocusPanel({
   onSelect,
   onColor,
   onClose,
+  compact,
 }: {
   category: Category;
   selectedId?: string;
@@ -573,12 +744,15 @@ function FocusPanel({
   onSelect: (id: string) => void;
   onColor: (id: string, colorId: string) => void;
   onClose: () => void;
+  compact: boolean;
 }) {
   const many = optionsFor(category).length > 5;
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:p-5">
-      <div className="pointer-events-auto w-full max-w-5xl animate-[pmPop_.3s_ease-out] rounded-3xl bg-white/90 p-4 shadow-2xl backdrop-blur-md">
-        <div className="mb-3 flex items-center justify-between">
+      <div
+        className={`pointer-events-auto w-full max-w-5xl animate-[pmPop_.3s_ease-out] rounded-3xl bg-white/90 shadow-2xl backdrop-blur-md ${compact ? 'p-2.5' : 'p-4'}`}
+      >
+        <div className={`flex items-center justify-between ${compact ? 'mb-1.5' : 'mb-3'}`}>
           <h2 className="text-lg font-black text-[#254642]">
             Elegí tu {CATEGORY_LABEL[category].toLowerCase()}
           </h2>
@@ -601,7 +775,7 @@ function FocusPanel({
             return (
               <div
                 key={o.id}
-                className={`w-[78%] shrink-0 snap-start rounded-2xl border-2 text-left transition sm:w-[38%] ${many ? 'lg:w-[19%]' : 'lg:w-auto'} ${
+                className={`w-[78%] shrink-0 snap-start rounded-2xl border-2 text-left transition ${compact ? 'sm:w-[27%]' : 'sm:w-[38%]'} ${many ? 'lg:w-[19%]' : 'lg:w-auto'} ${
                   sel
                     ? 'border-[#D4AF37] bg-[#D4AF37]/15'
                     : hovered === o.id
@@ -618,9 +792,11 @@ function FocusPanel({
                     {o.name}
                     {sel && <Check className="h-4 w-4 shrink-0 text-[#b08d25]" />}
                   </span>
-                  <span className="mt-0.5 block text-xs leading-snug text-gray-600">
-                    {o.description}
-                  </span>
+                  {!compact && (
+                    <span className="mt-0.5 block text-xs leading-snug text-gray-600">
+                      {o.description}
+                    </span>
+                  )}
                 </button>
                 {o.colors && (
                   <div
@@ -656,9 +832,11 @@ function FocusPanel({
             );
           })}
         </div>
-        <p className="mt-2 hidden text-center text-[11px] text-gray-500 sm:block">
-          También podés tocar el objeto en la mesa.
-        </p>
+        {!compact && (
+          <p className="mt-2 hidden text-center text-[11px] text-gray-500 sm:block">
+            También podés tocar el objeto en la mesa.
+          </p>
+        )}
       </div>
     </div>
   );
@@ -666,77 +844,86 @@ function FocusPanel({
 
 function DonePanel({
   snap,
+  record,
+  challenge,
   onReplay,
   onReset,
   onShare,
+  onDownload,
 }: {
   snap: Snapshot;
+  record: Record_;
+  challenge: number | null;
   onReplay: () => void;
   onReset: () => void;
   onShare: () => void;
+  onDownload: () => void;
 }) {
   const score = snap.finalScore ?? 0;
+  const versus =
+    challenge == null
+      ? null
+      : score > challenge
+        ? `¡Le ganaste por ${score - challenge}! Devolvele el desafío.`
+        : score === challenge
+          ? '¡Empate! Jugá otra para desempatar.'
+          : `Te faltaron ${challenge - score} para ganarle. ¿Revancha?`;
   return (
-    <div className="absolute inset-0 flex items-end justify-center overflow-y-auto p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:items-center sm:p-6">
-      <section className="w-full max-w-lg animate-[pmPop_.4s_ease-out] rounded-3xl bg-[#FAF8F5] p-5 shadow-2xl sm:p-7">
+    <div className="absolute inset-0 flex overflow-y-auto p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:p-6">
+      <section className="m-auto mb-0 w-full max-w-lg animate-[pmPop_.4s_ease-out] rounded-3xl bg-[#FAF8F5] p-4 shadow-2xl sm:mb-auto sm:p-6">
         <div className="flex items-center gap-4">
           <div className="flex h-20 w-20 shrink-0 flex-col items-center justify-center rounded-full bg-[#254642] text-[#D4AF37]">
-            <span className="text-2xl leading-none font-black">{score}</span>
+            <span className="text-3xl leading-none font-black">{score}</span>
             <span className="text-[10px] font-bold text-[#F5F5DC]/70">/ 100</span>
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-black tracking-widest text-[#D4AF37] uppercase">
               {snap.rounds > 1 ? `¡${snap.rounds} mates tomados!` : '¡Mate listo!'}
             </p>
             <h2 className="text-2xl leading-tight font-black text-[#254642]">
               {scoreTitle(score)}
             </h2>
+            {record.best != null && (
+              <p className="mt-0.5 flex items-center gap-1 text-xs font-bold text-gray-600">
+                <Trophy className="h-3.5 w-3.5 text-[#b08d25]" />
+                {record.isNew ? '¡Nuevo récord personal!' : `Tu récord: ${record.best}`}
+              </p>
+            )}
           </div>
         </div>
 
-        <h3 className="mt-5 text-sm font-bold text-gray-700">Tu equipo matero</h3>
-        <ul className="mt-2 divide-y divide-[#254642]/10 rounded-2xl bg-white">
-          {CATEGORY_ORDER.map((cat) => {
-            const o = getOption(snap.selection[cat]);
-            if (!o) return null;
-            return (
-              <li key={cat} className="flex items-center justify-between gap-3 px-3 py-2.5">
-                <span className="min-w-0">
-                  <span className="block text-[11px] font-bold text-gray-500 uppercase">
-                    {CATEGORY_LABEL[cat]}
-                  </span>
-                  <span className="block truncate text-sm font-bold text-[#254642]">
-                    {o.name}
-                    {colorLabel(o, snap.colors[o.id]) && (
-                      <span className="font-semibold text-gray-500">
-                        {' '}
-                        · {colorLabel(o, snap.colors[o.id])}
-                      </span>
-                    )}
-                  </span>
-                </span>
-                {cat !== 'yerba' && (
-                  <Link
-                    href={o.shopHref}
-                    onClick={() => track({ name: 'shop_click', category: cat })}
-                    className="flex shrink-0 items-center gap-1 rounded-full bg-[#254642]/10 px-3 py-1.5 text-xs font-bold text-[#254642] hover:bg-[#254642]/20"
-                  >
-                    <ShoppingBag className="h-3.5 w-3.5" /> Ver en la tienda
-                  </Link>
-                )}
-              </li>
-            );
-          })}
+        {versus && (
+          <p className="mt-3 rounded-2xl bg-[#D4AF37]/20 px-3 py-2 text-sm font-bold text-[#254642]">
+            {versus}
+          </p>
+        )}
+
+        {/* Desglose: en qué estuvo fino y qué puede mejorar */}
+        <ul className="mt-3 space-y-1.5">
+          {(snap.breakdown ?? []).map((b) => (
+            <li key={b.id} className="flex items-center gap-2 text-xs font-bold text-[#254642]">
+              <span className="w-[5.5rem] shrink-0">{SCORE_LABEL[b.id]}</span>
+              <span className="relative h-2.5 flex-1 overflow-hidden rounded-full bg-[#254642]/10">
+                <span
+                  className={`absolute inset-y-0 left-0 rounded-full ${b.score >= 90 ? 'bg-[#D4AF37]' : b.score >= 70 ? 'bg-[#254642]' : 'bg-[#c0392b]'}`}
+                  style={{ width: `${b.score}%` }}
+                />
+              </span>
+              <span className="w-7 shrink-0 text-right tabular-nums">{b.score}</span>
+            </li>
+          ))}
         </ul>
 
-        <div className="mt-5 grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={onReplay}
-            className="flex items-center justify-center gap-1.5 rounded-2xl bg-[#254642] py-3 text-sm font-black text-[#F5F5DC] hover:bg-[#1c3632]"
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <a
+            href={whatsappUrl(score)}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => track({ name: 'share', method: 'whatsapp' })}
+            className="col-span-2 flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] py-3.5 text-base font-black text-white shadow-lg hover:brightness-105 active:scale-[0.98]"
           >
-            <RotateCcw className="h-4 w-4" /> Armar otro mate
-          </button>
+            <MessageCircle className="h-5 w-5" /> Desafiar por WhatsApp
+          </a>
           <button
             type="button"
             onClick={onShare}
@@ -746,19 +933,65 @@ function DonePanel({
           </button>
           <button
             type="button"
-            onClick={onReset}
-            className="col-span-2 rounded-2xl border-2 border-[#254642]/20 py-2.5 text-sm font-bold text-[#254642] hover:bg-[#254642]/5"
+            onClick={onDownload}
+            className="flex items-center justify-center gap-1.5 rounded-2xl bg-[#254642]/10 py-3 text-sm font-black text-[#254642] hover:bg-[#254642]/20"
           >
-            Elegir otro equipo
+            <ImageDown className="h-4 w-4" /> Guardar imagen
+          </button>
+          <button
+            type="button"
+            onClick={onReplay}
+            className="flex items-center justify-center gap-1.5 rounded-2xl bg-[#254642] py-3 text-sm font-black text-[#F5F5DC] hover:bg-[#1c3632]"
+          >
+            <RotateCcw className="h-4 w-4" /> Jugar de nuevo
+          </button>
+          <button
+            type="button"
+            onClick={onReset}
+            className="rounded-2xl border-2 border-[#254642]/20 py-3 text-sm font-bold text-[#254642] hover:bg-[#254642]/5"
+          >
+            Cambiar equipo
           </button>
         </div>
-        <p className="mt-4 text-center text-xs text-gray-500">
-          ¿Querés los secretos de la ronda?{' '}
+
+        <h3 className="mt-4 text-xs font-black tracking-widest text-gray-500 uppercase">
+          Tu equipo matero
+        </h3>
+        <ul className="mt-1.5 divide-y divide-[#254642]/10 rounded-2xl bg-white">
+          {CATEGORY_ORDER.map((cat) => {
+            const o = getOption(snap.selection[cat]);
+            if (!o) return null;
+            return (
+              <li key={cat} className="flex items-center justify-between gap-3 px-3 py-2">
+                <span className="min-w-0 truncate text-sm font-bold text-[#254642]">
+                  <span className="font-semibold text-gray-500">{CATEGORY_LABEL[cat]}: </span>
+                  {o.name}
+                  {colorLabel(o, snap.colors[o.id]) && (
+                    <span className="font-semibold text-gray-500">
+                      {' '}
+                      · {colorLabel(o, snap.colors[o.id])}
+                    </span>
+                  )}
+                </span>
+                {cat !== 'yerba' && (
+                  <Link
+                    href={o.shopHref}
+                    onClick={() => track({ name: 'shop_click', category: cat })}
+                    className="flex shrink-0 items-center gap-1 rounded-full bg-[#254642]/10 px-3 py-1.5 text-xs font-bold text-[#254642] hover:bg-[#254642]/20"
+                  >
+                    <ShoppingBag className="h-3.5 w-3.5" /> Ver
+                  </Link>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+        <p className="mt-3 text-center text-xs text-gray-500">
           <Link
             href="/blog/como-cebar-un-mate-paso-a-paso"
             className="font-semibold text-[#254642] underline"
           >
-            Leé la guía completa
+            Leé la guía para cebar
           </Link>{' '}
           o{' '}
           <Link href="/shop" className="font-semibold text-[#254642] underline">

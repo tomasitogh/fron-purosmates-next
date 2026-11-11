@@ -34,6 +34,9 @@ es atraer tráfico (es compartible, tiene puntaje) y llevarlo a la tienda y al b
 | `components/playground/engine.ts`    | Motor Three.js: escena, cámara, clicks 3D y la lógica de cada paso.     |
 | `components/playground/catalog.ts`   | Opciones elegibles (nombre, descripción, colores, link) y los 9 pasos.  |
 | `components/playground/fx.ts`        | Efectos: yerba en relieve según la marca, agua con espuma y vapor.      |
+| `components/playground/share.ts`     | Compartir: link con puntaje (`?p=94`), texto de WhatsApp e imagen.      |
+| `components/playground/sound.ts`     | Sonidos por código (agua, yerba, ruidito final, mordidas).              |
+| `app/playground/og/route.tsx`        | Imagen de vista previa del link (con el puntaje si viene `?p=`).        |
 
 ### Cómo funciona Three.js acá (resumen)
 
@@ -58,6 +61,28 @@ es atraer tráfico (es compartible, tiene puntaje) y llevarlo a la tienda y al b
 Agarrar el mate → poner la yerba (2/3 a 3/4) → inclinar (30°–50°) → chorrito de agua tibia →
 esperar 5 segundos → agua de nuevo → poner la bombilla → cebar con agua caliente → tomar. Cada paso
 con medidor tiene una "zona ideal" y suma puntaje; al final se muestra un puntaje sobre 100.
+
+## Puntaje
+
+Cinco rubros que suman 100: yerba (20), pendiente (20), humedecido (20, promedio de los dos chorritos),
+paciencia (10, baja si se quiere tirar agua durante la espera) y cebada (30, promedio si se toman
+varios mates). Dentro de la zona ideal un paso vale entre 80 y 100: el 100 solo se consigue cerca
+del centro. El final muestra el desglose y guarda el récord personal en el dispositivo.
+
+## Compartir y desafíos
+
+El final ofrece WhatsApp, compartir nativo (con imagen si el dispositivo lo permite) y guardar la
+imagen. El link compartido es `/playground?p=<puntaje>`: quien lo abre ve "Te desafiaron: superá los
+N puntos" y al terminar se le dice si ganó. La vista previa del link (`/playground/og`) muestra ese
+puntaje. La URL canónica sigue siendo `/playground`.
+
+## Celular
+
+- El giroscopio se activa solo al empezar (en iOS pide permiso): el celular funciona como una ventana
+  a la mesa. El botón de la barra superior lo apaga, lo prende y vuelve a centrar.
+- Con el celular acostado los paneles pasan a un modo compacto, a la izquierda.
+- Si el equipo no llega a ~40 cuadros por segundo, el motor baja la resolución de a pasos.
+- Hay vibración en aciertos y avisos (Android) y un botón para silenciar el sonido.
 
 ## Analítica
 

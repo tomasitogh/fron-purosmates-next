@@ -2,33 +2,64 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import JsonLd from '@/components/blog/JsonLd';
 import MateGame from '@/components/playground/MateGame';
+import { parseChallenge } from '@/components/playground/share';
 import { getBaseUrl } from '@/lib/site';
 
 const baseUrl = getBaseUrl();
 const url = `${baseUrl}/playground`;
 
-export const metadata: Metadata = {
-  title: 'Cebá tu mate: juego 3D para aprender a cebar mate',
-  description:
-    'Juego 3D gratis: elegí termo, mate, bombilla y yerba, y cebá un mate paso a paso como se hace de verdad. Poné a prueba tu pulso matero y compartí tu puntaje.',
-  alternates: { canonical: '/playground' },
-  openGraph: {
-    title: 'Cebá tu mate en 3D | Puros Mates',
+type Props = { searchParams: Promise<{ p?: string | string[] }> };
+
+/**
+ * Con `?p=94` (link compartido desde el final del juego) la vista previa muestra
+ * el puntaje a superar. La URL canónica sigue siendo /playground.
+ */
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const score = parseChallenge((await searchParams).p);
+  const ogTitle =
+    score != null
+      ? `Saqué ${score}/100 cebando un mate en 3D. ¿Me ganás?`
+      : 'Cebá tu mate en 3D | Puros Mates';
+  const ogDescription =
+    score != null
+      ? 'Elegí tu equipo, cebá un mate paso a paso y tratá de superar mi puntaje. Es gratis y se juega desde el celu.'
+      : 'Sentate a la mesa, elegí tu equipo y cebá un mate paso a paso. ¿Cuánto sacás vos?';
+  const image = {
+    url: score != null ? `/playground/og?p=${score}` : '/playground/og',
+    width: 1200,
+    height: 630,
+    alt: 'Cebá tu mate: juego 3D de Puros Mates',
+  };
+  return {
+    title: 'Cebá tu mate: juego 3D para aprender a cebar mate',
     description:
-      'Sentate a la mesa, elegí tu equipo y cebá un mate paso a paso. ¿Cuánto sacás vos?',
-    url: '/playground',
-    type: 'website',
-    locale: 'es_AR',
-    siteName: 'Puros Mates',
-  },
-};
+      'Juego 3D gratis: elegí termo, mate, bombilla y yerba, y cebá un mate paso a paso como se hace de verdad. Poné a prueba tu pulso matero y compartí tu puntaje.',
+    alternates: { canonical: '/playground' },
+    openGraph: {
+      title: ogTitle,
+      description: ogDescription,
+      url: '/playground',
+      type: 'website',
+      locale: 'es_AR',
+      siteName: 'Puros Mates',
+      images: [image],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: ogTitle,
+      description: ogDescription,
+      images: [image.url],
+    },
+  };
+}
 
 /**
  * Playground 3D. Esta ruta es la ÚNICA que descarga Three.js: el motor se carga
  * con import() dinámico dentro de <MateGame/>, así que el resto del e-commerce
  * no suma ni un byte de JavaScript por este juego.
  */
-export default function PlaygroundPage() {
+export default async function PlaygroundPage({ searchParams }: Props) {
+  const challenge = parseChallenge((await searchParams).p);
   return (
     <>
       <JsonLd
@@ -69,7 +100,7 @@ export default function PlaygroundPage() {
           ],
         }}
       />
-      <MateGame />
+      <MateGame challenge={challenge} />
       <noscript>
         <p style={{ padding: 24 }}>
           Este juego necesita JavaScript. Mientras tanto, leé{' '}
