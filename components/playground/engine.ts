@@ -22,7 +22,7 @@ import {
   yerbaMoundGeometry,
   yerbaTexture,
 } from './fx';
-import { playChew, type Snack } from './sound';
+import { playChew, playDing, playSlurp, setPour, type Snack } from './sound';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
 import {
@@ -68,11 +68,17 @@ export type Snapshot = {
   toast: { id: number; text: string; tone: 'info' | 'good' | 'warn' } | null;
   scores: Partial<Record<Step, number>>;
   finalScore: number | null;
+  /** Desglose del puntaje final (solo en la fase `done`). */
+  breakdown: ScoreItem[] | null;
   /** Mates tomados en esta ronda (se puede seguir cebando sin rearmar). */
   rounds: number;
   /** Color elegido por artículo (id de opción → id de color). */
   colors: Record<string, string>;
 };
+
+/** Rubros del puntaje final y cuánto pesa cada uno (suman 100). */
+export const SCORE_WEIGHTS = { yerba: 20, tilt: 20, wet: 20, wait: 10, cebar: 30 } as const;
+export type ScoreItem = { id: keyof typeof SCORE_WEIGHTS; score: number };
 
 export type EngineEvent =
   | { name: 'select'; category: Category; optionId: string }
@@ -152,6 +158,9 @@ const FULL_MOUND_SLOPE = 0.3;
 
 const damp = (a: number, b: number, k: number, dt: number) => a + (b - a) * (1 - Math.exp(-k * dt));
 const clamp = THREE.MathUtils.clamp;
+/** Pasa del sistema de ejes del sensor al de la cámara (mirar por la parte de atrás). */
+const DEVICE_TO_CAMERA = new THREE.Quaternion(-Math.SQRT1_2, 0, 0, Math.SQRT1_2);
+const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
 function yawPitchTo(p: THREE.Vector3) {
   const d = p.clone().sub(EYE);
@@ -490,7 +499,10 @@ export class MateEngine {
   private yawT = 0;
   private pitchT = OVERVIEW_PITCH;
   private fovT = 55;
-  private gyro: { a: number; b: number; ga: number; gb: number } | null = null;
+  /** Hacia dónde apuntaba el celular al activar el giroscopio (el "centro"). */
+  private gyroRef: { yaw: number; pitch: number } | null = null;
+  /** Desvío pedido por el giroscopio y su versión suavizada (la que se dibuja). */
+  private gyroT = { yaw: 0, pitch: 0 };
   private gyroOffset = { yaw: 0, pitch: 0 };
 
   // Puntero
@@ -510,10 +522,18 @@ export class MateEngine {
     toast: null,
     scores: {},
     finalScore: null,
+    breakdown: null,
     rounds: 0,
     colors: {},
   };
   private toastSeq = 0;
+  /** Puntaje de cada cebada (si toma varios mates se promedian). */
+  private cebarScores: number[] = [];
+  /** Veces que quiso tirar agua durante la espera. */
+  private impatient = 0;
+  private slurped = false;
+  /** Medición de fluidez para bajar la resolución en equipos lentos. */
+  private perf = { t: 0, n: 0, ratio: 1 };
   private advanceTimer = 0;
   private yerbaFill = 0;
   private slope = 0;
@@ -535,7 +555,8 @@ export class MateEngine {
       antialias: true,
       powerPreference: 'high-performance',
     });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, mobile ? 1.75 : 2));
+    this.perf.ratio = Math.min(window.devicePixelRatio, mobile ? 1.75 : 2);
+    this.renderer.setPixelRatio(this.perf.ratio);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -1106,6 +1127,7 @@ export class MateEngine {
       sel.bombilla.tQuat.copy(quatZ(-0.18, 0.25));
     } else if (this.s.step === 'drink' && this.drinkT === 0) {
       this.drinkT = 0.0001;
+      this.slurped = false;
       sel.mate.tPos.set(0.0, 1.12, 0.5);
       sel.mate.tQuat.setFromEuler(new THREE.Euler(0.35, -0.5, 0.1, 'YXZ'));
       const { yaw, pitch } = yawPitchTo(new THREE.Vector3(0, 1.12, 0.5));
@@ -1120,6 +1142,7 @@ export class MateEngine {
     if (this.s.phase !== 'prepare') return;
     const st = this.s.step;
     if (on && st === 'wait') {
+      this.impatient++;
       this.toast('¡Paciencia! Dejá que la yerba absorba el agua.', 'warn');
       return;
     }
@@ -1154,8 +1177,8 @@ export class MateEngine {
   async setGyro(enabled: boolean): Promise<boolean> {
     if (!enabled) {
       window.removeEventListener('deviceorientation', this.onOrientation);
-      this.gyro = null;
-      this.gyroOffset = { yaw: 0, pitch: 0 };
+      this.gyroRef = null;
+      this.gyroT = { yaw: 0, pitch: 0 };
       return false;
     }
     const DOE = window.DeviceOrientationEvent as unknown as {
@@ -1168,12 +1191,16 @@ export class MateEngine {
         return false;
       }
     }
+    // La posición actual del celular pasa a ser "mirar al frente"
+    this.gyroRef = null;
     window.addEventListener('deviceorientation', this.onOrientation);
     return true;
   }
 
   dispose() {
     this.disposed = true;
+    setPour('water', false);
+    setPour('yerba', false);
     window.clearTimeout(this.advanceTimer);
     for (const t of this.restockTimers) window.clearTimeout(t);
     cancelAnimationFrame(this.raf);
@@ -1246,7 +1273,12 @@ export class MateEngine {
     this.drinkT = 0;
     this.s.scores = {};
     this.s.finalScore = null;
+    this.s.breakdown = null;
     this.s.rounds = 0;
+    this.cebarScores = [];
+    this.impatient = 0;
+    setPour('water', false);
+    setPour('yerba', false);
     this.s.meter = 0;
     this.s.tiltDeg = 0;
     this.s.holding = false;
@@ -1283,9 +1315,14 @@ export class MateEngine {
   }
 
   private bandScore(v: number, [lo, hi]: [number, number]) {
-    if (v >= lo && v <= hi) return 100;
+    // Dentro de la zona ideal: 80 en los bordes y 100 solo cerca del centro
+    // (el 20 % central). Afuera cae rápido. Así un 100 hay que ganárselo.
+    if (v >= lo && v <= hi) {
+      const off = Math.abs(v - (lo + hi) / 2) / ((hi - lo) / 2);
+      return Math.round(80 + 20 * clamp(1.25 * (1 - off), 0, 1));
+    }
     const d = v < lo ? lo - v : v - hi;
-    return Math.max(30, Math.round(100 - d * 260));
+    return Math.max(15, Math.round(80 - d * 300));
   }
 
   private release() {
@@ -1300,13 +1337,15 @@ export class MateEngine {
         return;
       }
       this.slope = -THREE.MathUtils.degToRad(Math.min(deg, 55)) * 0.45;
-      this.s.scores.tilt = this.bandScore(deg / 100, [0.3, 0.5]);
+      const tiltPts = this.bandScore(deg / 100, [0.3, 0.5]);
+      this.s.scores.tilt = tiltPts;
+      playDing(deg <= 65);
       this.toast(
-        deg > 65
+        (deg > 65
           ? '¡Uy, se volcó un poco de yerba! Igual seguimos.'
-          : deg >= 30 && deg <= 50
+          : tiltPts >= 95
             ? '¡Pendiente perfecta!'
-            : 'Bien, quedó la pendiente.',
+            : 'Bien, quedó la pendiente.') + ` · ${tiltPts} pts`,
         deg > 65 ? 'warn' : 'good'
       );
       this.advanceSoon('water1');
@@ -1322,8 +1361,15 @@ export class MateEngine {
       );
       return;
     }
-    this.s.scores[st] = this.bandScore(m, target);
+    let pts = this.bandScore(m, target);
+    if (st === 'cebar') {
+      // Si toma varios mates, vale el promedio de todas las cebadas
+      this.cebarScores.push(pts);
+      pts = Math.round(this.cebarScores.reduce((a, b) => a + b, 0) / this.cebarScores.length);
+    }
+    this.s.scores[st] = pts;
     const over = m > hi;
+    playDing(!over);
     const msgs: Partial<Record<Step, [string, string]>> = {
       yerba: ['¡Justo! Bien cargado.', 'Medio cargado de más, pero sirve.'],
       water1: ['Bien, la yerba se está humedeciendo.', 'Mucha agua: ojo que se lava.'],
@@ -1331,7 +1377,11 @@ export class MateEngine {
       cebar: ['¡Mate cebado como la gente!', 'Se rebalsó un poco… ¡a secar la mesa!'],
     };
     const [good, bad] = msgs[st]!;
-    this.toast(over ? bad : m < lo ? 'Quedó cortito, pero sigamos.' : good, over ? 'warn' : 'good');
+    this.toast(
+      (over ? bad : m < lo ? 'Quedó cortito, pero sigamos.' : good) +
+        ` · ${st === 'cebar' ? this.cebarScores[this.cebarScores.length - 1] : pts} pts`,
+      over ? 'warn' : 'good'
+    );
     if (st === 'water1') this.wetT = 0.45;
     if (st === 'water2') this.wetT = 0.8;
     this.advanceSoon(this.nextOf(st));
@@ -1368,8 +1418,24 @@ export class MateEngine {
   }
 
   private finish() {
-    const sc = Object.values(this.s.scores);
-    const final = sc.length ? Math.round(sc.reduce((a, b) => a + b, 0) / sc.length) : 0;
+    const sc = this.s.scores;
+    const pts = (v: number | undefined, missing = 0) => (v === undefined ? missing : v);
+    const wet = [sc.water1, sc.water2].filter((v): v is number => v !== undefined);
+    const breakdown: ScoreItem[] = [
+      { id: 'yerba', score: pts(sc.yerba) },
+      { id: 'tilt', score: pts(sc.tilt) },
+      {
+        id: 'wet',
+        score: wet.length ? Math.round(wet.reduce((a, b) => a + b, 0) / wet.length) : 0,
+      },
+      // Sin apuros durante la espera vale 100
+      { id: 'wait', score: pts(sc.wait, 100) },
+      { id: 'cebar', score: pts(sc.cebar) },
+    ];
+    const final = Math.round(
+      breakdown.reduce((sum, b) => sum + b.score * SCORE_WEIGHTS[b.id], 0) / 100
+    );
+    this.s.breakdown = breakdown;
     this.s.finalScore = final;
     this.s.phase = 'done';
     const sel = this.selected();
@@ -1417,13 +1483,42 @@ export class MateEngine {
   private loop = () => {
     if (this.disposed) return;
     this.raf = requestAnimationFrame(this.loop);
-    const dt = Math.min(this.clock.getDelta(), 0.05);
+    const raw = this.clock.getDelta();
+    const dt = Math.min(raw, 0.05);
+    this.adaptQuality(raw);
     this.update(dt);
     this.renderer.render(this.scene, this.camera);
     this.updateHotspots();
     const now = performance.now();
     if (this.dirty && now - this.lastEmit > 50) this.emit();
   };
+
+  /**
+   * Si el equipo no llega a ~40 cuadros por segundo, baja la resolución de a
+   * pasos (nunca por debajo de 1x). Prioriza que el juego responda fluido.
+   */
+  private adaptQuality(raw: number) {
+    if (this.clock.elapsedTime < 3 || this.perf.ratio <= 1) return;
+    this.perf.t += Math.min(raw, 0.1);
+    if (++this.perf.n < 90) return;
+    const avg = this.perf.t / this.perf.n;
+    this.perf.t = 0;
+    this.perf.n = 0;
+    if (avg > 1 / 40) {
+      this.perf.ratio = Math.max(1, this.perf.ratio - 0.25);
+      this.renderer.setPixelRatio(this.perf.ratio);
+      this.resize();
+    }
+  }
+
+  /**
+   * Dibuja un cuadro y devuelve el lienzo, para armar la imagen de compartir.
+   * Hay que copiarlo en el mismo tick (el navegador lo borra al componer).
+   */
+  capture() {
+    this.renderer.render(this.scene, this.camera);
+    return this.renderer.domElement;
+  }
 
   private emit(force = false) {
     if (!force && !this.dirty) return;
@@ -1434,6 +1529,7 @@ export class MateEngine {
       selection: { ...this.s.selection },
       scores: { ...this.s.scores },
       colors: { ...this.s.colors },
+      breakdown: this.s.breakdown && this.s.breakdown.map((b) => ({ ...b })),
     });
   }
 
@@ -1451,11 +1547,15 @@ export class MateEngine {
     // Al preparar, en pantallas anchas se acerca un poco más para lucir el mate
     const prep = portrait ? 58 : 53;
     const base = this.s.phase === 'choose' ? (this.s.focus ? focusFov : overview) : prep;
-    this.fovT = portrait ? Math.min(base * 1.3, 80) : base;
+    // En vertical: al elegir se abre el ángulo; al preparar se acerca al mate
+    this.fovT = portrait ? (this.s.phase === 'choose' ? Math.min(base * 1.3, 80) : 62) : base;
     this.yaw = damp(this.yaw, this.yawT, 5, dt);
     this.pitch = damp(this.pitch, this.pitchT, 5, dt);
     this.camera.fov = damp(this.camera.fov, this.fovT, 4, dt);
     this.camera.updateProjectionMatrix();
+    // Giroscopio suavizado (el sensor tiembla) y sumado a donde ya miraba
+    this.gyroOffset.yaw = damp(this.gyroOffset.yaw, this.gyroT.yaw, 14, dt);
+    this.gyroOffset.pitch = damp(this.gyroOffset.pitch, this.gyroT.pitch, 14, dt);
     const yaw = clamp(this.yaw + this.gyroOffset.yaw, -1.4, 1.4);
     const pitch = clamp(this.pitch + this.gyroOffset.pitch, -1.2, 0.5);
     const dir = new THREE.Vector3(
@@ -1463,7 +1563,14 @@ export class MateEngine {
       Math.sin(pitch),
       -Math.cos(yaw) * Math.cos(pitch)
     );
-    this.camera.lookAt(EYE.clone().add(dir));
+    // Leve desplazamiento de la cabeza al girar el celular: los objetos cercanos
+    // se corren más que el fondo y da sensación de profundidad.
+    this.camera.position.set(
+      EYE.x - Math.cos(yaw) * this.gyroOffset.yaw * 0.09,
+      EYE.y + this.gyroOffset.pitch * 0.06,
+      EYE.z + Math.sin(yaw) * this.gyroOffset.yaw * 0.09
+    );
+    this.camera.lookAt(this.camera.position.clone().add(dir));
 
     // Objetos: se acercan suavemente a su posición objetivo
     for (const it of this.items) {
@@ -1537,6 +1644,7 @@ export class MateEngine {
         new THREE.Euler(0, Math.atan2(EYE.x - PREP.yerba.x, EYE.z - PREP.yerba.z), 0)
       );
     }
+    setPour('yerba', emittingYerba && this.s.meter < 0.92);
     if (emittingYerba && this.s.meter < 0.92) {
       const mouth = sel.yerba.group.localToWorld(sel.yerba.mouth!.clone());
       const killY = mate.group.localToWorld(new THREE.Vector3(0, this.yerbaY(mp), 0)).y;
@@ -1598,6 +1706,7 @@ export class MateEngine {
         new THREE.Euler(0, Math.atan2(EYE.x - PREP.termo.x, EYE.z - PREP.termo.z), 0)
       );
     }
+    setPour('water', streamOn);
     if (streamOn) {
       const spout = sel.termo.group.localToWorld(sel.termo.mouth!.clone());
       const end = this.holePoint(0);
@@ -1630,6 +1739,7 @@ export class MateEngine {
       this.dirty = true;
       if (this.s.waitLeft === 0 && this.stepTimer < 1000) {
         this.stepTimer = 1000;
+        this.s.scores.wait = Math.max(25, 100 - 25 * this.impatient);
         this.toast('¡Absorbió! Ahora otro chorrito.', 'good');
         this.setStep('water2');
       }
@@ -1658,6 +1768,10 @@ export class MateEngine {
       this.drinkT += dt;
       this.s.meter = Math.max(0, 1 - this.drinkT / 2.6);
       this.dirty = true;
+      if (this.drinkT > 1.75 && !this.slurped) {
+        this.slurped = true;
+        playSlurp();
+      }
       if (this.drinkT > 3.1) {
         this.drinkT = 0;
         this.askAnother();
@@ -2038,18 +2152,32 @@ export class MateEngine {
     this.setHolding(false);
   };
 
+  /**
+   * Giroscopio: el celular funciona como una ventana a la mesa. Se arma la
+   * orientación real del teléfono (alpha/beta/gamma + rotación de pantalla) como
+   * cuaternión y de ahí sale hacia dónde apunta su parte de atrás. Usar los
+   * ángulos sueltos falla justo con el celular parado, que es como se lo sostiene.
+   */
   private onOrientation = (e: DeviceOrientationEvent) => {
-    if (e.alpha == null || e.beta == null) return;
-    if (!this.gyro) {
-      this.gyro = { a: e.alpha, b: e.beta, ga: 0, gb: 0 };
+    if (e.alpha == null || e.beta == null || e.gamma == null) return;
+    const rad = THREE.MathUtils.degToRad;
+    const screenAngle = rad(window.screen?.orientation?.angle ?? 0);
+    const q = new THREE.Quaternion()
+      .setFromEuler(new THREE.Euler(rad(e.beta), rad(e.alpha), -rad(e.gamma), 'YXZ'))
+      .multiply(DEVICE_TO_CAMERA)
+      .multiply(new THREE.Quaternion().setFromAxisAngle(Z_AXIS, -screenAngle));
+    const f = new THREE.Vector3(0, 0, -1).applyQuaternion(q);
+    const yaw = Math.atan2(-f.x, -f.z);
+    const pitch = Math.asin(clamp(f.y, -1, 1));
+    if (!this.gyroRef) {
+      this.gyroRef = { yaw, pitch };
       return;
     }
-    let da = e.alpha - this.gyro.a;
-    if (da > 180) da -= 360;
-    if (da < -180) da += 360;
-    const db = e.beta - this.gyro.b;
-    this.gyroOffset.yaw = THREE.MathUtils.degToRad(da);
-    this.gyroOffset.pitch = THREE.MathUtils.degToRad(db) * 0.8;
+    let dy = yaw - this.gyroRef.yaw;
+    if (dy > Math.PI) dy -= Math.PI * 2;
+    if (dy < -Math.PI) dy += Math.PI * 2;
+    this.gyroT.yaw = clamp(dy, -1.3, 1.3);
+    this.gyroT.pitch = clamp(pitch - this.gyroRef.pitch, -0.9, 0.9);
   };
 
   private resize() {
