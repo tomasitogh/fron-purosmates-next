@@ -1,0 +1,67 @@
+{
+  "slug": "que-necesito-para-empezar-a-tomar-mate",
+  "title": "¿Qué necesito para empezar a tomar mate?",
+  "description": "Lo básico para arrancar a tomar mate: un mate, una bombilla, yerba y agua caliente sin hervir. Qué elegir de cada cosa si recién empezás y qué podés dejar para después.",
+  "category": "Guía de compra",
+  "answer": "Para empezar a tomar mate necesitás cuatro cosas: un mate, una bombilla, yerba y agua caliente que no llegue a hervir. Si recién arrancás, lo más simple es un mate de acero inoxidable, que no hay que curar, una bombilla con buen filtro y una yerba suave. El termo es útil, pero podés arrancar con la pava.",
+  "sections": [
+    {
+      "heading": "Lo imprescindible",
+      "paragraphs": ["Con esto ya podés cebar tu primer mate en casa:"],
+      "list": [
+        "Un mate: el recipiente donde va la yerba.",
+        "Una bombilla: el tubo con filtro por el que tomás.",
+        "Yerba mate: el paquete que más te guste; para empezar suelen recomendarse las suaves.",
+        "Agua caliente sin hervir: si hierve, quema la yerba y el mate sale amargo."
+      ]
+    },
+    {
+      "heading": "Qué mate elegir si recién empezás",
+      "paragraphs": [
+        "El de acero inoxidable es el más fácil para arrancar: se usa desde el primer día, no toma olores y se limpia rápido. El de calabaza es el más tradicional y le da otro sabor a la yerba, pero hay que curarlo antes de usarlo y secarlo bien después de cada uso.",
+        "Si te gusta la idea del de calabaza, no hay problema en empezar con uno: solo tené en cuenta que pide un poco más de cuidado los primeros días."
+      ]
+    },
+    {
+      "heading": "Qué bombilla elegir",
+      "paragraphs": [
+        "Para empezar, buscá una bombilla de acero inoxidable o alpaca con un filtro que no deje pasar mucha yerba. Si se tapa seguido, probablemente el problema esté en cómo armás el mate y no en la bombilla, así que vale la pena aprender a cebar antes de cambiarla."
+      ]
+    },
+    {
+      "heading": "Lo que podés sumar después",
+      "paragraphs": [
+        "Un termo te permite tomar mate fuera de casa o en una ronda larga sin volver a calentar agua. Un yerbero, una azucarera y un matero (bolso para llevar todo) son comodidades, no requisitos. En Puros Mates también podés grabar la virola de tu mate si querés que sea propio o para regalar."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Necesito un termo para tomar mate?",
+      "answer": "No. En casa podés cebar directo con la pava; el termo sirve para mantener el agua caliente durante más tiempo o para salir."
+    },
+    {
+      "question": "¿Qué mate es mejor para un principiante?",
+      "answer": "Uno de acero inoxidable, porque no necesita curado y es fácil de limpiar. Si preferís calabaza, curalo antes de usarlo."
+    },
+    {
+      "question": "¿Puedo usar agua hirviendo si no tengo termómetro?",
+      "answer": "Mejor no. Apagá la pava cuando empiece a hacer ruido, antes de que hierva; así el agua queda en una temperatura adecuada."
+    },
+    {
+      "question": "¿Qué yerba conviene para empezar?",
+      "answer": "Una suave, para acostumbrarte al sabor. Después podés probar con palo, sin palo o compuestas según tu gusto."
+    }
+  ],
+  "related": [
+    "como-cebar-un-mate-paso-a-paso",
+    "que-mate-elegir-calabaza-madera-o-acero",
+    "como-elegir-una-bombilla-para-mate"
+  ],
+  "cta": {
+    "label": "Mirá mates y bombillas",
+    "href": "/shop"
+  },
+  "datePublished": "2026-11-12",
+  "dateModified": "2026-11-12"
+}
