@@ -1,0 +1,71 @@
+{
+  "slug": "como-se-comparte-el-mate-en-una-ronda",
+  "title": "¿Cómo se comparte el mate en una ronda? Las reglas que nadie te explica",
+  "description": "Quién ceba, en qué orden pasa el mate, por qué no se mueve la bombilla y cuándo decir 'gracias'. Las costumbres de la ronda de mate explicadas.",
+  "category": "Uso",
+  "answer": "En una ronda hay un cebador que prepara cada mate y se lo pasa a una persona por vez, siempre en el mismo orden. Quien lo recibe se lo toma entero hasta que la bombilla suene, sin moverla, y se lo devuelve al cebador. Decir 'gracias' significa que ya no querés más, así que guardalo para cuando termines.",
+  "sections": [
+    {
+      "heading": "El rol del cebador",
+      "paragraphs": [
+        "El cebador es quien arma el mate, calienta el agua y sirve cada mate. Por costumbre, el primero se lo toma él mismo: es el más amargo y el que puede traer polvo de yerba, así que no se le ofrece a los demás.",
+        "Después, el cebador carga agua y le pasa el mate a la persona que sigue en la ronda. Cuando se lo devuelven, vuelve a cebar y se lo da al siguiente. Si querés aprender a armarlo bien desde cero, mirá [cómo cebar un mate paso a paso](/blog/como-cebar-un-mate-paso-a-paso)."
+      ]
+    },
+    {
+      "heading": "Las reglas básicas de la ronda",
+      "paragraphs": ["No están escritas en ningún lado, pero casi todos los materos las respetan:"],
+      "list": [
+        "Tomate el mate entero, hasta que la bombilla haga ruido, antes de devolverlo.",
+        "No muevas ni revuelvas la bombilla: se tapa el filtro y se desarma el mate.",
+        "Devolvé el mate al cebador, no se lo pases directamente a la persona de al lado.",
+        "Respetá el orden: el mate va de a uno y vuelve siempre al cebador.",
+        "No te quedes charlando con el mate en la mano mientras los demás esperan.",
+        "Si no te gusta cómo está (muy caliente, dulce o lavado), avisale al cebador en vez de arreglarlo vos."
+      ]
+    },
+    {
+      "heading": "Cuándo decir 'gracias'",
+      "paragraphs": [
+        "En la ronda, 'gracias' no es solo cortesía: le avisa al cebador que no querés más mate. Si lo decís en el primer mate por educación, probablemente no te vuelva a tocar.",
+        "Cuando ya tomaste suficiente, lo devolvés y decís 'gracias'. El cebador te saltea en las vueltas siguientes y la ronda sigue con el resto."
+      ]
+    },
+    {
+      "heading": "Dulce o amargo, y cuándo cambiar la yerba",
+      "paragraphs": [
+        "Lo habitual es que toda la ronda tome igual. Si una parte quiere dulce y otra amargo, conviene armar dos mates separados en lugar de alternar en el mismo; para eso te sirve leer [cómo tomar mate dulce sin arruinar el mate](/blog/como-tomar-mate-dulce-sin-arruinar-el-mate).",
+        "Cuando el mate pierde sabor y el agua sale clara, está lavado. El cebador puede correr la yerba, agregar un poco más o directamente renovarla. Si te pasa seguido, mirá [por qué el mate se pone amargo o lavado](/blog/por-que-el-mate-se-pone-amargo-o-lavado). Y si la ronda es grande, en Puros Mates tenés mates camioneros, que entran más yerba y aguantan más vueltas antes de lavarse."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "¿Quién toma el primer mate de la ronda?",
+      "answer": "El cebador. El primer mate suele ser el más amargo y el que trae más polvo, por eso no se le ofrece a los demás."
+    },
+    {
+      "question": "¿Qué significa decir 'gracias' en una ronda de mate?",
+      "answer": "Que no querés tomar más. Si lo decís al recibir o devolver el mate, el cebador entiende que ya terminaste y te saltea."
+    },
+    {
+      "question": "¿Por qué no hay que mover la bombilla?",
+      "answer": "Porque al moverla se remueve la yerba, el filtro se llena de polvo y se tapa. Además se desarma la montañita que el cebador armó."
+    },
+    {
+      "question": "¿Puedo pasarle el mate directamente a quien tengo al lado?",
+      "answer": "Lo habitual es devolvérselo al cebador, que es quien vuelve a cargar agua y lo entrega a la persona siguiente."
+    }
+  ],
+  "related": [
+    "como-cebar-un-mate-paso-a-paso",
+    "como-cebar-un-mate-sin-que-se-tape-la-bombilla",
+    "que-es-un-mate-camionero"
+  ],
+  "cta": {
+    "label": "Elegí un mate para tu ronda",
+    "href": "/shop?category=mate"
+  },
+  "datePublished": "2026-11-14",
+  "dateModified": "2026-11-14"
+}
