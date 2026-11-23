@@ -132,6 +132,10 @@ export interface CorporateGiftInquiry {
   cantidad?: string;
   tipoRegalo?: string;
   tipoMate?: string;
+  color?: string;
+  conPersonalizado?: boolean;
+  logoUrl?: string;
+  fotoReferenciaUrl?: string;
   presupuesto?: string;
   fechaEntrega?: string;
   comentarios?: string;

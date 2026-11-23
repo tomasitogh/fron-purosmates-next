@@ -11,9 +11,10 @@ import AdminStock from '@/components/admin/AdminStock';
 import AdminExpenses from '@/components/admin/AdminExpenses';
 import AdminMayorista from '@/components/admin/AdminMayorista';
 import AdminCalendar from '@/components/admin/AdminCalendar';
+import AdminCompras from '@/components/admin/AdminCompras';
 
 type AdminTab =
-  'products' | 'orders' | 'settings' | 'stock' | 'expenses' | 'mayorista' | 'calendar';
+  'products' | 'orders' | 'settings' | 'stock' | 'expenses' | 'mayorista' | 'calendar' | 'compras';
 
 export default function AdminPanel() {
   const { user: clerkUser, isLoaded } = useUser();
@@ -28,7 +29,8 @@ export default function AdminPanel() {
     tabParam === 'stock' ||
     tabParam === 'expenses' ||
     tabParam === 'mayorista' ||
-    tabParam === 'calendar'
+    tabParam === 'calendar' ||
+    tabParam === 'compras'
       ? tabParam
       : 'products';
 
@@ -74,6 +76,7 @@ export default function AdminPanel() {
       {activeTab === 'expenses' && <AdminExpenses getToken={getToken} />}
       {activeTab === 'mayorista' && <AdminMayorista getToken={getToken} />}
       {activeTab === 'calendar' && <AdminCalendar getToken={getToken} />}
+      {activeTab === 'compras' && <AdminCompras getToken={getToken} />}
       {activeTab === 'settings' && <AdminSettings getToken={getToken} />}
     </AdminLayout>
   );
