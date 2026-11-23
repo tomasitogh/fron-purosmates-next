@@ -14,10 +14,11 @@ import {
   Menu,
   X,
   CalendarDays,
+  ShoppingCart,
 } from 'lucide-react';
 
 export type AdminTab =
-  'products' | 'orders' | 'settings' | 'stock' | 'expenses' | 'mayorista' | 'calendar';
+  'products' | 'orders' | 'settings' | 'stock' | 'expenses' | 'mayorista' | 'calendar' | 'compras';
 
 interface AdminLayoutProps {
   activeTab: AdminTab;
@@ -31,6 +32,7 @@ const tabs = [
   { id: 'stock' as AdminTab, label: 'Stock', icon: Warehouse },
   { id: 'expenses' as AdminTab, label: 'Gastos y Costos', icon: FileSpreadsheet },
   { id: 'mayorista' as AdminTab, label: 'Mayorista', icon: Briefcase },
+  { id: 'compras' as AdminTab, label: 'Compras', icon: ShoppingCart },
   { id: 'calendar' as AdminTab, label: 'Calendario', icon: CalendarDays },
   { id: 'settings' as AdminTab, label: 'Ajustes', icon: Settings },
 ];
